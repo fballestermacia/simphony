@@ -1,3 +1,4 @@
+###### Default ignores for Fortran repositories ######
 # Prerequisites
 *.d
 
