@@ -1,0 +1,59 @@
+OBJ = module.o sparse.o wt_aux.o math_lib.o mgmres.o symmetry.o \
+		  readHmnR.o inverse.o proteus.o \
+       eigen.o ham_qlayer2qlayer.o psi.o rand.o \
+  		 ham_slab.o ham_bulk.o ek_slab.o ek_bulk_polar.o ek_bulk.o \
+       readinput.o fermisurface.o surfgreen.o surfstat.o \
+  		 mat_mul.o ham_ribbon.o ek_ribbon.o \
+       fermiarc.o berrycurvature.o \
+  		 wanniercenter.o dos.o  orbital_momenta.o \
+		 berry.o wanniercenter_adaptive.o \
+  		 effective_mass.o findnodes.o \
+	main.o
+	
+
+# compiler
+#F90  = mpif90 -fpp -DMPI -fpe3 -O3 # -DINTELMKL -DSUPERLU #  -check all -traceback -g
+#F90  = gfortran -fpp #-DMPI -fpe3 -O3 # -DINTELMKL -DSUPERLU #  -check all -traceback -g
+F90  = gfortran -cpp 
+#F90  = ifort -fpp  -DINTELMKL -fpe3 -check all -traceback -g
+#CC = mpicc -fpp -DMPI -fpe3 -O3 # -DINTELMKL -DSUPERLU
+CC = gcc -E #-DMPI -fpe3 -O3 # -DINTELMKL -DSUPERLU
+
+INCLUDE = #-I${MKLROOT}/include 
+WFLAG = #-nogen-interface
+#OFLAG = -O3 -static-intel
+OFLAG = -O3 -ffree-line-length-512  #-g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
+FFLAG = $(OFLAG) $(WFLAG)
+LFLAG = $(OFLAG)
+
+# ARPACK LIBRARY
+ARPACK= #-L/usr/local/lib -larpack #/Users/user/quan/work/workplace/ARPACK/libarpack_gfortran.a
+
+# need to specify if -DSUPERLU privided in the F90 
+SUPERLULIB=#/usr/local/lib/libsuperlu.a
+
+# blas and lapack libraries
+# static linking
+#LIBS = -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \
+        ${MKLROOT}/lib/intel64/libmkl_sequential.a \
+        ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl \
+		  ${ARPACK}
+
+# dynamic linking
+#LIBS = ${ARPACK} -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread ${SUPERLULIB}
+LIBS = ${ARPACK} -llapack -lblas
+ 
+main : $(OBJ)
+	$(F90) $(LFLAG) $(OBJ) -o pn.x $(LIBS)
+	cp -f pn.x ../bin
+
+.SUFFIXES: .o .f90 .c
+
+.f90.o :
+	$(F90) $(FFLAG) $(INCLUDE) -c $*.f90
+.c.o:
+	$(CC) $(CFLAGS) -I$(INCLUDE) -c $< $(VERBOSE)
+
+clean :
+	rm -f *.o *.mod *~ wt.x
+
