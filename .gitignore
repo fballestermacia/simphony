@@ -1,6 +1,9 @@
 # Ignore executable binary file
 *.x
 
+# Ignore examples folder for the moment
+examples/*
+
 ###### Default ignores for Fortran repositories ######
 # Prerequisites
 *.d

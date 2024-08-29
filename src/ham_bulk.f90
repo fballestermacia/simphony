@@ -1201,16 +1201,16 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
    Hamk_bulk=0d0
    dummydynmat2=0d0
 
-   tau(:,:) = 0d0
+   tau(:,:) = Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1)
    !write(*,*) Origin_cell%Atom_name
-   do ia = 1,Origin_cell%Num_atoms
-      do ib=1,3
-         do ic=1,3
-            tau(ib,ia) = tau(ib,ia) + (Origin_cell%Atom_position_direct(ic,ia)*Origin_cell%lattice(ib,ic))/Origin_cell%cell_parameters(1) !Now we have the same units as QE
-         end do
-      end do
-   end do
-   !write(*,*) 'start', tau
+   ! do ia = 1,Origin_cell%Num_atoms
+   !    do ib=1,3
+   !       do ic=1,3
+   !          tau(ib,ia) = tau(ib,ia) + (Origin_cell%Atom_position_direct(ic,ia)*Origin_cell%lattice(ib,ic))/Origin_cell%cell_parameters(1) !Now we have the same units as QE
+   !       end do
+   !    end do
+   ! end do
+   
    zeu(:,:,:) = Born_Charge(:,:,:)
 
    !write(*,*) 'start',Origin_cell%proj_name
@@ -1221,19 +1221,9 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
    !write(*,*) 'start',zeu - Born_Charge
    !>  add loto splitting term
    temp1(1:3)= (/0.0,0.0,0.0/)
-   !write(*,*) keps
    temp2= 0.0
    atGamma=.false.
    
-   !write(*,*) Diele_Tensor(2,1)
-   
-   
-
-   !!!!!DEBUGGING
-   !if ((k(1) .eq. 0.5d0) .and. (k(2) .eq. 0.0d0) .and. (k(3) .eq. 0.5d0)) then
-   !   write(*,*) sum(lrange)!*(108.97077184367376*eV2Hartree)**2
-   !end if
-   !!!!!!
    
    
    
@@ -1271,28 +1261,14 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
       
       constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
 
-      !> see eqn. (3) in J. Phys.: Condens. Matter 22 (2010) 202201
-      !do qq= 1, 3
-      !   temp1(qq)= (keps(1)*Diele_Tensor(1, qq)+keps(2)*Diele_Tensor(2, qq)+keps(3)*Diele_Tensor(3, qq))
-      !enddo
-      !temp2= (keps(1)*temp1(1)+ keps(2)*temp1(2)+ keps(3)*temp1(3))
-      
-   
-      !do ii=1, Origin_cell%Num_atoms
-      !   do pp=1, 3
-      !      kBorn(ii, pp)=  (keps(1)*zeu(ii,pp,1)+keps(2)*zeu(ii,pp,2)+keps(3)*zeu(ii,pp,3))
-      !   enddo
-      !enddo
    endif
    
    
    
    
    
-   !write(*,*) SUM(kBorn,1)
    mat2 = 0.0d0
    if (atGamma) then
-      !write(*,*) keps
       do pp = 1,Origin_cell%Num_atoms
          do qq = 1,Origin_cell%Num_atoms
             do ii=1,3

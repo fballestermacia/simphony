@@ -82,25 +82,30 @@
      use para, only : stdout, cpuid, version
      implicit none
      if (cpuid==0) then
-        write(stdout, '(a)') " -----------------------------------------------------------------------"
-        write(stdout, '(a)') "  W            W            W              TTTTTTTTTTTTTTTTTTTT         "
-        write(stdout, '(a)') "   W          W W          W                        TT                  "
-        write(stdout, '(a)') "    W        W   W        W                         TT                  "
-        write(stdout, '(a)') "     W      W     W      W                          TT                  "
-        write(stdout, '(a)') "      W    W       W    W                           TT                  "
-        write(stdout, '(a)') "       W  W         W  W                            TT                  "
-        write(stdout, '(a)') "        WW           WW                             TT                  "
-        write(stdout, '(a)') "        W             W                             TT                  "
-        write(stdout, '(a)') "                                                                        "
-        write(stdout, '(a)') "                        Welcome to WannierTools.                       "
-        write(stdout, '(a,a10)') "                             Version ", version                             
-        write(stdout, '(a)') "                   Tools for novel topological materials.               "
-        write(stdout, '(a)') "                          Enjoy it and good luck.                       "
-        write(stdout, '(a)') "                           Author : QuanSheng Wu                        "
-        write(stdout, '(a)') "                        Email : wuquansheng@gmail.com                   "
-        write(stdout, '(a)') "               Find more information on www.wanniertools.com            "
-        write(stdout, '(a)') " ======================================================================="
-        write(stdout, '(a)') "                                                                        "
+        write(stdout, '(a)') " ----------------------------------------------------------"
+        write(stdout, '(a)') " =========================================================="
+        write(stdout, '(a)') " =       ===  ============================================="
+        write(stdout, '(a)') " =  ====  ==  ============================================="
+        write(stdout, '(a)') " =  ====  ==  ============================================="
+        write(stdout, '(a)') " =  ====  ==  ======   ===  = ===  = ===  ===   ===  =   =="
+        write(stdout, '(a)') " =       ===    ===     ==     ==     ======  =  ==    =  ="
+        write(stdout, '(a)') " =  ========  =  ==  =  ==  =  ==  =  ==  ==     ==  ======"
+        write(stdout, '(a)') " =  ========  =  ==  =  ==  =  ==  =  ==  ==  =====  ======"
+        write(stdout, '(a)') " =  ========  =  ==  =  ==  =  ==  =  ==  ==  =  ==  ======"
+        write(stdout, '(a)') " =  ========  =  ===   ===  =  ==  =  ==  ===   ===  ======"
+        write(stdout, '(a)') " =========================================================="
+        write(stdout, '(a)') "                                                           "
+        write(stdout, '(a)') "               Hi! You are now using Phonnier              "
+        write(stdout, '(a,a10)') "                  Version ", version                             
+        write(stdout, '(a)') "                      I hope I can help!                   "
+        write(stdout, '(a)') "                                                           "
+        write(stdout, '(a)') "                  Author: Francesc Ballester              "
+        write(stdout, '(a)') "               Email: fballestermacia@gmail.com           "
+        write(stdout, '(a)') "               TODO: INCLUDE PAPER AND GITHUB              "
+        write(stdout, '(a)') "                                                           "
+        write(stdout, '(a)') "         Now, let's start by reading your input file...    "
+        write(stdout, '(a)') " =========================================================="
+        write(stdout, '(a)') "                                                           "
      endif
   end subroutine header
 
@@ -113,25 +118,22 @@
         write(stdout, '(2x,a)') ''
         write(stdout, '(2x,a)') ''
         write(stdout, '(2x,a)') "======================================================================="
-        write(stdout, '(2x,a)') 'Congratulations! you finished the calculation.'
-        write(stdout, '(2x,a)') "I hope you could find something useful from this calculation."
-        write(stdout, '(2x,a)') "If so, I would like to ask you to cite our this paper:"
+        write(stdout, '(2x,a)') 'Hurray! I finished running!'
+        write(stdout, '(2x,a)') "Check the rest of the output files to see the results."
+        write(stdout, '(2x,a)') "If you think everything is correct and you want to use it for any "
+        write(stdout, '(2x,a)') "publication, please acknowledge and cite this program as:"
         write(stdout, '(2x,a)') ''
-        write(stdout, '(2x,a)') "WannierTools : An open-source software package for novel topological materials"
-        write(stdout, '(2x,a)') "QuanSheng Wu and ShengNan Zhang and Hai-Feng Song and Matthias Troyer and Alexey A. Soluyanov"
-        write(stdout, '(2x,a)') "Computer Physics Communications 224, 405 (2018)"
-        write(stdout, '(2x,a)') "https://doi.org/10.1016/j.cpc.2017.09.033"
-        if (Boltz_OHE_calc .or. Boltz_k_calc .or. Boltz_evolve_k) then
-           write(stdout, '(2x,a)') "Please also cite this paper for magnetoresistance calculation"
-           write(stdout, '(2x,a)') "Magnetoresistance from Fermi surface topology" 
-           write(stdout, '(2x,a)') "ShengNan Zhang, QuanSheng Wu, Yi Liu, and Oleg V. Yazyev"
-           write(stdout, '(2x,a)') "Phys. Rev. B 99, 035142 (2019) DOI:10.1103/PhysRevB.99.035142"
-        endif
+        write(stdout, '(2x,a)') "Loren ipsum dolor sit amet"
+        write(stdout, '(2x,a)') "name name name name"
+        write(stdout, '(2x,a)') "where and when"
+        write(stdout, '(2x,a)') "doi"
         write(stdout, '(2x,a)') ''
-        write(stdout, '(2x,a)') "For bugs, please report to wuquansheng@gmail.com                   "
-        write(stdout, '(2x,a)') "or wanniertools@groups.google.com.                 "
-        write(stdout, '(2x,a)') "More information could find on www.wanniertools.com            "
-        write(stdout, '(2x,a)') 'See you next time :)'
+        write(stdout, '(2x,a)') "If you saw any bug or anything odd during execution,        "
+        write(stdout, '(2x,a)') "report it at fballestermacia@gmail.com or on github                 "
+        write(stdout, '(2x,a)') "Thank you for using Phonnier!           "
+        write(stdout, '(2x,a)') ''
+        write(stdout, '(2x,a)')  "''And then there's quantum, of course.'  The monk sighed. "
+        write(stdout, '(2x,a)')  "'There's always bloody quantum.'' - Sir Terry Pratchett, Night Watch"
         write(stdout, '(2x,a)') "======================================================================="
      endif
   end subroutine footer

@@ -1,4 +1,4 @@
-OBJ = module.o sparse.o wt_aux.o math_lib.o mgmres.o symmetry.o \
+OBJ = module.o sparse.o pn_aux.o math_lib.o mgmres.o symmetry.o \
 		  readHmnR.o inverse.o proteus.o \
        eigen.o ham_qlayer2qlayer.o psi.o rand.o \
   		 ham_slab.o ham_bulk.o ek_slab.o ek_bulk_polar.o ek_bulk.o \

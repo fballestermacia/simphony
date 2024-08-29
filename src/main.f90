@@ -70,7 +70,7 @@
  
      !> set Num_wann from wt.in, Num_wann should be consistent with the hr.dat
      Num_wann= sum(Origin_cell%nprojs)
-     if (SOC>0) num_wann= 2*num_wann
+     !if (SOC>0) num_wann= 2*num_wann
   
      !> We need to extend the spinless hamiltonian to spinfull hamiltonian if
      !> we want to add Zeeman field when spin-orbit coupling is not included in 
