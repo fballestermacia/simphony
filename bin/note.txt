@@ -1,0 +1,12 @@
+After executing 
+
+> make
+
+inside the src/ directory, an executable file named "pn.x" should appear here. 
+If not already done, add this folder to your PATH by including the following line to your .bashrc file:
+
+export PATH=$HOME/bin:PATH_TO_YOUR_PHONNIER_INSTALLATION/bin:$PATH
+
+and with that you should be ready to go.
+
+Thank you for using Phonnier!
