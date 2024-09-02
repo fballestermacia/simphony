@@ -477,13 +477,6 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk
 
    implicit none
 
-   ! Diele_Tensor(3,3)   = epsil              Dielectric tensor
-   ! Born_Charge(Origin_cell$Num_atoms,3,3) = zeu     Born effective charges  in CC (3,3,Origin_cell%Num_Atoms)
-   ! Origin_cell%lattice          = at    Lattice vectors
-   ! Origin_cell%reciprocal_lattice  = bg   Reciprocal lattice vectors
-   ! Origin_cell%CellVolume  = Omega
-   ! alat = Origin_cell%cell_parameters(1) ! In Bohrs
-   ! Origin_cell%Atom_position_direct(3,Origin_cell%Num_atoms) = tau  Atom positions in direct coordinates
    integer :: nfr1, nfr2, nfr3   !  FFT grid             
    complex(Dp) :: Hamk_bulk(Num_wann, Num_wann)
    real(Dp) &
@@ -511,14 +504,14 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk
    ! very rough estimate: geg/4/alph > gmax = 14
    ! (exp (-14) = 10^-6)
    !
-   complex(Dp) :: dummydebug(3,Origin_cell%Num_atoms,3,Origin_cell%Num_atoms),dummydebug2(Num_wann,Num_wann), dummyFC(Num_wann,Num_wann,1)
+   complex(Dp) :: lrangetensor(3,Origin_cell%Num_atoms,3,Origin_cell%Num_atoms),lrangematrix(Num_wann,Num_wann)
 
    integer :: CartToOrb(3) !map cartesian axis to orbital ordering
 
 
    CartToOrb=(/1,2,3/)
-   dummydebug = 0d0
-   dummydebug2 = 0d0
+   lrangetensor = 0d0
+   lrangematrix = 0d0
 
    e2 = 2.0d0
 
@@ -527,12 +520,14 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk
    alph= 1.0d0
    geg = gmax*alph*4.0d0
 
-   rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi) !This value is the same as QE
+   rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi) !Transform to corect units
    
+    
    q(1) = k(1)*rec_lattice(1,1) + k(2)*rec_lattice(1,2) + k(3)*rec_lattice(1,3)
    q(2) = k(1)*rec_lattice(2,1) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
-   q(3) = k(1)*rec_lattice(3,1) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !The value of q is the same as QE   
+   q(3) = k(1)*rec_lattice(3,1) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to corect units 
    
+   ! Just in case for numerical errors or divergences
    do i=1,3
       if (abs(q(i)).le.eps12/1000)then
          q(i) = 0.0d0
@@ -560,8 +555,9 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk
                    (sqrt (rec_lattice (1, 3) **2 + rec_lattice (2, 3) **2 + rec_lattice (3, 3) **2) )) + 1
    endif
    
+   ! TESTING
    if (loto_2d) then 
-      fac = sign*4*twopi/Origin_cell%CellVolume*0.5d0/rec_lattice(3,3)!*alat !CHECK IF THE ANG2BOHRS SHOULD BE HERE OR NOT
+      fac = sign*4*twopi/Origin_cell%CellVolume*0.5d0/rec_lattice(3,3)!*alat 
       reff=0.0d0
       do i=1,2
          do j=1,2
@@ -604,9 +600,7 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk
                else
                  facgd = fac*exp(-geg/alph/4.0d0)/geg
                endif
-               !
             
-               !arg = twopi* (g1 * (dble(irvec(1,iR))) + g2 * (dble(irvec(2,iR))) + g3 * (dble(irvec(3,iR))))
                do na = 1,Origin_cell%Num_atoms
                   zag(:)=g1*zeu(na,1,:)+g2*zeu(na,2,:)+g3*zeu(na,3,:)
                   fnat(:) = 0.d0
@@ -619,17 +613,10 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk
                      fnat(:) = fnat(:) + zcg(:)*cos(arg)
                   end do
                   fmtx = MATMUL(RESHAPE(zag, (/3,1/)), RESHAPE(fnat, (/1,3/)))
-                  !fmtx = (fmtx + TRANSPOSE(fmtx)) / 2.d0
-                  !if (abs((q(1)**2+q(2)**2+q(3)**2)).le.eps12)then
-                  !   write(*,*) 'q',q, 'on-site', - facgd * fmtx(i,j)
-                  !end if
+
                   do j=1,3
                      do i=1,3
-                        dummydebug(i,na,j,na) = dummydebug(i,na,j,na) - facgd * fmtx(i,j)!zag(CartToOrb(i)) * fnat(CartToOrb(j)) !* (108.97077184367376*eV2Hartree)**2/sqrt(Atom_Mass(na)*Atom_Mass(na))
-
-
-                        !Hamk_bulk(3*(na-1)+j,3*(na-1)+i) = Hamk_bulk(3*(na-1)+j,3*(na-1)+i) - &
-                        !facgd * zag(i) * fnat(j) * (108.97077184367376*eV2Hartree)**2/sqrt(Atom_Mass(na)*Atom_Mass(na))
+                        lrangetensor(i,na,j,na) = lrangetensor(i,na,j,na) - facgd * fmtx(i,j)
                      end do
                   end do
                   
@@ -676,21 +663,12 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk
                                        g2 * (tau(2,na)-tau(2,nb))+             &
                                        g3 * (tau(3,na)-tau(3,nb)))
                      
-                     
-                     
-                     facg = facgd * exp(zi*arg)!cmplx(cos(arg), sin(arg), kind=dp)
-                     !fmtx = MATMUL(RESHAPE(zag, (/3,1/)), RESHAPE(zbg, (/1,3/)))
-                     !fmtx = (fmtx + TRANSPOSE(fmtx)) / 2.d0
-                     !if (abs((q(1)**2+q(2)**2+q(3)**2)).le.eps12)then
-                     !   write(*,*) 'q',q, 'full', - facgd * fmtx(i,j)
-                     !end if
+                     facg = facgd * exp(zi*arg)
                      do j=1,3
                         do i=1,3
                            
-                           dummydebug(i,na,j,nb) = dummydebug(i,na,j,nb) + &
-                            facg * zag(i) * zbg(j)!*(108.97077184367376*eV2Hartree)**2/sqrt(Atom_Mass(na)*Atom_Mass(nb))
-                           !Hamk_bulk(3*(na-1)+j,3*(nb-1)+i) = Hamk_bulk(3*(na-1)+j,3*(nb-1)+i) + &
-                            !facg * zag(j) * zbg(i)*(108.97077184367376*eV2Hartree)**2/sqrt(Atom_Mass(na)*Atom_Mass(nb))
+                           lrangetensor(i,na,j,nb) = lrangetensor(i,na,j,nb) + &
+                            facg * zag(i) * zbg(j)
                         end do
                      end do
                   end do
@@ -700,197 +678,27 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk
       end do
    end do
 
-   !dummydebug2 = RESHAPE(dummydebug,(/Num_wann,Num_wann/))
-   !dummydebug2 = 0.0d0
+
+   !> Convert to propper units and fold two indices to get a 2D matrix. 
+   !> Probably not efficient and not necessary, but makes the code clearer as to what we are doing.
    do nb=1,Origin_cell%Num_atoms
       do na=1,Origin_cell%Num_atoms
          do j=1,3
             do i=1,3
-               dummydebug2(3*(na-1)+i,3*(nb-1)+j) = dummydebug(i,na,j,nb)*(108.97077184367376*eV2Hartree)**2!/sqrt(Atom_Mass(na)*Atom_Mass(nb))
+               lrangematrix(3*(na-1)+i,3*(nb-1)+j) = lrangetensor(i,na,j,nb)*(108.97077184367376*eV2Hartree)**2
             end do
          end do
       end do
    end do
 
-
-   !do na=1,Num_wann
-   !   do nb=1, Num_wann
-   !      dummydebug2(na,nb) = dummydebug2(na,nb)*(108.97077184367376*eV2Hartree)**2/sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(na))*Atom_Mass(Origin_cell%spinorbital_to_atom_index(nb)))
-   !   end do
-   !end do
-
-   !dummyFC(:,:,1) = dummydebug2
-   !> Impose ASR on NAC
-   !call impose_ASR2(k,dummydebug2,Num_wann,1)
-
-
-   
-   !write(*,*) 'start', SUM(dummydebug2,1)
-   !if (abs(k(1)**2+k(2)**2+k(3)**2) < eps12) then
-   !   write(*,*) q
-   !   write(*,*) dummydebug(3,4,1,5)
-   !end if
-   !dummydebug2 = dummydebug2 - SUM(dummydebug2,2)/Num_wann
-   !write(*,*) 'start', SUM(dummydebug2,2)
+   !> Add the long range interaction to the Dynamical Matrix
    do na=1,Num_wann
       do nb=1, Num_wann
-         Hamk_bulk(na,nb) =  dummydebug2(na,nb) + Hamk_bulk(na,nb)
-         !*(108.97077184367376*eV2Hartree)**2/sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(na))*Atom_Mass(Origin_cell%spinorbital_to_atom_index(nb)))
+         Hamk_bulk(na,nb) =  lrangematrix(na,nb) + Hamk_bulk(na,nb)
       end do
    end do
-   !write(*,*) 'dummydebug', real(dummydebug(2,1,2,1))
-   !write(*,*) 'dummydebug2',real(dummydebug2(2,2))
    return
 end subroutine long_range_phonon_interaction
-
-subroutine impose_ASR2(k, ham,nwann, slabs)
-   ! This subroutine imposes the Acoustic Sum Rule to a Hamiltonian,
-   ! based on CellConstructor's python code
-   use para
-   
-   implicit none
-
-   integer :: nwann, slabs
-   complex(Dp), intent(out) :: ham(nwann*slabs, nwann*slabs)
-   real(Dp) :: k(3)
-
-
-   real(dp), external :: norm
-
-   !> local variables
-   real(Dp) :: bg(3,3), &
-   Q_proj(nwann*slabs,nwann*slabs), &! ASR projector
-   v1(nwann*slabs),  &
-   rec_lattice(3,3),    &
-   lattice_ang(3,3),    &
-   q(3),                &
-   tol,                 &
-   f_q2i(3),            &
-   f_q2,                &
-   mask(3),             &
-   atdotq,              &
-   normvec,             &
-   sigma,               &    
-   sqrtmass      
-   
-   complex(Dp) :: asrCorrection(nwann*slabs,nwann*slabs), dummyham(nwann*slabs,nwann*slabs)
-
-   integer :: N_i(3)
-
-   !> loop indices
-   integer :: i,j,l
-   
-   
-   
-
-   tol = 1e-8
-
-   q = 0.0d0
-   rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi) !This value is the same as QE
-   
-   q(1) = k(1)*rec_lattice(1,1) + k(2)*rec_lattice(1,2) + k(3)*rec_lattice(1,3)
-   q(2) = k(1)*rec_lattice(2,1) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
-   q(3) = k(1)*rec_lattice(3,1) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !The value of q is the same as QE
-
-   q = -q(:)*Ang2Bohr/Origin_cell%cell_parameters(1)
-   lattice_ang =Origin_cell%lattice/Ang2Bohr
-
-   
-   !> Create the ASR projector
-   Q_proj = 0.0d0
-   do i =1,3
-      v1 = 0.0d0
-      normvec = 0.0d0
-      do j=1,nwann*slabs,3
-         v1(j+(i-1))=1.0d0
-         normvec = normvec + 1.0d0
-      end do
-      v1 = v1/sqrt(normvec)
-      
-      Q_proj = Q_proj + spread(source = v1, dim = 2, ncopies = nwann*slabs) * spread(source = v1, dim = 1, ncopies = nwann*slabs)
-   end do
-   !write(*,*) Q_proj
-   do i=1,3
-      N_i(i) = 2*abs(maxval(irvec(i,:))-minval(irvec(i,:))) + 1
-      if (MOD(N_i(i),2) .eq. 0) then 
-         N_i(i) = N_i(i) + 1
-      end if
-   end do
-   
-   f_q2i = 1.0d0
-   
-   mask = (/(lattice_ang(1,1)*q(1)+lattice_ang(2,1)*q(2)+lattice_ang(3,1)*q(3)),      &
-           (lattice_ang(1,2)*q(1)+lattice_ang(2,2)*q(2)+lattice_ang(3,2)*q(3)),      &
-           (lattice_ang(1,3)*q(1)+lattice_ang(2,3)*q(2)+lattice_ang(3,3)*q(3))/)
-   
-   sigma = 2e-1
-   !write(*,*) abs(sin(Pi*mask)), q
-   !> We use the mask to avoid division by zero because the limit 0/0 is 1 in this case
-   do i=1,3
-      if (abs(sin(Pi*mask(i))) > tol) then
-         atdotq = lattice_ang(1,i)*q(1)+lattice_ang(2,i)*q(2)+lattice_ang(3,i)*q(3)
-         f_q2i(i) = sin(N_i(i)*Pi*atdotq)/(N_i(i)*sin(Pi*atdotq))
-      end if
-   end do
-   f_q2 = f_q2i(1)*f_q2i(2)*f_q2i(3)
-   !f_q2 = exp( - (q(1)**2+q(2)**2+q(3)**2) / (2 * sigma**2))
-   
-   asrCorrection = 0.0d0
-   !> Go to proper units
-   do i=1, nwann*slabs
-      do j=1, nwann*slabs
-         if (MOD(i,nwann).eq.0)then
-            sqrtmass = sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(nwann)))
-         else 
-            sqrtmass = sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(MOD(i,nwann))))
-         end if
-         if (MOD(j,nwann).eq.0)then
-            sqrtmass = sqrtmass *sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(nwann)))
-         else 
-            sqrtmass = sqrtmass*sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(MOD(j,nwann))))
-         end if
-         dummyham(i,j) = ham(i,j)/(108.97077184367376*eV2Hartree)**2*sqrtmass
-      end do
-   end do
-   
-   !> impose the acoustic sum rule
-   do i=1, nwann*slabs
-      do j=1, nwann*slabs
-         do l=1, nwann*slabs
-            asrCorrection(i,j) = asrCorrection(i,j) - dummyham(i,l)*Q_proj(j,l) * f_q2 !/sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(i))*Atom_Mass(Origin_cell%spinorbital_to_atom_index(j)))
-         end do
-      end do
-   end do
-   
-   dummyham = dummyham + asrCorrection
-   asrCorrection = 0.0d0
-   do i=1, nwann*slabs
-      do j=1, nwann*slabs
-         do l=1, nwann*slabs
-            asrCorrection(i,j) = asrCorrection(i,j) - dummyham(l,j)*Q_proj(i,l) * f_q2 !/sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(i))*Atom_Mass(Origin_cell%spinorbital_to_atom_index(j)))
-         end do
-      end do
-   end do
-   
-   dummyham = dummyham + asrCorrection
-   !> Go back to WT units
-   do i=1, nwann*slabs
-      do j=1, nwann*slabs
-         if (MOD(i,nwann).eq.0)then
-            sqrtmass = sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(nwann)))
-         else 
-            sqrtmass = sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(MOD(i,nwann))))
-         end if
-         if (MOD(j,nwann).eq.0)then
-            sqrtmass = sqrtmass *sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(nwann)))
-         else 
-            sqrtmass = sqrtmass*sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(MOD(j,nwann))))
-         end if
-         ham(i,j) = dummyham(i,j)*(108.97077184367376*eV2Hartree)**2/sqrtmass
-      end do
-   end do
-   !write(*,*) dummyham - Hamk_bulk, q
-end subroutine impose_ASR2
 
 subroutine impose_ASR_on_eff_charges (nat, tau, zeu)
    !-----------------------------------------------------------------------
@@ -1101,7 +909,6 @@ subroutine impose_ASR_on_eff_charges (nat, tau, zeu)
 end subroutine impose_ASR_on_eff_charges
 
 
-
 subroutine sp_zeu(zeu_u,zeu_v,nat,scal)
    !-----------------------------------------------------------------------
    !
@@ -1126,7 +933,8 @@ subroutine sp_zeu(zeu_u,zeu_v,nat,scal)
    !
    return
    !
- end subroutine sp_zeu
+end subroutine sp_zeu
+
 
 subroutine ham_bulk_LOTO(k,Hamk_bulk)
    ! This subroutine caculates Hamiltonian for
@@ -1202,23 +1010,11 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
    dummydynmat2=0d0
 
    tau(:,:) = Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1)
-   !write(*,*) Origin_cell%Atom_name
-   ! do ia = 1,Origin_cell%Num_atoms
-   !    do ib=1,3
-   !       do ic=1,3
-   !          tau(ib,ia) = tau(ib,ia) + (Origin_cell%Atom_position_direct(ic,ia)*Origin_cell%lattice(ib,ic))/Origin_cell%cell_parameters(1) !Now we have the same units as QE
-   !       end do
-   !    end do
-   ! end do
+
    
    zeu(:,:,:) = Born_Charge(:,:,:)
 
-   !write(*,*) 'start',Origin_cell%proj_name
 
-   !write(*,*) 'start', SUM(zeu,1)
-
-   !call impose_ASR_on_eff_charges(Origin_cell%Num_atoms,tau,zeu)
-   !write(*,*) 'start',zeu - Born_Charge
    !>  add loto splitting term
    temp1(1:3)= (/0.0,0.0,0.0/)
    temp2= 0.0
@@ -1292,7 +1088,6 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
    end if
    
 
-   !call impose_ASR2(k,mat2,Num_wann,1)
 
 
    do ii=1,Num_wann
@@ -1314,8 +1109,7 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
    
    
 
-   ! Apply ASR
-   !call impose_ASR2(k,Hamk_bulk,Num_wann, 1)
+
 
    ! preserve previous k point for NAC calculation in Gamma so as to not have unnecessary discontinuities
    if ((k(1).ne.0.0d0) .or. (k(2).ne.0.0d0) .or. (k(3).ne.0.0d0)) then
@@ -1707,350 +1501,7 @@ end subroutine rotation_to_Ham_basis
 
 
 
-! ============================== INITIALIZATIONS ============================================
-
-subroutine initialize_perm(R2, n_blocks,SClat,PBC)
-   use para
-   implicit none
-   integer, intent(in)           :: R2(3,n_blocks),n_blocks
-   integer, intent(in)           :: SCLat(3)
-   logical, intent(in)           :: PBC
-   !
-   integer :: x(3), y(3),i_block,j_block
-   logical :: found, Geq
-  
-   write(*,*) " "
-   write(*,*) "Initialize indices for permutation...", perm_initialized
-
-      
-   allocate(P(n_blocks))
-
-   do i_block = 1, n_blocks
-               
-       x=R2(:,i_block)
-       found=.false.
-       
-       do j_block = 1, n_blocks
-       !    
-           y=R2(:,j_block)
-           if (PBC) then
-               Geq= ( ALL (mod(y+x,SCLat)==0) )
-            else
-               Geq= ( ALL (y+x ==0) )
-           end if
-           if ( Geq) then
-               P(i_block)=j_block
-               found=.true.
-               cycle
-           end if
-       !    
-       end do
-       
-       if ( .not. found ) then
-       
-           write(*,*) " ERROR: new vector found during the permutation symmetry initialization "
-           write(*,*) "        the execution stops here. "
-           write(*,*) "        If the 2ndFC is centered, try to repeat the centering with higher Far "            
-           write(*,*) "        If the 2ndFC is not centered, try to repeat the ASR imposition with PBC=True "            
-           stop
-           
-       end if
-   
-   end do
-
-   perm_initialized =.true.
-
-   write(*,*) "Initialize indices for permutation...done"
-   write(*,*) " "
-   
-end subroutine initialize_perm
-
-subroutine clear_all()
-   use para
-   implicit none
-
-   ! This subroutine deallocates the permutations
-   if (perm_initialized) then
-       perm_initialized = .false.
-       deallocate(P)
-   end if
-end subroutine clear_all
-
-!==========================================================================================
-
-!function Geq(v1,v2,Lat,PBC)
-!   implicit none
-!   logical    :: Geq
-!   integer, dimension(:), intent(in)           :: v1,v2
-!   integer, dimension(:), intent(in) :: Lat
-!   logical, intent(in) :: PBC
-   !    
-!   if (PBC) then
-!    Geq= ( ALL (mod(v1-v2,Lat)==0) )
-!   else
-!    Geq= ( ALL (v1-v2 ==0) )
-!   end if
-   !
-   !   
-!end function Geq
-
-!=============================== PERM SYM =========================================
-
-subroutine impose_perm_sym(FC,R2,SClat,PBC,verbose,FCvar,FC_sym,nat,n_blocks)
-   use para
-   implicit none
-   !integer, parameter :: DP = selected_real_kind(14,200)
-   complex(kind=DP), intent(in)     :: FC(3*nat,3*nat,n_blocks)
-   integer, intent(in)           :: nat, n_blocks
-   integer, intent(in)           :: R2(3,n_blocks)
-   integer, intent(in)           :: SClat(3)
-   logical, intent(in)           :: PBC, verbose
-   !
-   complex(kind=DP), intent(out)    :: FC_sym(3*nat,3*nat,n_blocks)
-   real(kind=DP), intent(out) :: FCvar
-   !
-   integer                       :: jn1, jn2, i_block,nat3
-   !
-
-   
-   if ( .not. perm_initialized ) call initialize_perm(R2,n_blocks,SClat,PBC)
-         
-   nat3=3*nat  
-     
-   do i_block = 1,n_blocks
-
-   do jn1 = 1, nat3
-   do jn2 = 1, nat3
-   
-   FC_sym(jn1,jn2, i_block)=    FC(jn1,jn2, i_block)    &
-                              + FC(jn2,jn1, P(i_block))                                 
-
-   end do
-   end do
-                                   
-   end do
-
-   FC_sym=FC_sym/2.0_dp
 
 
-   FCvar=SUM(ABS(FC-FC_sym))/ SUM(ABS(FC)) 
-
-   if (verbose) then
-   write(*, * ) ""
-   write(*,  "(' FC variation due to permut. symm.= 'e20.6)") FCvar
-   write(*, * ) ""
-   end if
-   !
-end subroutine impose_perm_sym
-
-!================================ ASR ON 2nd INDEX ============================================
-
-subroutine impose_ASR_2nd(FC,pow,SClat,PBC,verbose, &
-                         FCvar,sum2nd,FC_asr,nat,n_blocks)
-   use para
-   implicit none
-   !integer, parameter :: DP = selected_real_kind(14,200)
-   complex(kind=DP), intent(in) :: FC(3*nat,3*nat, n_blocks)
-   real(kind=DP), intent(in)    :: pow
-   integer, intent(in) :: nat,n_blocks
-   integer, intent(in) :: SCLat(3)
-   logical, intent(in) :: PBC,verbose
-   !
-   real(kind=DP), intent(out) :: FCvar,sum2nd
-   complex(kind=DP), intent(out) :: FC_asr(3*nat,3*nat, n_blocks)
-   !
-   integer :: nat3,jn1,j2,n2,i_block
-   complex(kind=DP) :: d1,num,den,ratio,invpow
-
-   !    
-   nat3=3*nat
-   
-   FC_asr=0.0_dp
-   
-   d1=0.0_dp
-   sum2nd=0.0_dp
-   !
-   do jn1=1,nat3
-   do j2 =1,3
-           !
-           num=0.0_dp
-           den=0.0_dp
-           !
-           if ( pow > 0.01_dp ) then
-               !
-               !
-               do i_block=1,n_blocks
-               do n2=1,nat
-                   num=num+ FC(jn1 , j2+3*(n2-1), i_block)
-                   den=den+ ABS(FC(jn1 , j2+3*(n2-1), i_block))**pow     
-               end do
-               end do
-               !
-               if ( real(den) > 0.0_dp ) then
-                   ratio=num/den
-                   !
-                   do i_block=1,n_blocks
-                   do n2=1,nat
-                       FC_asr(jn1, j2+3*(n2-1), i_block)= &
-                           FC(jn1, j2+3*(n2-1), i_block)- &
-                           ratio*ABS(FC(jn1, j2+3*(n2-1), i_block))**pow
-                   end do
-                   end do
-                   !  
-               else ! no need to modify the FC
-                   !
-                   do i_block=1,n_blocks
-                   do n2=1,nat
-                       FC_asr(jn1, j2+3*(n2-1), i_block)= &
-                           FC(jn1, j2+3*(n2-1), i_block)
-                   end do
-                   end do                
-                   !           
-               end if
-               !
-               !
-           else
-               !
-               !
-               do i_block=1,n_blocks
-               do n2=1,nat
-                   num=num+ FC(jn1 , j2+3*(n2-1), i_block)
-                   den=den+1      
-               end do
-               end do            
-               !
-               ratio=num/den
-               !
-               do i_block=1,n_blocks
-               do n2=1,nat
-                   FC_asr(jn1, j2+3*(n2-1), i_block)= &
-                       FC(jn1, j2+3*(n2-1), i_block)- ratio
-               end do
-               end do
-               !  
-           end if
-           !            
-           !
-           d1 = d1 + den
-           sum2nd = sum2nd + ABS(num) ! should be zero if the ASR were fulfilled
-           !
-           !
-   end do
-   end do
-   !    
-   FCvar=SUM(ABS(FC-FC_ASR))/ SUM(ABS(FC)) 
-   sum2nd=sum2nd/SUM(ABS(FC))
-   !
-   if (verbose) then
-   if ( pow > 0.01_dp ) then
-   
-       invpow=1.0_dp/pow
-       
-       write(*, * ) ""   
-       write(*, "(' ASR imposition on 2nd index with pow= 'f5.3)") pow
-       write(*, "(' Previous values: sum(|sum_2nd phi|)/sum(|phi|)=       'e20.6)" ) sum2nd
-       write(*, "('                  sum(|phi|**pow)**(1/pow)/sum(|phi|)= 'e20.6)" ) d1**invpow/SUM(ABS(FC))
-       write(*, "(' FC relative variation= 'e20.6)" ) FCvar    
-       write(*, * ) "" 
-   
-   else
-
-       write(*, * ) ""   
-       write(*, "(' ASR imposition on 2nd index with pow= 0' )") 
-       write(*, "(' Previous value: sum(|sum_2nd phi|)/sum(|phi|)= 'e20.6 )" ) sum2nd
-       write(*, "(' FC relative variation= 'e20.6)" ) FCvar    
-       write(*, * ) ""     
-   
-   
-   end if
-   end if
-   !
-   !
-end subroutine impose_ASR_2nd
-
-
-! ==================================  MAIN ==========================================
-
-
-subroutine impose_ASR(FC,R2,pow,SClat,PBC,threshold,maxite,FC_out,verbose,nat,n_blocks)
-   use para
-   implicit none
-   !integer, parameter :: DP = selected_real_kind(14,200)
-   complex(kind=DP), intent(in) :: FC(3*nat,3*nat,n_blocks)
-   real(kind=DP), intent(in) :: pow,threshold
-   integer, intent(in)       :: maxite, nat, n_blocks
-   integer, intent(in) :: R2(3,n_blocks)
-   integer, intent(in) :: SCLat(3)
-   logical, intent(in) :: PBC,verbose
-   !
-   complex(kind=DP), intent(out) :: FC_out(3*nat,3*nat,n_blocks)
-   !
-   complex(kind=DP)   :: FC_tmp(3*nat,3*nat,n_blocks)
-   integer         :: ite, contr, iter, ios
-   real(kind=DP)   :: FCvar, sum2nd
-   logical :: converged
-
-   if (verbose) then
-   write(*,*) " "
-   write(*, "(' Iterative ASR imposition with pow= 'f5.3)") pow
-   write(*,*) " "
-   end if
-
-   call clear_all()
-   call initialize_perm(R2, n_blocks,SClat,PBC)
-
-   converged = .false.
-   FC_tmp=FC
-
-   ite=1
-   if ( maxite == 0 ) then
-   contr=-1
-   else
-   contr=1
-   end if
-   iter=ite*contr
-
-   do while (iter < maxite)
-
-      if (verbose) write(*,"(' Iter #' I5 '  ====')") ite
-      if (verbose) write(*,*) ""
-         call impose_ASR_2nd(FC_tmp,pow,SClat,PBC,.false.,FCvar,sum2nd,FC_out ,nat,n_blocks)
-      if (verbose) write(*,"('         Sum on 2nd='  e20.6  '    Imp. ASR on 2nd:  => delta FC=' e20.6)") sum2nd,FCvar
-         call impose_perm_sym(FC_out, R2, SClat,PBC,.false.,FCvar,FC_tmp,nat,n_blocks)
-      if (verbose) write(*,"('                    '  20X    '    Imp. permut sym:  => delta FC=' e20.6)") FCvar
-      if (verbose) write(*,*) ""
-
-   !  check converg
-   if ( sum2nd < threshold  .and. FCvar < threshold ) then
-         write(*,*) " "
-         write(*,"( ' * Convergence reached within threshold:' e20.6 )") threshold
-         write(*,*) " "
-         write(*,"( ' * Total FC relative variation:' e20.6 )") SUM(ABS(FC-FC_out))/ SUM(ABS(FC)) 
-         converged = .True.
-         EXIT
-   end if
-   
-   !  check if there is STOP file
-   OPEN(unit=100, file="STOP", status='OLD', iostat=ios)
-   IF(ios==0) THEN
-         CLOSE(100,status="DELETE")
-         write(*,*) " File STOP found, the ASR execution terminates here"
-         EXIT 
-   ENDIF
-   
-   ite=ite+1
-   iter=ite*contr
-   end do
-
-
-   if (.not. converged ) then
-   write(*,*) " "
-   write(*,"( ' Max number of iteration reached ('I6')' )") maxite
-   write(*,"( ' Convergence not reached within threshold:' e20.6 )") threshold
-   write(*,*) " "
-   end if   
-
-
-end subroutine impose_ASR
 
 

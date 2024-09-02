@@ -53,6 +53,7 @@ subroutine readinput
    Is_HrFile= .TRUE.
    Is_Sparse_Hr= .FALSE.
    Is_Sparse   = .FALSE.
+   Particle = 'phonon'
    Orthogonal_Basis = .TRUE.
    read(1001, TB_FILE, iostat= stat)
    if (stat/=0) then
@@ -67,17 +68,17 @@ subroutine readinput
       if (.not.exists) stop "ERROR>> TB_FIlE namelist should be given or wannier90_hr.dat should exist"
 
    endif
-   if(cpuid==0)write(stdout,'(1x, a, a6, a)')"You are using : ", KPorTB, " model"
-   Is_Sparse_Hr= (Is_Sparse_Hr.or.Is_Sparse)
-   if(cpuid==0) then
-      if(Is_HrFile) then
-         write(stdout,'(1x, a)')"Tight-binding Hamiltonian FROM: Hr File"
-         write(stdout,'(1x, a, L2)')"Is_Sparse_Hr= ", Is_Sparse_Hr
-         if(Is_Sparse_Hr) write(stdout,'(1x, a)')"Tight-binding Hamiltonian FROM: Sparse Hr File"
-      else
-         write(stdout,'(1x, a)')"Tight-binding Hamiltonian FROM: fitting"
-      end if
-   end if
+   ! if(cpuid==0)write(stdout,'(1x, a, a6, a)')"You are using : ", KPorTB, " model"
+   ! Is_Sparse_Hr= (Is_Sparse_Hr.or.Is_Sparse)
+   ! if(cpuid==0) then
+   !    if(Is_HrFile) then
+   !       write(stdout,'(1x, a)')"Tight-binding Hamiltonian FROM: Hr File"
+   !       write(stdout,'(1x, a, L2)')"Is_Sparse_Hr = ", Is_Sparse_Hr
+   !       if(Is_Sparse_Hr) write(stdout,'(1x, a)')"Tight-binding Hamiltonian FROM: Sparse Hr File"
+   !    else
+   !       write(stdout,'(1x, a)')"Tight-binding Hamiltonian FROM: fitting"
+   !    end if
+   ! end if
    if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight-binding Hamiltonian filename : ",Hrfile
    !if(cpuid==0)write(stdout,'(1x, a, a25)')"System of particle: ", Particle
    !if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight-binding Hamiltonian obtained from package : ",Package
@@ -112,9 +113,9 @@ subroutine readinput
    WireBand_calc         = .FALSE.
    SlabSS_calc           = .FALSE.
    SlabArc_calc          = .FALSE.
-   SlabQPI_calc          = .FALSE.
-   SlabQPI_kpath_calc    = .FALSE.
-   SlabQPI_kplane_calc   = .FALSE.
+   ! SlabQPI_calc          = .FALSE.
+   ! SlabQPI_kpath_calc    = .FALSE.
+   ! SlabQPI_kplane_calc   = .FALSE.
    !SlabSpintexture_calc  = .FALSE.
    !BulkSpintexture_calc  = .FALSE.
    wanniercenter_calc    = .FALSE.
@@ -162,7 +163,7 @@ subroutine readinput
    !ChargeDensity_selected_energies_calc= .FALSE.
 
    read(1001, CONTROL, iostat=stat)
-   SlabQPI_kplane_calc= SlabQPI_kplane_calc.or.SlabQPI_calc
+   ! SlabQPI_kplane_calc= SlabQPI_kplane_calc.or.SlabQPI_calc
 
    if (stat/=0) then
       write(*, *)"ERROR: namelist CONTROL should be set"
@@ -178,9 +179,9 @@ subroutine readinput
       write(*, *)"BulkGap_cube_calc,BulkGap_plane_calc"
       write(*, *)"SlabBand_calc,SlabBandWaveFunc_calc"
       write(*, *)"WireBand_calc,SlabSS_calc,SlabArc_calc "
-      write(*, *)"SlabQPI_calc"
-      write(*, *)"SlabQPI_kpath_calc"
-      write(*, *)"SlabQPI_kplane_calc"
+      ! write(*, *)"SlabQPI_calc"
+      ! write(*, *)"SlabQPI_kpath_calc"
+      ! write(*, *)"SlabQPI_kplane_calc"
       !write(*, *)"SlabSpintexture,wanniercenter_calc"
       write(*, *)"BerryPhase_calc,BerryCurvature_calc, BerryCurvature_EF_calc"
       write(*, *)"Berrycurvature_kpath_EF_calc"!, BerryCurvature_kpath_Occupied_calc"
@@ -229,7 +230,7 @@ subroutine readinput
 
    !> In order to be compatiable with the old version, we keep the bulkband_calc.
    BulkBand_line_calc= BulkBand_line_calc.or.BulkBand_calc
-   BulkBand_unfold_line_calc= BulkBand_unfold_line_calc.or.Landaulevel_unfold_line_calc
+   !BulkBand_unfold_line_calc= BulkBand_unfold_line_calc.or.Landaulevel_unfold_line_calc
 
    if (MirrorChern_calc) Symmetry_Import_calc = .true.
 
@@ -282,7 +283,7 @@ subroutine readinput
       !write(stdout, *) "LandauLevel_k_calc                : ", LandauLevel_k_calc
       !write(stdout, *) "LandauLevel_B_calc                : ", LandauLevel_B_calc
       !write(stdout, *) "LandauLevel_wavefunction_calc     : ", LandauLevel_wavefunction_calc
-      write(stdout, *) "Fit_kp_calc                       : ", Fit_kp_calc
+      !write(stdout, *) "Fit_kp_calc                       : ", Fit_kp_calc
       !write(stdout, *) "DMFT_MAG_calc                     : ", DMFT_MAG_calc
       !write(stdout, *) "Translate_to_WS_calc              : ", Translate_to_WS_calc
       !write(stdout, *) "LandauLevel_kplane_calc           : ", LandauLevel_kplane_calc
@@ -318,7 +319,7 @@ subroutine readinput
    !Bmagnitude = 0d0
    !Btheta = -99999d0
    !Bphi = -99999d0
-   surf_onsite = 0d0
+   !surf_onsite = 0d0
 
    !> By default, we don't add zeeman field
    !Add_Zeeman_Field = .FALSE.
@@ -394,7 +395,7 @@ subroutine readinput
     !  write(stdout, '(1x, a, f12.6)')"Number of total electrons:", Ntotch
     !  write(stdout, '(1x, a, i6)')"With SOC or not in Hrfile:", SOC
       write(stdout, '(1x, a, 3f16.6)')"Fermi energy (eV) :", E_FERMI
-      write(stdout, '(1x, a, 3f16.6)')"surf_onsite (eV): ", surf_onsite
+      !write(stdout, '(1x, a, 3f16.6)')"surf_onsite (eV): ", surf_onsite
     !  write(stdout, '(1x, a, L)')"Add_Zeeman_Field: ", Add_Zeeman_Field
     !  write(stdout, '(1x, a, 3f16.6)')"Zeeman_energy_in_eV (eV): ",  Zeeman_energy_in_eV
     !  write(stdout, '(1x, a, 3f16.6)')"Electric_field_in_eVpA (eV/Angstrom): ",  Electric_field_in_eVpA
@@ -3676,27 +3677,27 @@ subroutine rotate(R1, R2)
 end subroutine rotate
 
 
-!> transform from Cartesian coordinates to direct lattice vector basis for the magnetic cell
-subroutine cart_direct_real_magneticcell(R1, R2)
-   use para, only : dp, Magnetic_cell
-   implicit none
-   real(dp), intent(in) :: R1(3)
-   real(dp), intent(inout) :: R2(3)
-   real(dp), allocatable :: mata(:, :)
+! !> transform from Cartesian coordinates to direct lattice vector basis for the magnetic cell
+! subroutine cart_direct_real_magneticcell(R1, R2)
+!    use para, only : dp, Magnetic_cell
+!    implicit none
+!    real(dp), intent(in) :: R1(3)
+!    real(dp), intent(inout) :: R2(3)
+!    real(dp), allocatable :: mata(:, :)
 
-   allocate(mata(3, 3))
+!    allocate(mata(3, 3))
 
-   mata(1, :)= Magnetic_cell%Rua
-   mata(2, :)= Magnetic_cell%Rub
-   mata(3, :)= Magnetic_cell%Ruc
+!    mata(1, :)= Magnetic_cell%Rua
+!    mata(2, :)= Magnetic_cell%Rub
+!    mata(3, :)= Magnetic_cell%Ruc
 
-   call inv_r(3, mata)
-   R2= R1(1)*mata(1, :)+ R1(2)*mata(2, :)+ R1(3)*mata(3, :)
+!    call inv_r(3, mata)
+!    R2= R1(1)*mata(1, :)+ R1(2)*mata(2, :)+ R1(3)*mata(3, :)
 
-   deallocate(mata)
+!    deallocate(mata)
 
-   return
-end subroutine cart_direct_real_magneticcell
+!    return
+! end subroutine cart_direct_real_magneticcell
 
 
 
@@ -3780,17 +3781,17 @@ subroutine direct_cart_real_newcell(R1, R2)
    return
 end subroutine direct_cart_real_newcell
 
-!> transform from direct lattice vector basis to Cartesian coordinates for the magnetic cell
-subroutine direct_cart_real_magneticcell(R1, R2)
-   use para, only : dp, Magnetic_cell
-   implicit none
-   real(dp), intent(in) :: R1(3)
-   real(dp), intent(inout) :: R2(3)
+! !> transform from direct lattice vector basis to Cartesian coordinates for the magnetic cell
+! subroutine direct_cart_real_magneticcell(R1, R2)
+!    use para, only : dp, Magnetic_cell
+!    implicit none
+!    real(dp), intent(in) :: R1(3)
+!    real(dp), intent(inout) :: R2(3)
 
-   R2= R1(1)*Magnetic_cell%Rua+ R1(2)*Magnetic_cell%Rub+ R1(3)*Magnetic_cell%Ruc
+!    R2= R1(1)*Magnetic_cell%Rua+ R1(2)*Magnetic_cell%Rub+ R1(3)*Magnetic_cell%Ruc
 
-   return
-end subroutine direct_cart_real_magneticcell
+!    return
+! end subroutine direct_cart_real_magneticcell
 
 
 
@@ -3844,52 +3845,52 @@ subroutine cart_direct_rec_newcell(k1, k2)
 end subroutine cart_direct_rec_newcell
 
 
- !> transform from Cartesian coordinates to reciprocal lattice vector basis
-subroutine cart_direct_rec_unfold(k1, k2)
-   use para
-   implicit none
-   real(dp), intent(in) :: k1(3)
-   real(dp), intent(inout) :: k2(3)
+!  !> transform from Cartesian coordinates to reciprocal lattice vector basis
+! subroutine cart_direct_rec_unfold(k1, k2)
+!    use para
+!    implicit none
+!    real(dp), intent(in) :: k1(3)
+!    real(dp), intent(inout) :: k2(3)
 
-   real(dp), allocatable :: mata(:, :)
+!    real(dp), allocatable :: mata(:, :)
 
-   allocate(mata(3, 3))
+!    allocate(mata(3, 3))
 
-   mata(1, :)= Folded_cell%Kua
-   mata(2, :)= Folded_cell%Kub
-   mata(3, :)= Folded_cell%Kuc
+!    mata(1, :)= Folded_cell%Kua
+!    mata(2, :)= Folded_cell%Kub
+!    mata(3, :)= Folded_cell%Kuc
 
-   call inv_r(3, mata)
-   K2= k1(1)*mata(1, :)+ k1(2)*mata(2, :)+ k1(3)*mata(3, :)
+!    call inv_r(3, mata)
+!    K2= k1(1)*mata(1, :)+ k1(2)*mata(2, :)+ k1(3)*mata(3, :)
 
-   deallocate(mata)
+!    deallocate(mata)
 
-   return
-end subroutine cart_direct_rec_unfold
+!    return
+! end subroutine cart_direct_rec_unfold
 
 
- !> transform from Cartesian coordinates to reciprocal lattice vector basis for magnetic supercell
-subroutine cart_direct_rec_magneticcell(k1, k2)
-   use para, only : dp, Magnetic_cell
-   implicit none
-   real(dp), intent(in) :: k1(3)
-   real(dp), intent(inout) :: k2(3)
+!  !> transform from Cartesian coordinates to reciprocal lattice vector basis for magnetic supercell
+! subroutine cart_direct_rec_magneticcell(k1, k2)
+!    use para, only : dp, Magnetic_cell
+!    implicit none
+!    real(dp), intent(in) :: k1(3)
+!    real(dp), intent(inout) :: k2(3)
 
-   real(dp), allocatable :: mata(:, :)
+!    real(dp), allocatable :: mata(:, :)
 
-   allocate(mata(3, 3))
+!    allocate(mata(3, 3))
 
-   mata(1, :)= Magnetic_cell%Kua
-   mata(2, :)= Magnetic_cell%Kub
-   mata(3, :)= Magnetic_cell%Kuc
+!    mata(1, :)= Magnetic_cell%Kua
+!    mata(2, :)= Magnetic_cell%Kub
+!    mata(3, :)= Magnetic_cell%Kuc
 
-   call inv_r(3, mata)
-   K2= k1(1)*mata(1, :)+ k1(2)*mata(2, :)+ k1(3)*mata(3, :)
+!    call inv_r(3, mata)
+!    K2= k1(1)*mata(1, :)+ k1(2)*mata(2, :)+ k1(3)*mata(3, :)
 
-   deallocate(mata)
+!    deallocate(mata)
 
-   return
-end subroutine cart_direct_rec_magneticcell
+!    return
+! end subroutine cart_direct_rec_magneticcell
 
 
  !> transform from Cartesian coordinates to reciprocal lattice vector basis
@@ -3926,16 +3927,16 @@ subroutine direct_cart_rec_newcell(k1, k2)
    return
 end subroutine direct_cart_rec_newcell
 
-subroutine direct_cart_rec_magneticcell(k1, k2)
-   use para, only : dp, Magnetic_cell
-   implicit none
-   real(dp), intent(in) :: k1(3)
-   real(dp), intent(inout) :: k2(3)
+! subroutine direct_cart_rec_magneticcell(k1, k2)
+!    use para, only : dp, Magnetic_cell
+!    implicit none
+!    real(dp), intent(in) :: k1(3)
+!    real(dp), intent(inout) :: k2(3)
 
-   K2= k1(1)*Magnetic_cell%Kua+ k1(2)*Magnetic_cell%Kub+ k1(3)*Magnetic_cell%Kuc
+!    K2= k1(1)*Magnetic_cell%Kua+ k1(2)*Magnetic_cell%Kub+ k1(3)*Magnetic_cell%Kuc
 
-   return
-end subroutine direct_cart_rec_magneticcell
+!    return
+! end subroutine direct_cart_rec_magneticcell
 
 
 subroutine direct_cart_rec(k1, k2)
@@ -3949,16 +3950,16 @@ subroutine direct_cart_rec(k1, k2)
    return
 end subroutine direct_cart_rec
 
-subroutine direct_cart_rec_unfold(k1, k2)
-   use para
-   implicit none
-   real(dp), intent(in) :: k1(3)
-   real(dp), intent(inout) :: k2(3)
+! subroutine direct_cart_rec_unfold(k1, k2)
+!    use para
+!    implicit none
+!    real(dp), intent(in) :: k1(3)
+!    real(dp), intent(inout) :: k2(3)
 
-   K2= k1(1)*Folded_cell%Kua+ k1(2)*Folded_cell%Kub+ k1(3)*Folded_cell%Kuc
+!    K2= k1(1)*Folded_cell%Kua+ k1(2)*Folded_cell%Kub+ k1(3)*Folded_cell%Kuc
 
-   return
-end subroutine direct_cart_rec_unfold
+!    return
+! end subroutine direct_cart_rec_unfold
 
 
  !> define a new unit cell with the given MillerIndices [hkl]

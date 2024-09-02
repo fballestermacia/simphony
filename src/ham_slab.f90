@@ -96,9 +96,6 @@
         enddo ! i2
      enddo ! i1
      
-     if (index(Particle,'phonon')/=0) then
-      call impose_ASR(k3d,Hamk_slab,Num_wann,nslab)
-     end if
      ! check hermitcity
 
      do i1=1,nslab*Num_wann

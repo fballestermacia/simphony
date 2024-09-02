@@ -96,7 +96,7 @@
         write(stdout, '(a)') " =========================================================="
         write(stdout, '(a)') "                                                           "
         write(stdout, '(a)') "               Hi! You are now using Phonnier              "
-        write(stdout, '(a,a10)') "                  Version ", version                             
+        write(stdout, '(a,a10)') "                          Version ", version                             
         write(stdout, '(a)') "                      I hope I can help!                   "
         write(stdout, '(a)') "                                                           "
         write(stdout, '(a)') "                  Author: Francesc Ballester              "
