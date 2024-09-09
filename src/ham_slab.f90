@@ -35,12 +35,29 @@
      allocate( mat1(Num_wann,Num_wann))
      allocate( mat2(Num_wann,Num_wann))
      allocate(kBorn(Origin_cell%Num_atoms, 3))
-     mat1 = 0.0d0
+     !mat1 = 0.0d0
 
+     call ham_qlayer2qlayer2(k,Hij)
+
+     Hamk_slab=0.0d0 
+     ! i1 column index
+     do i1=1, nslab
+        ! i2 row index
+        do i2=1, nslab
+          if (abs(i2-i1).le.ijmax)then
+            Hamk_slab((i2-1)*Num_wann+1:(i2-1)*Num_wann+Num_wann,&
+                      (i1-1)*Num_wann+1:(i1-1)*Num_wann+Num_wann )&
+            = Hij(i1-i2,1:Num_wann,1:Num_wann) 
+          endif 
+        enddo ! i2
+     enddo ! i1
+     write(*,*) Num_wann!,Num_atoms_slab
      !> deal with phonon system
-     if (index(Particle,'phonon')/=0.and.LOTO_correction) then
-         k3d(1:3) = k(1)*Umatrix(1,:) + k(2)*Umatrix(2,:)
-         call ham_qlayer2qlayer2_LOTO(k,Hij)
+     if (LOTO_correction) then
+         k3d(:) = k(1)*Umatrix(1,:) + k(2)*Umatrix(2,:) ! ESTO NO ME CONVENCE
+
+         !call ham_qlayer2qlayer2(k,Hij)
+         !call ham_qlayer2qlayer2_LOTO(k,Hij)
          call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1)
          
          temp1(1:2)= (/0.0,0.0/)
@@ -77,24 +94,10 @@
             enddo  ! ii
 
          end if
-         
-      else
-        call ham_qlayer2qlayer2(k,Hij)
       endif
 
      
-     Hamk_slab=0.0d0 
-     ! i1 column index
-     do i1=1, nslab
-        ! i2 row index
-        do i2=1, nslab
-          if (abs(i2-i1).le.ijmax)then
-            Hamk_slab((i2-1)*Num_wann+1:(i2-1)*Num_wann+Num_wann,&
-                      (i1-1)*Num_wann+1:(i1-1)*Num_wann+Num_wann )&
-            = Hij(i1-i2,1:Num_wann,1:Num_wann) + mat1/nslab
-          endif 
-        enddo ! i2
-     enddo ! i1
+     
      
      ! check hermitcity
 

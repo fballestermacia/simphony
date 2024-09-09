@@ -546,7 +546,7 @@ subroutine readinput
    Eta_Arc= 0.001d0
    EF_broadening= 0.05d0
    OmegaNum = 100
-   OmegaNum_unfold = 0
+   ! OmegaNum_unfold = 0
    OmegaMin = -1d0
    OmegaMax =  1d0
    Nk1 = 10
@@ -556,23 +556,23 @@ subroutine readinput
    Gap_threshold= 0.01d0
    Tmin = 100.  ! in Kelvin
    Tmax = 100.  ! in Kelvin
-   NumT= 1
-   NBTau = 1
-   BTauNum = 1
-   Nslice_BTau_Max = 5000
-   BTauMax = 0d0
+   ! NumT= 1
+   ! NBTau = 1
+   ! BTauNum = 1
+   ! Nslice_BTau_Max = 5000
+   ! BTauMax = 0d0
    Rcut = 999999d0
-   Magp= 1
-   Magq= 0
-   Magp_min=0
-   Magp_max=0   
+   ! Magp= 1
+   ! Magq= 0
+   ! Magp_min=0
+   ! Magp_max=0   
    wcc_calc_tol= 0.08
    wcc_neighbour_tol= 0.3
-   NumLCZVecs=100
+   ! NumLCZVecs=100
    NumRandomConfs=1
    NumSelectedEigenVals=0 
    Beta= 100
-   Relaxation_Time_Tau= 1d0  ! in ps
+   ! Relaxation_Time_Tau= 1d0  ! in ps
    topsurface_atom_index= 0
    arpack_solver= 'zndrv1'
    RKF45_PERIODIC_LEVEL= 1
@@ -584,9 +584,9 @@ subroutine readinput
 
 
    read(1001, PARAMETERS, iostat= stat)
-   if (Magp<1) Magp= 0
-   if (Magp_max<1) Magp_max= Magp
-   if (Magq==0) Magq= Nslab
+   ! if (Magp<1) Magp= 0
+   ! if (Magp_max<1) Magp_max= Magp
+   ! if (Magq==0) Magq= Nslab
    if (Is_Sparse_Hr) then
       if (OmegaNum_unfold==0) OmegaNum_unfold= 4*OmegaNum
    else
@@ -602,7 +602,7 @@ subroutine readinput
 
    endif
 
-   NBTau= max(NBTau, BTauNum)
+   ! NBTau= max(NBTau, BTauNum)
   
    projection_weight_mode= upper(projection_weight_mode)
    if (cpuid==0) then
@@ -616,32 +616,32 @@ subroutine readinput
       write(stdout, '(1x, a, f16.5)')'OmegaMin : ', OmegaMin
       write(stdout, '(1x, a, f16.5)')'OmegaMax : ', OmegaMax
       write(stdout, '(1x, a, i6   )')'OmegaNum : ', OmegaNum
-      write(stdout, '(1x, a, i6   )')'OmegaNum_unfold : ', OmegaNum_unfold
+      ! write(stdout, '(1x, a, i6   )')'OmegaNum_unfold : ', OmegaNum_unfold
       write(stdout, '(1x, a, i6   )')'Nk1 : ', Nk1
       write(stdout, '(1x, a, i6   )')'Nk2 : ', Nk2
       write(stdout, '(1x, a, i6   )')'Nk3 : ', Nk3
       write(stdout, '(1x, a, i6   )')'NP number of principle layers  : ', Np
       write(stdout, '(1x, a, f16.5)')'Tmin(Kelvin)  : ', Tmin
       write(stdout, '(1x, a, f16.5)')'Tmax(Kelvin)  : ', Tmax
-      write(stdout, '(1x, a, i6   )')'NumT  : ', NumT
-      write(stdout, '(1x, a, i6   )')'NBTau  : ', NBTau
-      write(stdout, '(1x, a, f16.5)')'Beta  : ', Beta
-      write(stdout, '(1x, a, i6   )')'Nslice_BTau_Max  : ', Nslice_BTau_Max
-      write(stdout, '(1x, a, f16.5)')'BTauMax(Tesla.ps)', BTauMax
-      write(stdout, '(1x, a, f16.5)')'Relaxation_Time_Tau (ps)', Relaxation_Time_Tau
+      ! write(stdout, '(1x, a, i6   )')'NumT  : ', NumT
+      ! write(stdout, '(1x, a, i6   )')'NBTau  : ', NBTau
+      ! write(stdout, '(1x, a, f16.5)')'Beta  : ', Beta
+      ! write(stdout, '(1x, a, i6   )')'Nslice_BTau_Max  : ', Nslice_BTau_Max
+      ! write(stdout, '(1x, a, f16.5)')'BTauMax(Tesla.ps)', BTauMax
+      ! write(stdout, '(1x, a, f16.5)')'Relaxation_Time_Tau (ps)', Relaxation_Time_Tau
       write(stdout, '(1x, a, f16.5)')'Rcut', Rcut
-      write(stdout, '(1x, a, i16  )')'Magp', Magp
+      ! write(stdout, '(1x, a, i16  )')'Magp', Magp
       write(stdout, '(1x, a, i16  )')'iprint_level', iprint_level
       write(stdout, '(1x, a, f16.2)')'RKF45_PERIODIC_LEVEL', RKF45_PERIODIC_LEVEL
-      write(stdout, '(1x, a, i16  )')'Magp_min', Magp_min
-      write(stdout, '(1x, a, i16  )')'Magp_max', Magp_max
+      ! write(stdout, '(1x, a, i16  )')'Magp_min', Magp_min
+      ! write(stdout, '(1x, a, i16  )')'Magp_max', Magp_max
       write(stdout, '(1x, a, f16.5)')'wcc_calc_tol', wcc_calc_tol
       write(stdout, '(1x, a, f16.5)')'wcc_neighbour_tol', wcc_neighbour_tol
-      write(stdout, '(1x, a, i6   )')'NumLCZVecs', NumLCZVecs
+      ! write(stdout, '(1x, a, i6   )')'NumLCZVecs', NumLCZVecs
       write(stdout, '(1x, a, i6   )')'NumSelectedEigenVals', NumSelectedEigenVals
       write(stdout, '(1x, a, i6   )')'NumRandomConfs:', NumRandomConfs
       write(stdout, '(1x, a, a    )')'Projection weight mode:', projection_weight_mode
-      write(stdout, '(1x, a, i8   )')'The size of magnetic supercell is Magq= :', Magq
+      ! write(stdout, '(1x, a, i8   )')'The size of magnetic supercell is Magq= :', Magq
    endif
 
    !> changed to atomic units
@@ -653,10 +653,10 @@ subroutine readinput
    Rcut= Rcut*Ang2Bohr
 
    !> change the unit of relaxtion time from ps to atomic unit
-   Relaxation_Time_Tau= Relaxation_Time_Tau*1E-12/Time_atomic
+   ! Relaxation_Time_Tau= Relaxation_Time_Tau*1E-12/Time_atomic
 
    !> change the unit of B*Tau from T*ps to atomic unit
-   BTauMax= BTauMax/Magneticfluxdensity_atomic*Relaxation_Time_Tau
+   ! BTauMax= BTauMax/Magneticfluxdensity_atomic*Relaxation_Time_Tau
 
    !> 
    allocate(Omega_array(OmegaNum))
@@ -759,19 +759,19 @@ subroutine readinput
    if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Kuc*Angstrom2atomic
 
 !===============================================================================================================!
-!> ATOM_POSITIONS card
+!> ATOMS card
 !===============================================================================================================!
-
+   
    !> Read atom positions information
    rewind(1001)
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 101)inline
       inline=upper(inline)
-      if (trim(adjustl(inline))=='ATOM_POSITIONS') then
+      if (trim(adjustl(inline))=='ATOMS') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
-         if (cpuid==0) write(stdout, *)'We found ATOM_POSITIONS card'
+         if (cpuid==0) write(stdout, *)'We found ATOMS card'
          exit
       endif
    enddo
@@ -785,11 +785,14 @@ subroutine readinput
       allocate(Origin_cell%Atom_position_direct(3, Origin_cell%Num_atoms))
       allocate(Atom_position_cart_newcell(3, Origin_cell%Num_atoms))
       allocate(Atom_position_direct_newcell(3, Origin_cell%Num_atoms))
-      allocate(Origin_cell%Atom_magnetic_moment(3, Origin_cell%Num_atoms))
-      Origin_cell%Atom_magnetic_moment= 0d0
+
+      allocate(Atom_Mass(Origin_cell%Num_atoms))
+
+      ! allocate(Origin_cell%Atom_magnetic_moment(3, Origin_cell%Num_atoms))
+      ! Origin_cell%Atom_magnetic_moment= 0d0
       read(1001, *)inline   ! The unit of lattice vector
       DirectOrCart= trim(adjustl(inline))
-
+      
       !> check whether we have the magnetic moment in the POSITION card
     !   do i=1, Origin_cell%Num_atoms
     !      read(1001, *, err=132) Origin_cell%atom_name(i), Origin_cell%Atom_position_cart(:, i), Origin_cell%Atom_magnetic_moment(:, i)
@@ -817,7 +820,7 @@ subroutine readinput
       do while (.true.)
          read(1001, *)inline
          inline=upper(inline)
-         if (trim(adjustl(inline))=='ATOM_POSITIONS') then
+         if (trim(adjustl(inline))=='ATOMS') then
             exit
          endif
       enddo
@@ -826,7 +829,7 @@ subroutine readinput
       read(1001, *)
 
       do i=1, Origin_cell%Num_atoms
-         read(1001, *, err=134) Origin_cell%atom_name(i), Origin_cell%Atom_position_cart(:, i)
+         read(1001, *, err=134) Origin_cell%atom_name(i), ATOM_MASS(i), Origin_cell%Atom_position_cart(:, i)
          !> Origin_cell%Atom_position_cart is in the cartesian coordinate.
          if (index(DirectOrCart, "D")>0)then
             pos= Origin_cell%Atom_position_cart(:, i)
@@ -841,10 +844,10 @@ subroutine readinput
       go to 133
       
 134   continue
-      write(*, *)"ERROR occurred while reading the ATOM_POSITIONS card"
+      write(*, *)"ERROR occurred while reading the ATOMS card"
       write(*, *)"This is a free format card, between lines there shouldn't be any comments"
       write(*, *)"The number in the second line should be the same as the number of lines of the atom positions."
-      stop "ERROR: please set ATOM_POSITIONS card correctly"!, see manual on www.wanniertools.com"
+      stop "ERROR: please set ATOMS card correctly"
 
 133   continue
       
@@ -854,14 +857,14 @@ subroutine readinput
         enddo
 
         if(cpuid==0)write(stdout,'(a)')' '
-        if(cpuid==0)write(stdout,'(a)')'>> Atom position and magnetic moment of Original lattice'
-        if(cpuid==0)write(stdout,'(13X, 2a36, a24)')' Catesian(Ang)', 'Fractional(Direct)', 'Magnetic moment'
+        if(cpuid==0)write(stdout,'(a)')'>> Atom position and mass of Original lattice'
+        if(cpuid==0)write(stdout,'(13X, 2a36, a24)')' Catesian(Ang)', 'Fractional(Direct)', 'Mass'
         if(cpuid==0)write(stdout,'(a)')'------------------------------------------------------------------------------------------------------------------'
-        if(cpuid==0)write(stdout,'(a6, 2X, a10, 6a12, 3a8)')'index', 'Atom Name ', ' x', ' y', ' z', 'a', 'b', 'c', 'Mx', 'My', 'Mz'
+        if(cpuid==0)write(stdout,'(a6, 2X, a10, 6a12, 3a8)')'index', 'Atom Name ', ' x', ' y', ' z', 'a', 'b', 'c', 'm'
         if(cpuid==0)write(stdout,'(a)')'------------------------------------------------------------------------------------------------------------------'
         do i=1, Origin_cell%Num_atoms
-            if(cpuid==0)write(stdout, '(i6,2X, a10,6f12.6)')i, Origin_cell%atom_name(i), &
-            Origin_cell%Atom_position_cart(:, i)/Angstrom2atomic, Origin_cell%Atom_position_direct(:,i)!, Origin_cell%Atom_magnetic_moment(:, i)
+            if(cpuid==0)write(stdout, '(i6,2X, a10,6f12.6,6f12.6)')i, Origin_cell%atom_name(i), &
+            Origin_cell%Atom_position_cart(:, i)/Angstrom2atomic, Origin_cell%Atom_position_direct(:,i), Atom_Mass(i)!, Origin_cell%Atom_magnetic_moment(:, i)
         enddo
 
    else
@@ -3433,47 +3436,10 @@ subroutine readinput
    endif
 
 !===============================================================================================================!
-!> ATOM_MASS card
+!> LOTO_DT card
 !===============================================================================================================!
     
-   !> for phonon system,  LO-TO correction, by T.T Zhang and F. Ballester
-   !> Atomic MASS in unit of g/mol
-   rewind(1001)
-   lfound = .false.
-   do while (.true.)
-      read(1001, *, end= 221)inline
-      inline=upper(inline)
-      if (trim(adjustl(inline))=='ATOM_MASS') then
-         lfound= .true.
-         if (cpuid==0) write(stdout, *)' '
-         if (cpuid==0) write(stdout, *)'We found ATOM_MASS card'
-         exit
-      endif
-   enddo
-221 continue
-
-   if (lfound) then
-      read(1001,*)Origin_cell%Num_atom_type
-      if(cpuid==0)write(stdout,'(a,i10,a)')'There are', Origin_cell%Num_atom_type, 'kind of atoms'
-      if (.not.allocated(Origin_cell%Num_atoms_eachtype))allocate(Origin_cell%Num_atoms_eachtype(Origin_cell%Num_atom_type))
-      allocate(mass_temp(Origin_cell%Num_atom_type))
-      allocate(ATOM_MASS(Origin_cell%Num_atoms))
-      read(1001,*)Origin_cell%Num_atoms_eachtype(1:Origin_cell%Num_atom_type)
-      read(1001,*)mass_temp(1:Origin_cell%Num_atom_type)
-      do i= 1, Origin_cell%Num_atom_type
-         if (cpuid==0)write(stdout,'(a,i10,a)')'Each type have', Origin_cell%Num_atoms_eachtype(i), ' atoms'
-         if (cpuid==0)write(stdout,'(a,f12.6)')'And their mass is', mass_temp(i)
-      enddo
-      it=0
-      do i=1, Origin_cell%Num_atom_type
-         do j=1, Origin_cell%Num_atoms_eachtype(i)
-            it=it+1
-            ATOM_MASS(it)=mass_temp(i)
-         enddo
-      enddo
-   else
-      if (LOTO_correction)stop "ERROR: please set ATOM_MASS card for LOTO correction of phonon spectrum"
-   endif
+   !> LO-TO correction, by T.T Zhang and F. Ballester
 
    !>> setup Dielectric tensor for a given materials
    rewind(1001)
@@ -3508,6 +3474,11 @@ subroutine readinput
       endif
    endif
 
+
+!===============================================================================================================!
+!> LOTO_BC card
+!===============================================================================================================!
+  
    !>> setup Born charge for a given material
    rewind(1001)
    lfound = .false.
