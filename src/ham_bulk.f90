@@ -460,7 +460,7 @@ subroutine dHdk_latticegauge_Ham(k, eigval, eigvec, Vmn_Ham)
    return
 end subroutine dHdk_latticegauge_Ham
 
-subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk,tau,zeu) 
+subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk,tau,zeu,rec_lattice,natoms, map2atoms) 
    ! This subroutine computes the rigid-ion (long-range) term for q
    ! X. Gonze et al, PRB 50. 13035 (1994) 
    ! the Ewald parameter alpha must be large enough to
@@ -477,13 +477,14 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk
 
    implicit none
 
-   integer :: nfr1, nfr2, nfr3   !  FFT grid             
-   complex(Dp) :: Hamk_bulk(Num_wann, Num_wann)
+   integer :: nfr1, nfr2, nfr3, natoms, map2atoms(natoms)   !  FFT grid             
+   complex(Dp) :: Hamk_bulk(3*natoms, 3*natoms)
    real(Dp) &
-        k(3),           &! q-vector
+        q(3),           &! q-vector
         sign,          &! sign=+/-1.0 ==> add/subtract rigid-ion term
-        tau(3,Origin_cell%Num_atoms),  & ! atom position
-        zeu(Origin_cell%Num_atoms,3,3) ! Effective charges
+        tau(3,natoms),  & ! atom position
+        zeu(Origin_cell%Num_atoms,3,3), & ! Effective charges
+        rec_lattice(3,3)
    logical :: loto_2d ! 2D LOTO correction 
 
    
@@ -496,15 +497,15 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk
    !real(DP) :: tau(3,Origin_cell%Num_atoms) 
    real(Dp) :: zag(3),zbg(3),zcg(3), fnat(3), reff(2,2)
    complex(dp) :: facg, fmtx(3,3)
-   real(Dp) :: q(3) !new k
-   real(Dp) :: rec_lattice(3,3) 
+   !real(Dp) :: q(3) !new k
+   
    !
    ! alph is the Ewald parameter, geg is an estimate of G^2
    ! such that the G-space sum is convergent for that alph
    ! very rough estimate: geg/4/alph > gmax = 14
    ! (exp (-14) = 10^-6)
    !
-   complex(Dp) :: lrangetensor(3,Origin_cell%Num_atoms,3,Origin_cell%Num_atoms),lrangematrix(Num_wann,Num_wann)
+   complex(Dp) :: lrangetensor(3,natoms,3,natoms),lrangematrix(3*natoms,3*natoms)
 
    integer :: CartToOrb(3) !map cartesian axis to orbital ordering
 
@@ -520,12 +521,6 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk
    alph= 1.0d0
    geg = gmax*alph*4.0d0
 
-   rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi) !Transform to corect units
-   
-    
-   q(1) = k(1)*rec_lattice(1,1) + k(2)*rec_lattice(1,2) + k(3)*rec_lattice(1,3)
-   q(2) = k(1)*rec_lattice(2,1) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
-   q(3) = k(1)*rec_lattice(3,1) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to corect units 
    
    ! Just in case for numerical errors or divergences
    do i=1,3
@@ -601,14 +596,14 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk
                  facgd = fac*exp(-geg/alph/4.0d0)/geg
                endif
             
-               do na = 1,Origin_cell%Num_atoms
-                  zag(:)=g1*zeu(na,1,:)+g2*zeu(na,2,:)+g3*zeu(na,3,:)
+               do na = 1,natoms
+                  zag(:)=g1*zeu(map2atoms(na),1,:)+g2*zeu(map2atoms(na),2,:)+g3*zeu(map2atoms(na),3,:)
                   fnat(:) = 0.d0
-                  do nb = 1,Origin_cell%Num_atoms
+                  do nb = 1,natoms
                      arg = 2.d0 * Pi* (g1 * (tau(1,na)-tau(1,nb))+             &
                                        g2 * (tau(2,na)-tau(2,nb))+             &
                                        g3 * (tau(3,na)-tau(3,nb)))
-                     zcg(:) = g1*zeu(nb,1,:) + g2*zeu(nb,2,:) + g3*zeu(nb,3,:)
+                     zcg(:) = g1*zeu(map2atoms(nb),1,:) + g2*zeu(map2atoms(nb),2,:) + g3*zeu(map2atoms(nb),3,:)
 
                      fnat(:) = fnat(:) + zcg(:)*cos(arg)
                   end do
@@ -652,11 +647,11 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk
                endif
                !
             
-               do nb = 1,Origin_cell%Num_atoms
+               do nb = 1,natoms
                   
-                  zbg(:)=g1*zeu(nb,1,:)+g2*zeu(nb,2,:)+g3*zeu(nb,3,:)
-                  do na = 1,Origin_cell%Num_atoms
-                     zag(:)=g1*zeu(na,1,:)+g2*zeu(na,2,:)+g3*zeu(na,3,:) 
+                  zbg(:)=g1*zeu(map2atoms(nb),1,:)+g2*zeu(map2atoms(nb),2,:)+g3*zeu(map2atoms(nb),3,:)
+                  do na = 1,natoms
+                     zag(:)=g1*zeu(map2atoms(na),1,:)+g2*zeu(map2atoms(na),2,:)+g3*zeu(map2atoms(na),3,:) 
                   
                      
                      arg = 2.d0*Pi* (g1 * (tau(1,na)-tau(1,nb))+             & 
@@ -681,8 +676,8 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,k,loto_2d,sign,Hamk_bulk
 
    !> Convert to propper units and fold two indices to get a 2D matrix. 
    !> Probably not efficient and not necessary, but makes the code clearer as to what we are doing.
-   do nb=1,Origin_cell%Num_atoms
-      do na=1,Origin_cell%Num_atoms
+   do nb=1,natoms
+      do na=1,natoms
          do j=1,3
             do i=1,3
                lrangematrix(3*(na-1)+i,3*(nb-1)+j) = lrangetensor(i,na,j,nb)*(108.97077184367376*eV2Hartree)**2
@@ -957,8 +952,8 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
 
    real(dp) :: kdotr
 
-   ! wave vector in 2d
-   real(Dp) :: k(3), keps(3) = (/eps12,eps12,eps12/)
+   ! wave vector 
+   real(Dp) :: k(3), keps(3) = (/eps12,eps12,eps12/), q(3)
 
    ! coordinates of R vector
    real(Dp) :: R(3)
@@ -976,7 +971,7 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
    real(dp) :: temp2=0.0
    real(dp) :: temp3(30),constant_t
    real(dp) ::A_ii(3)=(/0.0,0.0,0.0/)
-   real(dp) ::A_jj(3)=(/0.0,0.0,0.0/), zag(3), zbg(3), qeq
+   real(dp) ::A_jj(3)=(/0.0,0.0,0.0/), zag(3), zbg(3), qeq, rec_lattice(3,3)
 
    !> k times Born charge
    real(dp), allocatable :: kBorn(:, :)
@@ -993,6 +988,7 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
    complex(Dp), allocatable :: dummydynmat(:,:,:)
    complex(Dp), allocatable :: dummydynmat2(:,:,:)
 
+
    allocate(kBorn(Origin_cell%Num_atoms, 3))
    allocate(mat1(Num_wann, Num_wann))
    allocate(mat2(Num_wann, Num_wann))
@@ -1003,6 +999,8 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
    
    !mat2 = 0d0
    !nac_correction= zzero
+
+
 
    CartToOrb=(/1,2,3/)
 
@@ -1046,7 +1044,14 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
    
    ! Add long-range interaction
    !Hamk_bulk = 0.0d0
-   call long_range_phonon_interaction(0,0,0,k,.false.,1.0d0,Hamk_bulk,tau,zeu)
+   rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi) !Transform to corect units
+   
+    
+   q(1) = k(1)*rec_lattice(1,1) + k(2)*rec_lattice(1,2) + k(3)*rec_lattice(1,3)
+   q(2) = k(1)*rec_lattice(2,1) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
+   q(3) = k(1)*rec_lattice(3,1) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to corect units 
+   
+   call long_range_phonon_interaction(0,0,0,q,.false.,1.0d0,Hamk_bulk,tau,zeu,rec_lattice,Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
    
    if (abs((k(1)**2+k(2)**2+k(3)**2)).le.eps12)then  !> skip k=0
       atGamma=.true.

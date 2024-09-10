@@ -1666,6 +1666,24 @@ subroutine readinput
    Cell_defined_by_surface%lattice(:, 2)= R2
    Cell_defined_by_surface%lattice(:, 3)= R3
 
+   call get_volume(Cell_defined_by_surface%Rua, Cell_defined_by_surface%Rub, Cell_defined_by_surface%Ruc, Cell_defined_by_surface%CellVolume)
+
+   call get_reciprocal_lattice(Cell_defined_by_surface%Rua, Cell_defined_by_surface%Rub, Cell_defined_by_surface%Ruc, &
+                               Cell_defined_by_surface%Kua, Cell_defined_by_surface%Kub, Cell_defined_by_surface%Kuc)
+   
+
+
+   Cell_defined_by_surface%reciprocal_lattice(:, 1)= Cell_defined_by_surface%Kua
+   Cell_defined_by_surface%reciprocal_lattice(:, 2)= Cell_defined_by_surface%Kub
+   Cell_defined_by_surface%reciprocal_lattice(:, 3)= Cell_defined_by_surface%Kuc
+
+   Cell_defined_by_surface%cell_parameters(1)= norm(Cell_defined_by_surface%Rua)
+   Cell_defined_by_surface%cell_parameters(2)= norm(Cell_defined_by_surface%Rub)
+   Cell_defined_by_surface%cell_parameters(3)= norm(Cell_defined_by_surface%Ruc)
+   Cell_defined_by_surface%cell_parameters(4)= angle(Cell_defined_by_surface%Rub, Origin_cell%Ruc)
+   Cell_defined_by_surface%cell_parameters(5)= angle(Cell_defined_by_surface%Rua, Origin_cell%Ruc)
+   Cell_defined_by_surface%cell_parameters(6)= angle(Cell_defined_by_surface%Rua, Origin_cell%Rub)
+
    Cell_defined_by_surface%Num_atoms = Origin_cell%Num_atoms
    Cell_defined_by_surface%max_projs = Origin_cell%max_projs
    Cell_defined_by_surface%NumberOfspinorbitals = Origin_cell%NumberOfspinorbitals
@@ -3567,6 +3585,7 @@ subroutine rotate_newlattice(R1, R2)
    Umatrix_inv= Umatrix
 
    call inv_r(3, Umatrix_inv)
+   
 
    R2(1)= Umatrix_inv(1, 1)*R1(1)+ Umatrix_inv(2, 1)*R1(2)+ Umatrix_inv(3, 1)*R1(3)
    R2(2)= Umatrix_inv(1, 2)*R1(1)+ Umatrix_inv(2, 2)*R1(2)+ Umatrix_inv(3, 2)*R1(3)
@@ -4601,8 +4620,8 @@ subroutine generate_slab_poscar(cell)
    pos_cart=0d0
 
    it= 0
-   do ia=1, num_atoms_primitive_cell
-      do i=1, Nslab
+   do i=1, Nslab
+      do ia=1, num_atoms_primitive_cell
          it=it+1
          pos_cart(:, it)= cell%Atom_position_cart(:, ia)+ R3*(i-1d0+ratio/2d0)
          atom_name(it)= cell%atom_name(ia)
