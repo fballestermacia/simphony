@@ -328,7 +328,7 @@
            = Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
            + HmnR(1:Num_wann,1:Num_wann,iR)*ratio/ndegen(iR)
 
-           call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,Hij(inew_ic,:,:))
+           !call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,Hij(inew_ic,:,:))
 
            if (atGamma) then
             do ii= 1,Origin_cell%Num_atoms

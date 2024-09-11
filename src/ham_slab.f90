@@ -23,7 +23,7 @@
 
      ! for LO-TO correction
      real(Dp) :: k3d(3), R1(3), R2(3), R3(3), R12_cross(3),R3_slab(3)
-     real(dp) :: temp1(3), temp2, zag(3), zbg(3), keps(3) = (/eps12,eps12,eps12/)
+     real(dp) :: temp1(3), temp2, zag(3), zbg(3), keps(3) = (/eps12,eps12,0.0d0/)
      real(dp) ::  constant_t, ratio, angle_t, volume_slab
      integer ::  Num_atoms_slab
      complex(dp), allocatable :: mat2(:,:)
@@ -132,15 +132,15 @@
    
          
    
-         allocate(mat2(3*Num_atoms_slab,3*Num_atoms_slab))
+         allocate(mat2(Num_wann,Num_wann))
          mat2 = 0.0d0
          if (atGamma) then
-            do pp = 1,Num_atoms_slab
-               do qq = 1,Num_atoms_slab
+            do pp = 1,Origin_cell%Num_atoms
+               do qq = 1,Origin_cell%Num_atoms
                   do ii=1,3
-                     zag(ii) = keps(1)*Born_Charge(maptoprimitive(pp),1,ii) +  keps(2)*Born_Charge(maptoprimitive(pp),2,ii) + keps(3)*Born_Charge(maptoprimitive(pp),3,ii)
+                     zag(ii) = keps(1)*Born_Charge(pp,1,ii) +  keps(2)*Born_Charge(pp,2,ii) + keps(3)*Born_Charge(pp,3,ii)
                      
-                     zbg(ii) = keps(1)*Born_Charge(maptoprimitive(qq),1,ii) +  keps(2)*Born_Charge(maptoprimitive(qq),2,ii) + keps(3)*Born_Charge(maptoprimitive(qq),3,ii)
+                     zbg(ii) = keps(1)*Born_Charge(qq,1,ii) +  keps(2)*Born_Charge(qq,2,ii) + keps(3)*Born_Charge(qq,3,ii)
 
                   end do
                   
@@ -163,8 +163,8 @@
 
 
 
-         do ii=1,3*Num_atoms_slab
-            do jj=1, 3*Num_atoms_slab
+         do ii=1,Num_wann
+            do jj=1, Num_wann
                Hamk_slab(ii,jj) = Hamk_slab(ii,jj) + mat2(ii,jj)*(108.97077184367376*eV2Hartree)**2!/sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(na))*Atom_Mass(Origin_cell%spinorbital_to_atom_index(nb)))
             end do
          end do

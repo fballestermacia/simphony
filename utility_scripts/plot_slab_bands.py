@@ -45,7 +45,7 @@ ax1 = plt.axes()
 hue_neg, hue_pos = 250, 15
 colormap = sns.diverging_palette(hue_neg, hue_pos, center="dark", as_cmap=True,s=100,sep=100)
 
-sc = ax1.scatter(np.array(qpoints).flatten(), np.array(tbbandsperline).flatten(), c = colors.flatten(), label='WannierTools',s=2,cmap = colormap, vmin=-1, vmax=1)
+sc = ax1.scatter(np.array(qpoints).flatten(), np.array(tbbandsperline).flatten(), c = colors.flatten(), label='Phonnier',s=2,cmap = colormap, vmin=-1, vmax=1)
 
 cb = plt.colorbar(sc,ticks=[-1, 0, 1])
 cb.set_ticklabels(['Bottom','Bulk','Top'], fontsize = 20)
