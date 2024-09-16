@@ -4,7 +4,7 @@
      ! 
      ! History  
      !        4/18/2010 by Quansheng Wu
-     ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
+     !       12/09/2024 modified by Francesc Ballester to include LO-TO splitting
   
      use para
      implicit none
@@ -40,7 +40,9 @@
 
      allocate( Hij(-ijmax:ijmax,Num_wann,Num_wann))
   
-
+   !!!!!!!!!!!
+   ! TO-DO: Remove LO-TO here and add it in the ham_qlayer2qlayer.f90 file instead!!!!!
+   !!!!!!!!!!!
 
      
      !mat1 = 0.0d0

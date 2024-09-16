@@ -27,7 +27,7 @@ def readbulkekgnu(prefix):
 factor = 0.123983#*0.24180
 thztomev = 4.15665538536
 
-qpoints, tbbandsperline, labels, ticks = readbulkekgnu('examples/PbTe/bulkek')
+qpoints, tbbandsperline, labels, ticks = readbulkekgnu('examples/Al2ZnTe4_666/bulkek')
 
 tbbandsperline *= thztomev
 

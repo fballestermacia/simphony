@@ -1027,84 +1027,84 @@ subroutine readinput
       enddo ! j
    enddo ! ia
    
-   rewind(1001)
-   lfound = .false.
-   do while (.true.)
-      read(1001, *, end= 110)inline
-      inline=upper(inline)
-      if (trim(adjustl(inline))=='WANNIER_CENTERS' &
-         .or. trim(adjustl(inline))=='WANNIER_CENTRES') then
-         lfound= .true.
-         if (cpuid==0) write(stdout, *)' '
-         if (cpuid==0) write(stdout, *)'We found WANNIER_CENTERS card'
-         exit
-      endif
-   enddo
+!    rewind(1001)
+!    lfound = .false.
+!    do while (.true.)
+!       read(1001, *, end= 110)inline
+!       inline=upper(inline)
+!       if (trim(adjustl(inline))=='WANNIER_CENTERS' &
+!          .or. trim(adjustl(inline))=='WANNIER_CENTRES') then
+!          lfound= .true.
+!          if (cpuid==0) write(stdout, *)' '
+!          if (cpuid==0) write(stdout, *)'We found WANNIER_CENTERS card'
+!          exit
+!       endif
+!    enddo
 
-   if (lfound) then
-      read(1001, *)inline   ! Direct or Cartesian
-      inline= upper(inline)
-      DirectOrCart= trim(adjustl(inline))
+!    if (lfound) then
+!       read(1001, *)inline   ! Direct or Cartesian
+!       inline= upper(inline)
+!       DirectOrCart= trim(adjustl(inline))
 
-      it= 0
-      if (index(DirectOrCart, "D")>0)then
-         !if (SOC==0.and.Add_Zeeman_Field) then
-         !   do i=1, NumberOfspinorbitals/2
-         !      read(1001, *, end=207, err=207) Origin_cell%wannier_centers_direct(:, i)
-         !      it= it+ 2
-         !      call direct_cart_real(Origin_cell%wannier_centers_direct(:, i), &
-         !         Origin_cell%wannier_centers_cart(:, i), Origin_cell%lattice)
-         !      Origin_cell%wannier_centers_cart(:, i+NumberOfspinorbitals/2)= &
-         !      Origin_cell%wannier_centers_cart(:, i)
-         !      Origin_cell%wannier_centers_direct(:, i+NumberOfspinorbitals/2)= &
-         !      Origin_cell%wannier_centers_direct(:, i)
-         !   enddo
-         !else
-            do i=1, NumberOfspinorbitals
-               read(1001, *, end=207, err=207) Origin_cell%wannier_centers_direct(:, i)
-               it= it+ 1
-               call direct_cart_real(Origin_cell%wannier_centers_direct(:, i), &
-                  Origin_cell%wannier_centers_cart(:, i), Origin_cell%lattice)
-            enddo
-         !endif
+!       it= 0
+!       if (index(DirectOrCart, "D")>0)then
+!          !if (SOC==0.and.Add_Zeeman_Field) then
+!          !   do i=1, NumberOfspinorbitals/2
+!          !      read(1001, *, end=207, err=207) Origin_cell%wannier_centers_direct(:, i)
+!          !      it= it+ 2
+!          !      call direct_cart_real(Origin_cell%wannier_centers_direct(:, i), &
+!          !         Origin_cell%wannier_centers_cart(:, i), Origin_cell%lattice)
+!          !      Origin_cell%wannier_centers_cart(:, i+NumberOfspinorbitals/2)= &
+!          !      Origin_cell%wannier_centers_cart(:, i)
+!          !      Origin_cell%wannier_centers_direct(:, i+NumberOfspinorbitals/2)= &
+!          !      Origin_cell%wannier_centers_direct(:, i)
+!          !   enddo
+!          !else
+!             do i=1, NumberOfspinorbitals
+!                read(1001, *, end=207, err=207) Origin_cell%wannier_centers_direct(:, i)
+!                it= it+ 1
+!                call direct_cart_real(Origin_cell%wannier_centers_direct(:, i), &
+!                   Origin_cell%wannier_centers_cart(:, i), Origin_cell%lattice)
+!             enddo
+!          !endif
 
-      else
-         !if (SOC==0.and.Add_Zeeman_Field) then
-         !   do i=1, NumberOfspinorbitals/2
-         !      read(1001, *, end=207, err=207) Origin_cell%wannier_centers_cart(:, i)
-         !      Origin_cell%wannier_centers_cart(:, i)= Origin_cell%wannier_centers_cart(:, i)*Angstrom2atomic
-         !      it= it+ 2
-         !      call cart_direct_real(Origin_cell%wannier_centers_cart(:, i), &
-         !         Origin_cell%wannier_centers_direct(:, i), Origin_cell%lattice)
-         !      Origin_cell%wannier_centers_cart(:, i+NumberOfspinorbitals/2)= &
-         !      Origin_cell%wannier_centers_cart(:, i)
-         !      Origin_cell%wannier_centers_direct(:, i+NumberOfspinorbitals/2)= &
-         !      Origin_cell%wannier_centers_direct(:, i)
-         !   enddo
-         !else
-            do i=1, NumberOfspinorbitals
-               read(1001, *, end=207, err=207) Origin_cell%wannier_centers_cart(:, i)
-               if (index(AngOrBohr, 'ANG')>0) then
-                  Origin_cell%wannier_centers_cart(:, i)= Origin_cell%wannier_centers_cart(:, i)*Angstrom2atomic
-               endif
-               it= it+ 1
-               call cart_direct_real(Origin_cell%wannier_centers_cart(:, i), &
-                  Origin_cell%wannier_centers_direct(:, i), Origin_cell%lattice)
-            enddo
-         !endif
-      endif
-   endif ! found Origin_cell%wannier_ceters card
-207 continue
-   if (it< NumberOfspinorbitals.and.cpuid==0) then
-      write(stdout, *)' '
-      write(stdout, *)' >>>> Error happens in Wannier_centres card'
-      write(stdout, *)' Error: the number of Origin_cell%wannier_ceters lines should '
-      write(stdout, *)' equal to the number wannier functions'
-      write(stdout, *)' Num_wann', NumberOfspinorbitals, ' the centres lines you given ', it
-      write(stdout, *)' Otherwise, if you do not know the meaning of this,'
-      write(stdout, *)' please delete this card'
-      stop
-   endif
+!       else
+!          !if (SOC==0.and.Add_Zeeman_Field) then
+!          !   do i=1, NumberOfspinorbitals/2
+!          !      read(1001, *, end=207, err=207) Origin_cell%wannier_centers_cart(:, i)
+!          !      Origin_cell%wannier_centers_cart(:, i)= Origin_cell%wannier_centers_cart(:, i)*Angstrom2atomic
+!          !      it= it+ 2
+!          !      call cart_direct_real(Origin_cell%wannier_centers_cart(:, i), &
+!          !         Origin_cell%wannier_centers_direct(:, i), Origin_cell%lattice)
+!          !      Origin_cell%wannier_centers_cart(:, i+NumberOfspinorbitals/2)= &
+!          !      Origin_cell%wannier_centers_cart(:, i)
+!          !      Origin_cell%wannier_centers_direct(:, i+NumberOfspinorbitals/2)= &
+!          !      Origin_cell%wannier_centers_direct(:, i)
+!          !   enddo
+!          !else
+!             do i=1, NumberOfspinorbitals
+!                read(1001, *, end=207, err=207) Origin_cell%wannier_centers_cart(:, i)
+!                if (index(AngOrBohr, 'ANG')>0) then
+!                   Origin_cell%wannier_centers_cart(:, i)= Origin_cell%wannier_centers_cart(:, i)*Angstrom2atomic
+!                endif
+!                it= it+ 1
+!                call cart_direct_real(Origin_cell%wannier_centers_cart(:, i), &
+!                   Origin_cell%wannier_centers_direct(:, i), Origin_cell%lattice)
+!             enddo
+!          !endif
+!       endif
+!    endif ! found Origin_cell%wannier_ceters card
+! 207 continue
+!    if (it< NumberOfspinorbitals.and.cpuid==0) then
+!       write(stdout, *)' '
+!       write(stdout, *)' >>>> Error happens in Wannier_centres card'
+!       write(stdout, *)' Error: the number of Origin_cell%wannier_ceters lines should '
+!       write(stdout, *)' equal to the number wannier functions'
+!       write(stdout, *)' Num_wann', NumberOfspinorbitals, ' the centres lines you given ', it
+!       write(stdout, *)' Otherwise, if you do not know the meaning of this,'
+!       write(stdout, *)' please delete this card'
+!       stop
+!    endif
 
 
 
