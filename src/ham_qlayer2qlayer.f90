@@ -87,15 +87,15 @@
      enddo
      enddo
 
-     do i=1,Ndim
-     do j=1,Ndim
-        if(abs(H00new(i,j)-conjg(H00new(j,i))).ge.1e-4)then
-       !  write(stdout,*)'there are something wrong with ham_qlayer2qlayer'
-       !stop
-        endif
+   !   do i=1,Ndim
+   !   do j=1,Ndim
+   !      if(abs(H00new(i,j)-conjg(H00new(j,i))).ge.1e-4)then
+   !     !  write(stdout,*)'there are something wrong with ham_qlayer2qlayer'
+   !     !stop
+   !      endif
 
-     enddo
-     enddo
+   !   enddo
+   !   enddo
 
      deallocate(Hij)
 
@@ -373,15 +373,15 @@
      enddo
      enddo
 
-     do i=1,Ndim
-     do j=1,Ndim
-        if(abs(H00new(i,j)-conjg(H00new(j,i))).ge.1e-4)then
-       !  write(stdout,*)'there are something wrong with ham_qlayer2qlayer'
-       !stop
-        endif
+   !   do i=1,Ndim
+   !   do j=1,Ndim
+   !      if(abs(H00new(i,j)-conjg(H00new(j,i))).ge.1e-4)then
+   !     !  write(stdout,*)'there are something wrong with ham_qlayer2qlayer'
+   !     !stop
+   !      endif
 
-     enddo
-     enddo
+   !   enddo
+   !   enddo
 
      deallocate(kBorn)
      deallocate(mat1)
@@ -511,6 +511,9 @@
      ! 4/23/2010 by QS Wu
      ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
+     ! Modified and corrected by Francesc Ballester
+     ! September 2024
+
      use para
 
      implicit none
@@ -533,7 +536,7 @@
 
      ! input wave vector k's cooridinates
      real(dp),intent(in) :: k(2)
-     real(Dp) :: k3d(3), keps(2)
+     real(Dp) :: k3d(3)
      complex(dp) :: ratio
 
      ! H00 Hamiltonian between nearest neighbour-quintuple-layers
@@ -541,56 +544,101 @@
      complex(dp), intent(out) :: Hij(-ijmax:ijmax,Num_wann,Num_wann)
 
      !> see eqn. (3) in J. Phys.: Condens. Matter 22 (2010) 202201
-     complex(Dp),allocatable :: nac_correction(:, :, :) 
+     complex(Dp),allocatable :: nac_correction(:, :) 
 
-     real(dp) :: temp1(2), temp2
      real(dp) ::  constant_t
      complex(dp), allocatable :: mat1(:, :)
      complex(dp), allocatable :: mat2(:, :)
+     integer :: counter
  
      !> k times Born charge
-     real(dp), allocatable :: kBorn(:, :)
      logical :: atGamma
-     real(dp) :: nac_q
+     real(dp) :: qeq, temp1(3), temp2, zag(3), zbg(3),  keps(3) = (/eps12,eps12,0.0d0/)
+     complex(dp) :: nac_q
      
 
-     allocate(kBorn(Origin_cell%Num_atoms, 3))
+     
      allocate(mat1(Num_wann, Num_wann))
      allocate(mat2(Num_wann, Num_wann))
-     allocate(nac_correction(Num_wann, Num_wann, Nrpts))
+     allocate(nac_correction(Num_wann, Num_wann))
      mat1 = 0d0
      mat2 = 0d0
      nac_correction= 0d0
+     atGamma = .false.
 
      
      
      !>  add loto splitting term
      temp1(1:2)= (/0.0,0.0/)
-     keps(1:2) = (/eps12,eps12/)
-     k3d(1:3) = k(1)*Umatrix(1,:) + k(2)*Umatrix(2,:) ! Pretty sure this is correct alltough i might have to use the inverse of Umatrix
-
-     temp2= 0.0
-     atGamma=.false.
-     if (abs((k(1)**2+k(2)**2)).le.eps12) then  !> skip k=0
-      atGamma=.true.
-     endif
      
-     !> see eqn. (3) in J. Phys.: Condens. Matter 22 (2010) 202201
-     do qq= 1, 2
-        temp1(qq)= keps(1)*Diele_Tensor(qq, 1)+keps(2)*Diele_Tensor(qq, 2) 
-     enddo
-     temp2= keps(1)*temp1(1)+ keps(2)*temp1(2)
-     constant_t= 2.0d0*4.0d0*Pi/(temp2*Origin_cell%CellVolume)
+     k3d(:) = k(1)*Cell_defined_by_surface%reciprocal_lattice(1,:) + k(2)*Cell_defined_by_surface%reciprocal_lattice(2,:) ! ESTO NO ME CONVENCE
+     k3d = k3d*Cell_defined_by_surface%cell_parameters(1)/(twopi)
+     
+     if (abs((k3d(1)**2+k3d(2)**2+k3d(3)**2)).le.eps12)then  !> skip k=0
+         atGamma=.true.
 
-     do ii=1, Origin_cell%Num_atoms
-        do pp=1, 3
-           kBorn(ii, pp)=  keps(1)*Born_Charge(ii,1,pp)+keps(2)*Born_Charge(ii,2,pp)
-        enddo
-     enddo
+         qeq = (keps(1)*(Diele_Tensor(1,1)*keps(1)+Diele_Tensor(1,2)*keps(2)+Diele_Tensor(1,3)*keps(3))+    &
+            keps(2)*(Diele_Tensor(2,1)*keps(1)+Diele_Tensor(2,2)*keps(2)+Diele_Tensor(2,3)*keps(3))+    &
+            keps(3)*(Diele_Tensor(3,1)*keps(1)+Diele_Tensor(3,2)*keps(2)+Diele_Tensor(3,3)*keps(3)))
+
+         constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
+          do pp = 1,Origin_cell%Num_atoms
+            do qq = 1,Origin_cell%Num_atoms
+               do ii=1,3
+                  zag(ii) = keps(1)*Born_Charge(pp,1,ii) +  keps(2)*Born_Charge(pp,2,ii) + keps(3)*Born_Charge(pp,3,ii)
+                  
+                  zbg(ii) = keps(1)*Born_Charge(qq,1,ii) +  keps(2)*Born_Charge(qq,2,ii) + keps(3)*Born_Charge(qq,3,ii)
+
+               end do
+               
+               do ii=1,3
+                  do jj=1,3
+                     
+                     nac_q= constant_t*zag(ii)*zbg(jj)/qeq
+
+
+                     mat2(3*(pp-1)+ii,3*(qq-1)+jj) = nac_q
+
+
+                  enddo  ! jj
+               enddo  ! ii
+            enddo ! qq
+          enddo ! pp
+      endif
      
      nac_correction= 0d0
-     !call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1)
+     call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1,  &
+          Cell_defined_by_surface%Atom_position_cart/Cell_defined_by_surface%cell_parameters(1),  &
+          Born_Charge(:,:,:), Cell_defined_by_surface%reciprocal_lattice*Cell_defined_by_surface%cell_parameters(1)/(twopi), &
+          Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+     
+     do ii=1,Num_wann
+        do jj=1, Num_wann
+            pp = Origin_cell%spinorbital_to_atom_index(ii)
+            qq = Origin_cell%spinorbital_to_atom_index(jj)
+            nac_correction(ii,jj) = (mat1(ii,jj) + mat2(ii,jj)*(108.97077184367376*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
+        end do
+     end do
+      
      Hij=0.0d0
+
+     counter = 0
+     !> First check the max number of blocks in the hamiltonian matrix so as to add the long range interaction
+     ! counter is the normlization factor, if the supercell is not excesively large, it should coincide with Nrpts, but just to be sure
+     do iR=1,Nrpts
+        ia=irvec(1,iR)
+        ib=irvec(2,iR)
+        ic=irvec(3,iR)
+        !> new lattice
+        call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+        
+         inew_ic= int(new_ic)
+         if (abs(new_ic).le.ijmax)then
+            counter = counter + 1
+         end if
+     end do
+
+
      do iR=1,Nrpts
         ia=irvec(1,iR)
         ib=irvec(2,iR)
@@ -608,34 +656,33 @@
 
             Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
             = Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
-            + HmnR(1:Num_wann,1:Num_wann,iR)*ratio/ndegen(iR)
-
-            if (new_ic.eq.0)then
-               
-
-               if (atGamma) then
-               do ii= 1,Origin_cell%Num_atoms
-                  do pp= 1, 3
-                     do jj= 1, Origin_cell%Num_atoms
-                        do qq= 1,3
-                           nac_q = zzero
-                           nac_q= kBorn(jj, qq)*kBorn(ii, pp)*constant_t/sqrt(Atom_Mass(ii)*Atom_Mass(jj))
-         
-                           Hij(inew_ic,3*(ii-1)+pp,3*(jj-1)+qq) = Hij(inew_ic,3*(ii-1)+pp,3*(jj-1)+qq) !+ nac_q*(108.97077184367376*eV2Hartree)**2
-                        
-                           enddo  ! qq
-                        enddo  ! jj
-                     enddo ! pp
-                  enddo  ! ii
-               end if
-            end if
+            + HmnR(1:Num_wann,1:Num_wann,iR)*ratio/ndegen(iR)  +nac_correction(1:Num_wann, 1:Num_wann)/counter
          endif
 
      enddo
 
+     !> Add long range interaction
+     do pp =-ijmax, ijmax
+         do ii=1,Num_wann
+            do jj=1, Num_wann
+               Hij(pp, ii,jj) = Hij(pp, ii,jj) !+ nac_correction(ii,jj)/(counter)
+            end do
+         end do
+     end do
+
+     ! preserve previous k point for NAC calculation in Gamma so as to not have unnecessary discontinuities
+     if ((k3d(1).ne.0.0d0) .or. (k3d(2).ne.0.0d0) .or. (k3d(3).ne.0.0d0)) then
+         
+        keps(:) = k3d
+        do ii=1,3
+           if (abs(keps(ii)).le.eps12/1000)then
+               keps(ii) = 0.0d0
+           end if
+        end do  
+     end if
      
 
-     deallocate(kBorn)
+     
      deallocate(mat1)
      deallocate(mat2)
      deallocate(nac_correction)

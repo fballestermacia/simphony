@@ -418,12 +418,12 @@ subroutine readinput
    !   write(stdout, "(1x,a)") "by default we set Btheta=0, Bphi=0 which means B is along z direction."
    !endif
 
-   !> check if Bmagnitude is specified in the input.dat/wt.in
+   !> check if Bmagnitude is specified in the input.dat/pn.in
    !if (abs(Bmagnitude)>eps6 .and. (abs(Bx)+abs(By)+abs(Bz))>eps6) then
    !   if (cpuid==0) then
    !      write(stdout, *) " "
    !      write(stdout, *) " Warning: You specify Bmagnitude and Bx, By, Bz at the same time "
-   !      write(stdout, *) " in the SYSTEM namelist in the wt.in/input.dat."
+   !      write(stdout, *) " in the SYSTEM namelist in the pn.in/input.dat."
    !      write(stdout, *) " However, we will only take Bmagnitude and Btheta, Bphi but discard Bx,By,Bz. "
    !      write(stdout, *) " Bx,By,Bz will be calculated as Bx=Bmagnitude*sin(Btheta*pi/180)*cos(bphi/180*pi). "
    !      write(stdout, *) "  By=Bmagnitude*sin(Btheta*pi/180)*sin(bphi/180*pi), "
@@ -1571,6 +1571,7 @@ subroutine readinput
       endif
    endif
 
+
    !> check whether Umatrix is right
    !> the volume of the new cell should be the same as the old ones
    !> Here R1, R2, R3 are vectors defined by SURFACE CARD in original cartesian coordinates
@@ -1636,7 +1637,7 @@ subroutine readinput
    outfileindex= outfileindex+ 1
    if (cpuid.eq.0) then
       open(outfileindex, file="POSCAR-rotated")
-      write(outfileindex, '(a)')"Rotated POSCAR by SURFACE card in wt.in by WannierTools"
+      write(outfileindex, '(a)')"Rotated POSCAR by SURFACE card in pn.in by Phonnier"
       write(outfileindex, '(a)')"1.0"
       write(outfileindex, '(3f12.6)') R1/Angstrom2atomic
       write(outfileindex, '(3f12.6)') R2/Angstrom2atomic
@@ -3123,16 +3124,16 @@ subroutine readinput
    if (stat/=0) then
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, *)' '
-      if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of atoms in wt.in like this:'
+      if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of atoms in pn.in like this:'
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, '(a)')'SELECTED_ATOMS'
       if (cpuid==0) write(stdout, '(a)')'2 ! number of groups'
       if (cpuid==0) write(stdout, '(a)')'1 2-4 ! atomic indices '
       if (cpuid==0) write(stdout, '(a)')'3 5 ! atomic indices '
-      stop 'Errors happen in the WT.in, please check informations in the WT.out'
+      stop 'Errors happen in the pn.in, please check informations in the PN.out'
    endif
 
-   !> setup SelectedAtoms if not specified by wt.in
+   !> setup SelectedAtoms if not specified by pn.in
    if (.not.allocated(Selected_Atoms)) then
       NumberofSelectedAtoms_groups=1
       allocate(NumberofSelectedAtoms(NumberofSelectedAtoms_groups))
@@ -3161,7 +3162,7 @@ subroutine readinput
 !===============================================================================================================!
     
    !>> parameters for selectedorbitals
-   !> this part is useful for surfstat or other slab or bulk band stOrigin_cell%Ructure calculations
+   !> this part is useful for surfstat or other slab or bulk band Origin_cell%structure calculations
    rewind(1001)
    lfound = .false.
    stat=0
@@ -3209,17 +3210,17 @@ subroutine readinput
    if (stat/=0) then
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, *)' '
-      if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of orbitals and orbitals in wt.in like this:'
+      if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of orbitals and orbitals in pn.in like this:'
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, '(a)')'SELECTED_WANNIERORBITALS'
       if (cpuid==0) write(stdout, '(a)')'2  ! number of groups of selectedorbitals'
       if (cpuid==0) write(stdout, '(a)')'1-3 ! orbitals indices '
       if (cpuid==0) write(stdout, '(a)')'4-7 ! orbitals indices '
-      stop 'Errors happen in the WT.in, please check informations in the WT.out'
+      stop 'Errors happen in the pn.in, please check informations in the PN.OUT'
    endif
 
 
-   !> setup SelectedOrbitals if not specified by wt.in
+   !> setup SelectedOrbitals if not specified by pn.in
    !> by default we take the orbitals associated with Selected_Atoms
    if (.not.allocated(Selected_WannierOrbitals)) then
       NumberofSelectedOrbitals_groups= NumberofSelectedAtoms_groups
@@ -3307,11 +3308,11 @@ subroutine readinput
    if (stat/=0) then
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, *)' '
-      if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of bands and band indices in wt.in like this:'
+      if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of bands and band indices in pn.in like this:'
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, '(a)')'SELECTED_OCCUPIED_BANDS'
       if (cpuid==0) write(stdout, '(a)')'4-7 ! band indices '
-      stop 'Errors happen in the WT.in, please check informations in the WT.out'
+      stop 'Errors happen in the pn.in, please check informations in the PN.OUT'
    endif
 
    !> setup SELECTEDOccupiedBANDS
@@ -3368,12 +3369,12 @@ subroutine readinput
    if (stat/=0) then
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, *)' '
-      if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of bands and band indices in wt.in like this:'
+      if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of bands and band indices in pn.in like this:'
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, '(a)')'SELECTED_BANDS'
       if (cpuid==0) write(stdout, '(a)')'4  ! number of selected bands'
       if (cpuid==0) write(stdout, '(a)')'4 5 6 7 ! band indices '
-      stop 'Errors happen in the WT.in, please check informations in the WT.out'
+      stop 'Errors happen in the pn.in, please check informations in the PN.OUT'
    endif
 
    !> setup SELECTEDBANDS
@@ -3444,13 +3445,13 @@ subroutine readinput
    if (stat/=0) then
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, *)' '
-      if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of bands and band indices in wt.in like this:'
+      if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of bands and band indices in pn.in like this:'
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, '(a)')'TBTOKP'
       if (cpuid==0) write(stdout, '(a)')'8  ! number of selected bands to constOrigin_cell%Ruct kp model'
       if (cpuid==0) write(stdout, '(a)')'1 2 3 4 5 6 7 8 ! band indices '
       if (cpuid==0) write(stdout, '(a)')'0 0 0 ! k point in fractional coordinates '
-      stop 'Errors happen in the WT.in, please check informations in the WT.out'
+      stop 'Errors happen in the pn.in, please check informations in the PN.OUT'
    endif
 
 !===============================================================================================================!
@@ -3487,7 +3488,7 @@ subroutine readinput
          if (cpuid==0) then
             write(stdout, *)"ERROR: please set LOTO_DT card for LOTO correction of phonon spectrum"
             write(stdout, *)"ERROR: please set Dielectric Tensor information"
-            stop "ERROR: Check error messages in WT.out"
+            stop "ERROR: Check error messages in PN.OUT"
          endif
       endif
    endif
@@ -3536,7 +3537,7 @@ subroutine readinput
          if (cpuid==0) then
             write(stdout, *)"ERROR: please set LOTO_BC card for LOTO correction of phonon spectrum"
             write(stdout, *)"ERROR: please set Born charge information"
-            stop "ERROR: Check error messages in WT.out"
+            stop "ERROR: Check error messages in PN.OUT"
          endif
       endif
    endif
@@ -3546,12 +3547,12 @@ subroutine readinput
       call build_map_supercell_primitivecell
    endif
 
-   !> close wt.in
+   !> close pn.in
    close(1001)
 
    eta=(omegamax- omegamin)/omeganum*2d0
 
-   if(cpuid==0)write(stdout,*)'<<<Read wt.in file successfully'
+   if(cpuid==0)write(stdout,*)'<<<Read pn.in file successfully'
 
    contains
 
@@ -4632,7 +4633,7 @@ subroutine generate_slab_poscar(cell)
    outfileindex= outfileindex+ 1
    if (cpuid.eq.0) then
       open(outfileindex, file="POSCAR-slab")
-      write(outfileindex, '(a)')"POSCAR for slab defined by SURFACE card and Nslab and Vacuum_thickness_in_Angstrom in wt.in by WannierTools"
+      write(outfileindex, '(a)')"POSCAR for slab defined by SURFACE card and Nslab and Vacuum_thickness_in_Angstrom in pn.in by WannierTools"
       write(outfileindex, '(a)')"1.0"
       write(outfileindex, '(3f12.6)') R1/Angstrom2atomic
       write(outfileindex, '(3f12.6)') R2/Angstrom2atomic
@@ -4702,7 +4703,7 @@ subroutine generate_supercell_poscar()
    outfileindex= outfileindex+ 1
    if (cpuid.eq.0) then
       open(outfileindex, file="POSCAR-slab")
-      write(outfileindex, '(a)')"POSCAR for slab defined by SURFACE card and Nslab and Vacuum_thickness_in_Angstrom in wt.in by WannierTools"
+      write(outfileindex, '(a)')"POSCAR for slab defined by SURFACE card and Nslab and Vacuum_thickness_in_Angstrom in pn.in by WannierTools"
       write(outfileindex, '(a)')"1.0"
       write(outfileindex, '(3f12.6)') R1/Angstrom2atomic
       write(outfileindex, '(3f12.6)') R2/Angstrom2atomic

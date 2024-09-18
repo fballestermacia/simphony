@@ -31,7 +31,7 @@ def readslabek(prefix):
 factor = 0.123983#*0.24180
 thztomev = 4.15665538536
 
-qpoints, tbbandsperline, labels, ticks, bottom, top = readslabek('examples/PbTe/slabek')
+qpoints, tbbandsperline, labels, ticks, bottom, top = readslabek('examples/Al2ZnTe4_666/slabek')
 
 tbbandsperline *= thztomev
 
@@ -58,7 +58,7 @@ for pos in ticks:
     ax1.axvline(x=pos, linewidth=0.5, color='k')
 
 ax1.axhline(y=0, linewidth=0.5, color='b', linestyle='--')
-plt.title('PbTe, (001) surface', fontsize=20)
+plt.title('Al2ZnTe4, (001) surface', fontsize=20)
 
 #plt.ylim(17, 23.2)
 #plt.savefig('DFTpycodes/plotsWT/testfig.jpeg')

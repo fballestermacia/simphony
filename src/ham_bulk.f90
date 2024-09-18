@@ -19,38 +19,25 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
    use para
    implicit none
 
-   integer :: i1,i2,iR
+   integer :: i1,i2,iR,ii,jj,qq,pp
 
    ! wave vector in 3d
    real(Dp) :: k(3), kdotr, pos0(3), dis
 
    complex(dp) :: factor
 
-   real(dp) :: pos(3), pos1(3), pos2(3), pos_cart(3), pos_direct(3)
+   real(dp) :: pos(3), pos1(3), pos2(3), pos_cart(3), pos_direct(3), &
+   keps(3)=(/eps12, eps12, eps12/), rec_lattice(3,3),q(3), zag(3),zbg(3), nac_q,qeq, constant_t
    ! Hamiltonian of bulk system
    complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann)
-   complex(dp), allocatable :: mat1(:, :)
+   complex(dp), allocatable :: mat1(:, :), mat2(:,:)
    real(dp), external :: norm
+   real(dp), allocatable :: tau(:,:), zeu(:,:,:)
+   logical :: atGamma
 
-   allocate(mat1(Num_wann, Num_wann))
+   
 
    Hamk_bulk=0d0
-  !do iR=1, Nrpts
-  !   kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-  !   factor= exp(pi2zi*kdotr)
-
-  !   Hamk_bulk(:, :)= Hamk_bulk(:, :) &
-  !      + HmnR(:, :, iR)*factor/ndegen(iR)
-  !enddo ! iR
- 
-  !mat1=0d0
-  !do i1=1,Num_wann
-  !   pos0=Origin_cell%wannier_centers_direct(:, i1)
-  !   kdotr= k(1)*pos0(1)+ k(2)*pos0(2)+ k(3)*pos0(3)
-  !   mat1(i1,i1)= exp(pi2zi*kdotr)
-  !enddo
-  !Hamk_bulk=matmul(conjg(mat1),matmul(Hamk_bulk,mat1))
-
 
    !> the first atom in home unit cell
    do iR=1, Nrpts
@@ -76,18 +63,111 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
       enddo ! i2
    enddo ! iR
 
+   if (LOTO_correction) then
+      ! Add long-range interaction
+      allocate(mat1(Num_wann, Num_wann))
+      allocate(mat2(Num_wann, Num_wann))
+      allocate(tau(3,Origin_cell%Num_atoms))
+      allocate(zeu(Origin_cell%Num_atoms,3,3))
+      mat1 = 0.0d0
+      rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi) !Transform to corect units
+      
+      tau(:,:) = Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1)
+      
+      q(1) = k(1)*rec_lattice(1,1) + k(2)*rec_lattice(1,2) + k(3)*rec_lattice(1,3)
+      q(2) = k(1)*rec_lattice(2,1) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
+      q(3) = k(1)*rec_lattice(3,1) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to corect units 
+      
+      call long_range_phonon_interaction(0,0,0,q,.false.,1.0d0,mat1,tau,Born_Charge,rec_lattice,Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+      atGamma=.false.
+      if (abs((k(1)**2+k(2)**2+k(3)**2)).le.eps12)then  !> skip k=0
+         atGamma=.true.
+
+         qeq = (keps(1)*(Diele_Tensor(1,1)*keps(1)+Diele_Tensor(1,2)*keps(2)+Diele_Tensor(1,3)*keps(3))+    &
+               keps(2)*(Diele_Tensor(2,1)*keps(1)+Diele_Tensor(2,2)*keps(2)+Diele_Tensor(2,3)*keps(3))+    &
+               keps(3)*(Diele_Tensor(3,1)*keps(1)+Diele_Tensor(3,2)*keps(2)+Diele_Tensor(3,3)*keps(3)))
+         
+         constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
+
+      endif
+      
+      
+      
+      
+      
+      mat2 = 0.0d0
+      if (atGamma) then
+         do pp = 1,Origin_cell%Num_atoms
+            do qq = 1,Origin_cell%Num_atoms
+               do ii=1,3
+                  zag(ii) = keps(1)*zeu(pp,1,ii) +  keps(2)*zeu(pp,2,ii) + keps(3)*zeu(pp,3,ii)
+                  
+                  zbg(ii) = keps(1)*zeu(qq,1,ii) +  keps(2)*zeu(qq,2,ii) + keps(3)*zeu(qq,3,ii)
+
+               end do
+               do ii=1,3
+                  do jj=1,3
+                     
+                     nac_q= constant_t*zag(ii)*zbg(jj)/qeq
+                     mat2(3*(pp-1)+ii,3*(qq-1)+jj) = nac_q
+                  
+                  enddo  ! jj
+               enddo  ! ii
+            enddo ! qq
+         enddo  ! pp
+         
+      end if
+      
+
+
+
+      do ii=1,Num_wann
+         do jj=1, Num_wann
+            pp = Origin_cell%spinorbital_to_atom_index(ii)
+            qq = Origin_cell%spinorbital_to_atom_index(jj)
+            Hamk_bulk(ii,jj) = Hamk_bulk(ii,jj) + (mat1(ii,jj) +mat2(ii,jj)*(108.97077184367376*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
+         end do
+      end do
+
+      do ii=1,Num_wann
+         do jj=1, Num_wann
+            pp = Origin_cell%spinorbital_to_atom_index(ii)
+            qq = Origin_cell%spinorbital_to_atom_index(jj)
+            Hamk_bulk(ii,jj) = Hamk_bulk(ii,jj)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
+         end do
+      end do
+
+      ! preserve previous k point for NAC calculation in Gamma so as to not have unnecessary discontinuities
+      if ((k(1).ne.0.0d0) .or. (k(2).ne.0.0d0) .or. (k(3).ne.0.0d0)) then
+         !rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi)
+         keps(1) = k(1)*Origin_cell%reciprocal_lattice(1,1) + k(2)*Origin_cell%reciprocal_lattice(1,2) + k(3)*Origin_cell%reciprocal_lattice(1,3)
+         keps(2) = k(1)*Origin_cell%reciprocal_lattice(2,1) + k(2)*Origin_cell%reciprocal_lattice(2,2) + k(3)*Origin_cell%reciprocal_lattice(2,3)
+         keps(3) = k(1)*Origin_cell%reciprocal_lattice(3,1) + k(2)*Origin_cell%reciprocal_lattice(3,2) + k(3)*Origin_cell%reciprocal_lattice(3,3)
+         keps = keps*Origin_cell%cell_parameters(1)/(twopi)
+         do ii=1,3
+            if (abs(keps(ii)).le.eps12/1000)then
+               keps(ii) = 0.0d0
+            end if
+         end do  
+      end if
+
+      deallocate(mat1)
+      deallocate(mat2)
+      deallocate(zeu)
+   end if
+
    ! check hermitcity
-   do i1=1, Num_wann
-      do i2=1, Num_wann
-         if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
-            write(stdout,*)'there is something wrong with Hamk_bulk'
-            write(stdout,*)'i1, i2', i1, i2
-            write(stdout,*)'value at (i1, i2)', Hamk_bulk(i1, i2)
-            write(stdout,*)'value at (i2, i1)', Hamk_bulk(i2, i1)
-            !stop
-         endif
-      enddo
-   enddo
+   ! do i1=1, Num_wann
+   !    do i2=1, Num_wann
+   !       if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
+   !          write(stdout,*)'there is something wrong with Hamk_bulk'
+   !          write(stdout,*)'i1, i2', i1, i2
+   !          write(stdout,*)'value at (i1, i2)', Hamk_bulk(i1, i2)
+   !          write(stdout,*)'value at (i2, i1)', Hamk_bulk(i2, i1)
+   !          !stop
+   !       endif
+   !    enddo
+   ! enddo
 
    return
 end subroutine ham_bulk_atomicgauge

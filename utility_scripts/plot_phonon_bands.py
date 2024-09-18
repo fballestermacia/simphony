@@ -50,7 +50,7 @@ for pos in ticks:
     ax1.axvline(x=pos, linewidth=0.5, color='k' )
 
 ax1.axhline(y=0, linewidth=0.5, color='b', linestyle='--')
-plt.title('PbTe bulk bands', fontsize=20 )
+plt.title('Al2ZnTe4 bulk bands', fontsize=20 )
 
 #plt.ylim(0, )
 plt.show()
