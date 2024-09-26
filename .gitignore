@@ -1,6 +1,9 @@
 # Ignore executable binary file
 *.x
 
+# Ignore also the DS_store file
+.DS_store
+
 # Ignore examples folder for the moment
 examples/*
 
