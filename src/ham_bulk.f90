@@ -52,7 +52,7 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
             call direct_cart_real(pos_direct, pos_cart, Origin_cell%lattice)
 
             dis= norm(pos_cart)
-            if (dis> Rcut) cycle
+            !if (dis> Rcut) cycle
 
             kdotr=k(1)*pos_direct(1) + k(2)*pos_direct(2) + k(3)*pos_direct(3)
             factor= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
@@ -129,13 +129,6 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
          end do
       end do
 
-      do ii=1,Num_wann
-         do jj=1, Num_wann
-            pp = Origin_cell%spinorbital_to_atom_index(ii)
-            qq = Origin_cell%spinorbital_to_atom_index(jj)
-            Hamk_bulk(ii,jj) = Hamk_bulk(ii,jj)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
-         end do
-      end do
 
       ! preserve previous k point for NAC calculation in Gamma so as to not have unnecessary discontinuities
       if ((k(1).ne.0.0d0) .or. (k(2).ne.0.0d0) .or. (k(3).ne.0.0d0)) then

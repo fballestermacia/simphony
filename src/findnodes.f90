@@ -38,7 +38,6 @@
       kabc_minimal= 0d0
       gap_minimal= 0d0
      
-
       do ik=1+cpuid, knv3, num_cpu
          ikx= (ik- 1)/(Nk2*Nk3)+ 1
          iky= (ik- (ikx-1)*Nk2*Nk3- 1)/Nk3+ 1
@@ -300,7 +299,7 @@
       call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
 
       func_energy= W(Numoccupied)
-
+      
       !> deal with phonon system
       !> sign(A, B) returns the value of A with the sign of B.
       if (index(Particle,'phonon')/=0) then
@@ -339,13 +338,13 @@
       if (index(KPorTB, 'KP')/=0)then
          call ham_bulk_kp(X, Hamk_bulk)
       else
-         call ham_bulk_atomicgauge  (X, Hamk_bulk)
+         call ham_bulk_atomicgauge(X, Hamk_bulk)
       endif
  
       ! diagonalization by call zheev in lapack
       W= 0d0
       call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
-
+      
       func_gap= W(Numoccupied+1)- W(Numoccupied)
 
       deallocate(W, Hamk_bulk)
