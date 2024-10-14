@@ -213,6 +213,7 @@
         call now(time2)
         time_q= time_q+time2-time1
 
+        
 
         !> calculate surface green function
         ! there are two method to calculate surface green's function
@@ -240,6 +241,12 @@
            dos_bulk(ik1, ik2)=dos_bulk(ik1, ik2)- AIMAG(GB(i,i))/pi
         enddo ! i
 
+
+
+        !write(*,*) aimag(GRR(io,io))/pi
+        
+        
+        
         if (SOC>0 .and. (SlabSpintexture_calc.or.SlabQPI_kplane_calc)) then
            !>> calculate spin-resolved bulk spectrum
            sx_bulk= 0d0
@@ -370,7 +377,7 @@
         ik2= ik12(2, ikp)
 
         dos_l_only(ik1, ik2)= dos_l_mpi(ik1, ik2)
-        if (dos_l_only(ik1, ik2)<dos_l_max/10d0) then
+        if (dos_l_only(ik1, ik2)<dos_l_max/1e9) then
            dos_l_only(ik1, ik2)=eps9
            if (SOC>0 .and. (SlabSpintexture_calc.or.SlabQPI_kplane_calc)) then
               sx_l_mpi(ik1, ik2)=eps9
@@ -379,7 +386,7 @@
            endif
         endif
         dos_r_only(ik1, ik2)= dos_r_mpi(ik1, ik2)
-        if (dos_r_only(ik1, ik2)<dos_r_max/10d0) then
+        if (dos_r_only(ik1, ik2)<dos_r_max/1e9) then
            dos_r_only(ik1, ik2)=eps9
            if (SOC>0 .and. (SlabSpintexture_calc.or.SlabQPI_kplane_calc)) then
               sx_r_mpi(ik1, ik2)=eps9
@@ -432,10 +439,12 @@
         write(arcbulkfile,'(a)')"# z axis is parallel to R1'xR2'"
         write(arcbulkfile,'(a)')"# y axis is parallel to z x x"
         write(arcbulkfile,'(30a16)')'#kx', 'ky', 'log(dos)'
+        
         do ikp=1, nkx*nky
-           write(arclfile, '(30f16.8)')k12_shape(:, ikp)*Angstrom2atomic, log(dos_l_mpi(ik12(1, ikp), ik12(2, ikp))) 
+           !write(*,*) dos_r_mpi(ik12(1, ikp), ik12(2, ikp))
+           write(arclfile, '(30f16.8)')k12_shape(:, ikp)*Angstrom2atomic, log(abs(dos_l_mpi(ik12(1, ikp), ik12(2, ikp)))) 
            if (mod(ikp, nky)==0) write(arclfile, *)' '
-           write(arcrfile, '(30f16.8)')k12_shape(:, ikp)*Angstrom2atomic, log(dos_r_mpi(ik12(1, ikp), ik12(2, ikp))) 
+           write(arcrfile, '(30f16.8)')k12_shape(:, ikp)*Angstrom2atomic, log(abs(dos_r_mpi(ik12(1, ikp), ik12(2, ikp)))) 
            if (mod(ikp, nky)==0) write(arcrfile, *)' '
            write(arcbulkfile, '(30f16.8)')k12_shape(:, ikp)*Angstrom2atomic, log(abs(dos_bulk_mpi(ik12(1, ikp), ik12(2, ikp))))
            if (mod(ikp, nky)==0) write(arcbulkfile, *)' '

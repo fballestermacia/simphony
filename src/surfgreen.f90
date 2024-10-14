@@ -32,7 +32,7 @@
 
      ! >> local variables
      ! iteration number
-     integer :: iter
+     integer :: iter, i, j
 
      ! maximun iteration 
      integer ,parameter:: itermax=100
@@ -77,16 +77,17 @@
      betai   = conjg(transpose(H01))
     !print *, sqrt(sum(abs(H00)**2)), 'H00'
 
-     ! w+i*0^+
+     ! w+i*eta
      omegac= dcmplx(omega, eta)
-    !print *, omegac
 
+    !print *, omegac
+      
      ! begin iteration
      do iter=1, itermax
 
         g0= omegac*ones- epsiloni
         call inv(Ndim, g0)
-
+         
         ! a_i-1*(w-e_i-1)^-1
         call mat_mul(Ndim, alphai, g0, mat1 )
         
@@ -107,7 +108,7 @@
         epsiloni= epsiloni+ g0
         ! es_i= es_i-1 + a_i-1*(w-e_i-1)^-1*b_i-1
         epsilons_t= epsilons_t+ g0
-
+        
         ! a_i= a_i-1*(w-e_i-1)^-1*a_i-1 
         call mat_mul(Ndim, mat1, alphai, g0)
         alphai= g0
@@ -131,7 +132,6 @@
 
      GB = omegac*ones- epsiloni
      call inv(Ndim, GB)
-
      return
   end subroutine surfgreen_1985
 

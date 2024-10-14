@@ -843,25 +843,32 @@
                cycle
             endif
             k= kline_integrate(ik1)%k
-            if (Is_Sparse) then
-               call ham_bulk_coo_sparsehr_latticegauge(k,acoo,icoo,jcoo)
-               nnz= splen
+            ! if (Is_Sparse) then
+            !    call ham_bulk_coo_sparsehr_latticegauge(k,acoo,icoo,jcoo)
+            !    nnz= splen
               
-               ritzvec= .true.
-               call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,eigenvalue,shiftsigma, zeigv, ritzvec)
-               kline_integrate(ik1)%eig_vec(1:Num_wann, 1:NumberofSelectedOccupiedBands)= &
-                  zeigv(1:Num_wann, Selected_Occupiedband_index(1):Selected_Occupiedband_index(NumberofSelectedOccupiedBands))
+            !    ritzvec= .true.
+            !    call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,eigenvalue,shiftsigma, zeigv, ritzvec)
+            !    kline_integrate(ik1)%eig_vec(1:Num_wann, 1:NumberofSelectedOccupiedBands)= &
+            !       zeigv(1:Num_wann, Selected_Occupiedband_index(1):Selected_Occupiedband_index(NumberofSelectedOccupiedBands))
 
-            else
+            ! else
                !> get the TB hamiltonian in k space
-               call ham_bulk_latticegauge(k,hamk)
+               
+               !> deal with LO-TO system
+               if (LOTO_correction) then
+                  call ham_bulk_LOTO(k, Hamk)
+               else
+                  call ham_bulk_latticegauge    (k, Hamk)
+               
+               endif
       
                !> diagonal hamk
                call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
                kline_integrate(ik1)%eig_vec(1:Num_wann, 1:NumberofSelectedOccupiedBands)= &
                   hamk(1:Num_wann, Selected_Occupiedband_index(1):Selected_Occupiedband_index(NumberofSelectedOccupiedBands))
  
-            endif
+            ! endif
    
          enddo  ! ik1
 

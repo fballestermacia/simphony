@@ -29,7 +29,7 @@ def readslabek(prefix):
    
 
 factor = 0.123983#*0.24180
-thztomev = 4.15665538536
+thztomev = 1#4.15665538536
 
 qpoints, tbbandsperline, labels, ticks, bottom, top = readslabek('examples/Al2ZnTe4_666/slabek')
 
@@ -51,14 +51,14 @@ cb = plt.colorbar(sc,ticks=[-1, 0, 1])
 cb.set_ticklabels(['Bottom','Bulk','Top'], fontsize = 20)
 
 plt.yticks(fontsize=20)
-plt.ylabel("Frequency (meV)",fontsize=20 )#(cm$^{-1}$)")
+plt.ylabel("Frequency (ThZ)",fontsize=20 )#(cm$^{-1}$)")
 plt.xlim(np.min(qpoints), np.max(qpoints))
 plt.xticks(ticks=ticks, labels=labels,fontsize=20)
 for pos in ticks:
     ax1.axvline(x=pos, linewidth=0.5, color='k')
 
 ax1.axhline(y=0, linewidth=0.5, color='b', linestyle='--')
-plt.title('Al2ZnTe4, (001) surface', fontsize=20)
+plt.title('PbTe, surface', fontsize=20)
 
 #plt.ylim(17, 23.2)
 #plt.savefig('DFTpycodes/plotsWT/testfig.jpeg')

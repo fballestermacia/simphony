@@ -25,7 +25,7 @@ def readbulkekgnu(prefix):
     
 
 factor = 0.123983#*0.24180
-thztomev = 4.15665538536
+thztomev = 1#4.15665538536
 
 qpoints, tbbandsperline, labels, ticks = readbulkekgnu('examples/Al2ZnTe4_666/bulkek')
 
@@ -42,7 +42,7 @@ ax1 = plt.axes()
 for i, tbands in enumerate(tbbandsperline):
     ax1.plot(qpoints[i], tbands,linewidth = 1, alpha = 1, color = topocolors[i])
 
-plt.ylabel("Frequency (meV)", fontsize=20 )#(cm$^{-1}$)")
+plt.ylabel("Frequency (ThZ)", fontsize=20 )#(cm$^{-1}$)")
 plt.yticks(fontsize=20 )
 plt.xlim(np.min(qpoints), np.max(qpoints))
 plt.xticks(ticks=ticks, labels=labels, fontsize=20 )
