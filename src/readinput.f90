@@ -134,7 +134,7 @@ subroutine readinput
    MirrorChern_calc      = .FALSE.
    Dos_calc              = .FALSE.
    JDos_calc             = .FALSE.
-   EffectiveMass_calc    = .FALSE.
+   !EffectiveMass_calc    = .FALSE.
    FindNodes_calc        = .FALSE.
    LOTO_correction       = .FALSE.
    !Boltz_OHE_calc        = .FALSE.
@@ -3532,6 +3532,7 @@ subroutine readinput
             endif
          enddo
       enddo
+      call impose_ASR_on_eff_charges(Origin_cell%Num_atoms, Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1), Born_Charge)
    else
       if (LOTO_correction) then
          if (cpuid==0) then

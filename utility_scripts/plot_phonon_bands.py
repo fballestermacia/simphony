@@ -27,7 +27,7 @@ def readbulkekgnu(prefix):
 factor = 0.123983#*0.24180
 thztomev = 1#4.15665538536
 
-qpoints, tbbandsperline, labels, ticks = readbulkekgnu('examples/Al2ZnTe4_666/bulkek')
+qpoints, tbbandsperline, labels, ticks = readbulkekgnu('examples/PbTe/bulkek')
 
 tbbandsperline *= thztomev
 
@@ -40,7 +40,7 @@ topocolors = 'k'*8 + 'g' +'r'+'g'+'r'+'k'*2+'k'+'b'*3+'b'*3
 ax1 = plt.axes()
 
 for i, tbands in enumerate(tbbandsperline):
-    ax1.plot(qpoints[i], tbands,linewidth = 1, alpha = 1, color = topocolors[i])
+    ax1.plot(qpoints[i], tbands,linewidth = 3, alpha = 1, color = topocolors[i])
 
 plt.ylabel("Frequency (ThZ)", fontsize=20 )#(cm$^{-1}$)")
 plt.yticks(fontsize=20 )
@@ -50,7 +50,7 @@ for pos in ticks:
     ax1.axvline(x=pos, linewidth=0.5, color='k' )
 
 ax1.axhline(y=0, linewidth=0.5, color='b', linestyle='--')
-plt.title('Al2ZnTe4 bulk bands', fontsize=20 )
+plt.title('PbTe with long-range', fontsize=20 )
 
 #plt.ylim(0, )
 plt.show()
