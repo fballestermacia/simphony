@@ -1,0 +1,220 @@
+#!/usr/bin/env python3
+
+"""
+This code generates an input file 'pn.in' which is an input of Phonnier.
+Inputs are output files from Quantum Espresso. Mainly the 'name.dat{0,1,2,...}' files, which are read and parsed using SSCHA's CellConstructor.
+
+Usage:
+createPhonnierInput PathTo/name.dyn N_irr_q
+
+"""
+
+
+from datetime import datetime
+import numpy as np
+import cellconstructor as CC
+import cellconstructor.Phonons
+import cellconstructor.ForceTensor
+from cellconstructor.Units import MASS_RY_TO_UMA
+import sys
+
+if __name__ == '__main__':
+
+    # Constant to get the correct units
+    factor = 108.97077184367376 #PwscfToTHz
+
+    # Handle inputs from terminal
+
+    try:
+        dynprefix = str(sys.argv[1])
+    except IndexError:
+        raise IndexError('Missing file name name.dyn. Usage: \'createPhonnierInput PathTo/name.dyn N_irr_q\'')
+
+    try:
+        nqirrs = int(sys.argv[2])
+    except IndexError:
+        raise IndexError('Missing number of irreducible q points N_irr_q. Usage: \'createPhonnierInput PathTo/name.dyn N_irr_q\'')
+    
+    prefix = dynprefix.split('.dyn')[0]
+
+    dyn = CC.Phonons.Phonons()
+    dyn.LoadFromQE(fildyn_prefix=dynprefix, nqirr=nqirrs)
+
+    if dyn.effective_charges is not None:
+        isloto="T"
+    else: isloto="F"
+
+    bc = dyn.effective_charges
+    dt = dyn.dielectric_tensor
+
+    num_atom = int(len(dyn.structure.coords))
+
+    mass = np.round(dyn.structure.get_masses_array()*MASS_RY_TO_UMA,2)
+
+    cell = dyn.structure.unit_cell
+
+    positions = np.round(CC.Methods.covariant_coordinates(cell, dyn.structure.coords),8) 
+
+    labels = dyn.structure.atoms
+
+    with open("pn.in", "w") as f:
+        f.write("!> Input file written automatically on " + str(datetime.now()) +" by F. B. \n")
+
+        f.write("&TB_FILE\n" 
+                +"Hrfile = \'{}_phononTB_hr.dat\'\n".format(prefix)
+                +"/\n \n")        
+        
+        f.write("&CONTROL" + "\n"
+                + "!> LO-TO correction (if True, long range part of Dynamical matrix must be removed from phononTB_hr.dat)"
+                + "\n"
+                +"LOTO_correction       = {}".format(isloto)
+                + "\n"
+                + "\n"    
+                +"!> bulk band structure calculation flags"
+                + "\n"
+                +"BulkBand_calc         = F"
+                + "\n"
+                +"BulkGap_cube_calc     = F"
+                + "\n"
+                +"BulkGap_plane_calc    = F"
+                + "\n"
+                +"BulkFS_calc           = F"
+                + "\n"
+                + "\n"
+                +"!> slab band structure calculation flags"
+                + "\n"
+                +"SlabBand_calc         = F"
+                + "\n"
+                +"SlabSS_calc           = F"
+                + "\n"
+                +"SlabArc_calc          = F"
+                + "\n"
+                + "\n"
+                +"!> wire band structure calculation flags"
+                + "\n"
+                +"WireBand_calc         = F"
+                + "\n"
+                + "\n"
+                +"!> DOS and JDOS calculation flags"
+                + "\n"
+                +"Dos_calc              = F"
+                + "\n"
+                +"JDos_calc             = F"
+                + "\n"
+                + "\n"
+                +"!> Topological quantities calculation flags"
+                + "\n"
+                +"FindNodes_calc        = F"
+                + "\n"
+                +"BerryPhase_calc       = F"
+                + "\n"
+                +"BerryCurvature_calc   = F"
+                + "\n"
+                +"Chern_3D_calc         = F"
+                + "\n"
+                +"Z2_3D_calc            = F"
+                + "\n"
+                +"Wanniercenter_calc    = F"
+                + "\n"
+                +"WeylChirality_calc    = F"
+                + "\n"
+                +"/\n \n")
+        
+
+        f.write("&SYSTEM \n"
+                +"NSLAB = 10\n"
+                +"NumOccupied = 1      !>Index of band taken into account for the calculations\n"
+                +"/\n"
+                +"\n\n")
+        
+        f.write("&PARAMETERS \n"
+                +"Eta_Arc = 0.005    !>infinite small value, like brodening. Too small a value leads to singularities in the Green Function \n"
+                +"E_arc = 1     !>energy for calculate Fermi Arc, ThZ \n"
+                +"OmegaNum = 100     !>omega number \n"
+                +"OmegaMin =  0.5      !>energy interval in unit of ThZ \n"
+                +"OmegaMax =  1.5     !>energy interval in unit of ThZ \n"
+                +"Nk1 = 50           !>number k points \n"
+                +"Nk2 = 50           !>number k points \n"
+                +"Nk3 = 50          !>number k points \n"
+                +"NP = 5             !>number of principle layers \n"
+                +"Gap_threshold = 0.00001 !>threshold for GapCube output \n"
+                +"/\n\n\n"
+                )
+
+        f.write("LATTICE\n"
+                +"Angstrom\n"
+                +"{:20.10f}     {:20.10f}       {:20.10f}\n".format(cell[0][0],cell[0][1],cell[0][2])
+                +"{:20.10f}     {:20.10f}       {:20.10f}\n".format(cell[1][0],cell[1][1],cell[1][2])
+                +"{:20.10f}     {:20.10f}       {:20.10f}\n".format(cell[2][0],cell[2][1],cell[2][2])
+                +"\n\n")
+
+        f.write("ATOMS\n"
+                +"{}\n".format(num_atom)
+                +"Direct\n")
+        for i in range(num_atom):
+            f.write("{}     {}      {:20.10f}      {:20.10f}      {:20.10f}\n".format(labels[i],mass[i],positions[i][0],positions[i][1],positions[i][2]))
+        f.write("\n \n")
+
+        f.write("KPATH_BULK\n"
+                +"8\n"
+                +"X   0.500000  0.000000  0.500000   W   0.500000  0.250000  0.750000\n"
+                +"W   0.500000  0.250000  0.750000   L   0.500000  0.500000  0.500000\n"
+                +"L   0.500000  0.500000  0.500000   G   0.000000  0.000000  0.000000\n"
+                +"G   0.000000  0.000000  0.000000   X   0.500000  0.000000  0.500000\n"
+                +"X   0.500000  0.000000  0.500000   X1   0.500000  0.500000  1.000000\n"
+                +"X1   0.500000  0.500000  1.000000   K   0.375000  0.375000  0.750000\n"
+                +"K   0.375000  0.375000  0.750000    U   0.125000  0.125000  0.250000\n"
+                +"U   0.125000  0.125000  0.250000   G   0.000000  0.000000  0.000000\n"
+                +"\n \n")
+        
+        f.write("SURFACE\n"
+                +"1 0 0\n"
+                +"0 1 0\n" 
+                +"\n\n")
+        
+        f.write("KPATH_SLAB\n"
+                +"3\n"
+                +"G 0.0 0.0 X 0.5 0.0\n"
+                +"X 0.5 0.0 M 0.5 0.5\n"
+                +"M 0.5 0.5 G 0.0 0.0\n"
+                +"\n\n")
+        
+        f.write("KPLANE_SLAB\n"
+                +"-0.5 -0.5\n"
+                +"1.0 0.0\n"
+                +"0.0 1.0\n" 
+                +"\n\n")
+        
+        f.write("KPLANE_BULK\n"
+                +"-0.00 -0.00 -0.00\n"
+                +"1.00 0.00 0.00\n"
+                +"0.00 1.00 0.00\n" 
+                +"\n\n")
+        
+        f.write("KCUBE_BULK\n"
+                +"-0.00 -0.00 -0.00\n"
+                +"1.00 0.00 0.00\n"
+                +"0.00 1.00 0.00\n" 
+                +"0.00 0.00 1.00\n"
+                +"\n\n")
+        
+        f.write("WEYL_CHIRALITY\n"
+                +"2          ! Num_Weyls\n"
+                +"Direct     ! Direct or Cartesian coordinate\n"
+                +"0.0001       ! Radius of the ball surround a Weyl point\n"
+                +"-0.50000000    0.00000000    0.00000000      ! Positions of Weyl points, No. of lines should larger than Num_weyls\n"
+                +"-0.00000000    0.50000000   -0.00000000\n"
+                +"\n\n")
+        
+        if isloto=="T":
+            f.write("LOTO_DT\n"
+                    +"{:20.10f}     {:20.10f}       {:20.10f}\n".format(dt[0][0],dt[0][1],dt[0][2])
+                    +"{:20.10f}     {:20.10f}       {:20.10f}\n".format(dt[1][0],dt[1][1],dt[1][2])
+                    +"{:20.10f}     {:20.10f}       {:20.10f}\n".format(dt[2][0],dt[2][1],dt[2][2])
+                    +"\n\n")
+            
+            f.write("LOTO_BC\n")
+            for i in range(num_atom):
+                f.write("{:20.10f}     {:20.10f}       {:20.10f}\n".format(bc[i][0][0],bc[i][0][1],bc[i][0][2])
+                    +"{:20.10f}     {:20.10f}       {:20.10f}\n".format(bc[i][1][0],bc[i][1][1],bc[i][1][2])
+                    +"{:20.10f}     {:20.10f}       {:20.10f}\n".format(bc[i][2][0],bc[i][2][1],bc[i][2][2]))

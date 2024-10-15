@@ -1,0 +1,32 @@
+OBJ = module.o sparse.o pn_aux.o math_lib.o mgmres.o symmetry.o \
+		  readHmnR.o inverse.o proteus.o \
+       eigen.o ham_qlayer2qlayer.o psi.o rand.o \
+  		 ham_slab.o ham_bulk.o ek_slab.o ek_bulk_polar.o ek_bulk.o \
+       readinput.o fermisurface.o surfgreen.o surfstat.o \
+  		 mat_mul.o ham_ribbon.o ek_ribbon.o \
+       fermiarc.o berrycurvature.o \
+  		 wanniercenter.o dos.o  orbital_momenta.o \
+		 berry.o wanniercenter_adaptive.o \
+  		 effective_mass.o findnodes.o \
+	main.o
+
+
+# compiler
+f90  = gfortran -cpp -fprofile-arcs -ftest-coverage
+
+flag = -O2 -ffree-line-length-512                          
+
+# blas and lapack libraries
+libs = -llapack -lblas
+ 
+main :  $(OBJ)
+	$(f90) $(OBJ) -o wt.x $(libs) 
+	cp -f pn.x ../bin
+
+.SUFFIXES: .o .f90
+
+.f90.o :
+	$(f90) -c $(flag) $(includes) $*.f90
+
+clean :
+	rm -f *.o *.mod *~ pn.x

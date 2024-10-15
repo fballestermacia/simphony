@@ -9,40 +9,36 @@ OBJ = module.o sparse.o pn_aux.o math_lib.o mgmres.o symmetry.o \
 		 berry.o wanniercenter_adaptive.o \
   		 effective_mass.o findnodes.o \
 	main.o
-	
 
-# compiler
-F90  = gfortran -cpp 
-CC = gcc -E 
+# compiler, here mpif90 should be comipled with gfortran
+F90  = mpif90 -cpp -DMPI -ffree-line-length-512                          
 
-INCLUDE = #-I${MKLROOT}/include 
-WFLAG = #-nogen-interface
-#OFLAG = -O3 -static-intel
-OFLAG = -O3 -ffree-line-length-512  #-g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
+INCLUDE =
+WFLAG = #-Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none \
+       -fbacktrace -ffree-line-length-0 -fcheck=all -finit-real=nan \
+       -ffpe-trap=zero,overflow,underflow
+
+OFLAG = -g
 FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)
 
-# ARPACK LIBRARY
-ARPACK= #-L/usr/local/lib -larpack
 
-# need to specify if -DSUPERLU is provided in the F90 
-SUPERLULIB=#/usr/local/lib/libsuperlu.a
+# blas and lapack libraries
+LIBS = -llapack -lblas
 
-
+# Intel MKL also supports with gfortran comipler
 # dynamic linking
-LIBS = ${ARPACK} -llapack -lblas
+# LIBS = -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread
  
+
 main : $(OBJ)
-	$(F90) $(LFLAG) $(OBJ) -o pn.x $(LIBS)
+	$(F90) $(LFLAG) $(OBJ) -o wt.x $(LIBS)
 	cp -f pn.x ../bin
 
-.SUFFIXES: .o .f90 .c
+.SUFFIXES: .o .f90
 
 .f90.o :
 	$(F90) $(FFLAG) $(INCLUDE) -c $*.f90
-.c.o:
-	$(CC) $(CFLAGS) -I$(INCLUDE) -c $< $(VERBOSE)
 
 clean :
 	rm -f *.o *.mod *~ pn.x
-

@@ -9,4 +9,6 @@ export PATH=$HOME/bin:PATH_TO_YOUR_PHONNIER_INSTALLATION/bin:$PATH
 
 and with that you should be ready to go.
 
+We have also added two simple scripts to generate the input files for Phonnier by reading a QuantumESPRESSO output.
+
 Thank you for using Phonnier!

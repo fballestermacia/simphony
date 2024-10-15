@@ -45,4 +45,3 @@ main : $(OBJ)
 
 clean :
 	rm -f *.o *.mod *~ pn.x
-
