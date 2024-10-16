@@ -1,5 +1,5 @@
 <a name="readme-top"></a>
-![Phonnier_Logo](Phonnier_Logo.png)
+![Phonnier_Logo](images/Phonnier_Logo.png)
 <div align="center">
 
 
@@ -91,12 +91,26 @@ For examples on input files, we refer to the *examples* directory.
 
 
 ## Capabilities
-### Bulk band structure
-### Slab band structure
-### Surface states, Fermi arcs and Weyl nodes
-### Wilson loops
+Phonnier is intended to be a multipurpose tool for calculating topological quantitites and band structures of phonon systems. What follows is a non-exhaustive list of the main calculations that Phonnier is capable of performing:
+<ol>
+    <li> Bulk band structure </li>
+    <li> Slab band structure </li>
+    <li> Wilson loops </li>
+    <li> Surface states and Fermi arcs </li>
+    <li> Weyl node localization and topological charge </li>
+
+</ol>
+
+For more details on how to perform these calculations, check the <a href="#examples">Examples</a> section.
+
 
 ## Examples
+
+### Surface states on an Obstructed Atomic Band Representation: $\text{AgP}_2$ 
+
+### Weyl nodes, topological charges and Fermi arcs: $\text{Al}_2\text{ZnTe}_4$
+
+
 
 ## Installation
 
@@ -147,5 +161,7 @@ With that, you should be ready to go! Thank you again for using Phonnier and che
 [ ] ~~Finish~~ Write documentation
 
 [ ] Add examples
+
+[ ] Continue testing topological quantities with LO-TO
 
 
