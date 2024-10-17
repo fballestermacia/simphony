@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     num_atom = int(len(dyn.structure.coords))
 
-    mass = np.round(dyn.structure.get_masses_array()*MASS_RY_TO_UMA,2)
+    mass = np.round(dyn.structure.get_masses_array()*MASS_RY_TO_UMA,5)
 
     cell = dyn.structure.unit_cell
 
@@ -129,10 +129,10 @@ if __name__ == '__main__':
         
         f.write("&PARAMETERS \n"
                 +"Eta_Arc = 0.005    !>infinite small value, like brodening. Too small a value leads to singularities in the Green Function \n"
-                +"E_arc = 1     !>energy for calculate Fermi Arc, ThZ \n"
+                +"E_arc = 1     !>energy for calculate Fermi Arc, THz \n"
                 +"OmegaNum = 100     !>omega number \n"
-                +"OmegaMin =  0.5      !>energy interval in unit of ThZ \n"
-                +"OmegaMax =  1.5     !>energy interval in unit of ThZ \n"
+                +"OmegaMin =  0.5      !>energy interval in unit of THz \n"
+                +"OmegaMax =  1.5     !>energy interval in unit of THz \n"
                 +"Nk1 = 50           !>number k points \n"
                 +"Nk2 = 50           !>number k points \n"
                 +"Nk3 = 50          !>number k points \n"

@@ -65,6 +65,8 @@ instead.
 
 The code will read your *pn.in* file and the corresponding *wannier90_hr.dat* file. It will run the calculations designated in your input file and write, in the same folder,a *PN.out* file detailing the execution of the program and the appropiate output files. In case of a failed execution or errors, the *PN.out* file contains all the information about how the code read the input parameters and what calculations executed. An error message will apear in this file in case of failure.
 
+Therefore, the workflow usually is to modify by hand the different tags and simulation parameters of the *pn.in* file and checking the output of the code.
+
 ### Input Files
 
 Phonnier only needs two input files: *pn.in* and *wannier90_hr.dat*. 
@@ -106,7 +108,72 @@ For more details on how to perform these calculations, check the <a href="#examp
 
 ## Examples
 
+In this section, we will showcase a couple of calculations. It is reccomended that you try to replicate theese examples so as to familiarize yourself with the workflow of Phonnier and to make sure your installation is correct.
+
 ### Surface states on an Obstructed Atomic Band Representation: $\text{AgP}_2$ 
+
+$\text{AgP}_2$ is an insulator, thus, in the *&CONTROL* namelist we must include:
+
+```
+LOTO_correction       = T
+```
+for all calculations.
+
+For this example, we will calculate the bulk bands of the system, the Wilson loop of an *OABR* band and the band structure of the surface state originated from the *OABR*. Thus, our full *&CONTROL* namelist will look something like this:
+
+```
+&CONTROL
+LOTO_correction       = T
+BulkBand_calc         = T
+Wanniercenter_calc    = T
+SlabSS_calc           = T
+/
+```
+
+You can run all calculations on the same run or run them separately.
+
+For the BulkBand_calc we need to set the Nk1 tag in the *&PARAMETERS* namelist. We also need Nk2 for the Wilson loop calculation, so we must include both. We know where the surface state sits in the spectrum, thus, we also set the 
+OmegaNum, OmegaMin and OmegaMax tags to appropiate values. OmegaMin and OmegaMax set the energy range (in THz) for the calculation, and OmegaNum sets the resolution of that energy range. 
+
+For the surface state we also need the Nk1 tag and the NP tag, which sets the number of principal layers for the Green's function method. Note that the value of NP should be converged, since it strongly influences the runtime of the calculations. It is reccommended to start with NP=2 and increase from there by one until you arrive at a reasonable solution.
+
+Then, the *&PARAMETERS* namelist should be something like this:
+
+```
+&PARAMETERS 
+OmegaNum = 200     !>omega number 
+OmegaMin =  8      !>energy interval in unit of THz 
+OmegaMax =  12     !>energy interval in unit of THz
+Nk1 = 50           !>number k points 
+Nk2 = 50           !>number k points 
+NP = 5             !>number of principle layers 
+/
+```
+
+For the *&SYSTEM* namelist we only need to set the NumOccupied tag for the Wilson loop calculation. That is, we need to let the code know in which band we want to perform the loop. Thus: 
+
+```
+&SYSTEM 
+NumOccupied = 14  
+/
+```
+Note that we start counting the bands at 1, not at 0.
+
+After all this calculations, we can plot the results by reading the *.dat* files or by simply using *gnuplot*, whichever you prefer. In any case, the bulk bands should look something like this:
+
+![AgP2bulkek](images/AgP2bulkek.png)
+
+Then, on the 14th band we obtain the Wilson loop:
+![wloop](images/AgP2wcc.png)
+which leads to an *OABR* system.
+
+Therefore, we can obtain the surface states that appear around 10 THz with the SlabSS_calc tag. When we project onto the bulk, we get nothing
+![bulkss](images/surfdos_bulk.png)
+and when we project onto one of the surfaces, a band appears:
+![lss](images/surfdos_l.png)
+
+It should also be noted, that for these calculations, other parameters must be included in the pn.in file, such as the crystal structure, the high symmetry path, or the surface we are considering for the calculations. For more details, check the examples folder.
+
 
 ### Weyl nodes, topological charges and Fermi arcs: $\text{Al}_2\text{ZnTe}_4$
 
@@ -132,7 +199,15 @@ To compile Phonnier, clone the repository wherever you want your installation to
 ```
 or download the zip file directly from the [github repository](https://github.com/fballestermacia/phonnier).
 
-Then, on the *phonnier/src* directory, copy or rename the Makefile.* that best adjusts to your system and/or needs into a file named simply *Makefile*. Then run:
+Then, on the *phonnier/src* directory, copy or rename the Makefile.* that best adjusts to your system and/or needs into a file named simply *Makefile*. 
+
+For most satandard cases, the gfortran installation is enough, so simply by copying the appropiate makefile is enough:
+
+```
+cp Makefile.gfortran Makefile
+```
+
+Then run:
 
 ```
 > make
