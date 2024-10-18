@@ -342,7 +342,7 @@ if __name__ == '__main__':
     #t2.Center()
     dyn2 = t2.GeneratePhonons(dyn.GetSupercell(), asr = asr, lo_to_splitting = False)
     #if symmetrize:
-    #    dyn2.Symmetrize(verbose=False, asr=asr, use_spglib=False)
+    dyn2.Symmetrize(verbose=False, asr=asr, use_spglib=False)
 
     
 
