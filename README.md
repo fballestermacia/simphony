@@ -235,8 +235,10 @@ With that, you should be ready to go! Thank you again for using Phonnier and che
 
 [ ] ~~Finish~~ Write documentation
 
-[ ] Add examples
+[/] Add examples (still need the Al2ZnTe4 example)
 
 [ ] Continue testing topological quantities with LO-TO
+
+[ ] Add reference
 
 
