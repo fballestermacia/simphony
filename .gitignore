@@ -4,8 +4,14 @@
 # Ignore also the DS_store file
 .DS_store
 
-# Ignore examples folder for the moment
-examples/*
+# Ignore examples folder except the important files
+examples/* 
+
+!examples/AgP2
+
+examples/AgP2/* 
+!examples/AgP2/pn.in
+!examples/AgP2/AgP2_phononTB_hr.dat
 
 ###### Default ignores for Fortran repositories ######
 # Prerequisites
