@@ -33,7 +33,7 @@
 
 
      !> version of Phonnier
-     version='0.8'
+     version='1.0.0'
 
      ierr = 0
      cpuid= 0
