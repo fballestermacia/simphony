@@ -273,15 +273,15 @@
          open(unit=dosbulkfile , file='dos.dat_bulk')
          open(unit=spindoslfile, file='spindos.dat_l')
          open(unit=spindosrfile, file='spindos.dat_r')
-         write(doslfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(eV)', 'dos_l', 'dos_l_only'
-         write(dosrfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(eV)', 'dos_r', 'dos_r_only'
-         write(dosbulkfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(eV)', 'dos_bulk'
+         write(doslfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(THz)', 'dos_l', 'dos_l_only'
+         write(dosrfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(THz)', 'dos_r', 'dos_r_only'
+         write(dosbulkfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(THz)', 'dos_bulk'
          write(spindoslfile, '("#", a)') ' spin dos_l, the axis is rotated as '
          write(spindoslfile, '("#", a)') " x is along R1', z is along R1'xR2', y is along z x y"
-         write(spindoslfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(eV)', 'sx', 'sy', 'sz'
+         write(spindoslfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(THz)', 'sx', 'sy', 'sz'
          write(spindosrfile, '("#", a)') ' spin dos_r, the axis is rotated as '
          write(spindosrfile, '("#", a)') " x is along R1', z is along R1'xR2', y is along z x y"
-         write(spindosrfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(eV)', 'sx', 'sy', 'sz'
+         write(spindosrfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(THz)', 'sx', 'sy', 'sz'
          do ikp = 1, knv2
             do j = 1, omeganum
                 write(doslfile,    2002) k2len(ikp)*Angstrom2atomic, omega(j)/eV2Hartree, dos_l(ikp, j), dos_l_only(ikp, j)
@@ -347,7 +347,7 @@
         write(outfileindex, '(a)')'#set xtics font ",48"'
         write(outfileindex, '(a)')'#set ytics font ",48"'
         write(outfileindex, '(a)')'#set ylabel font ",48"'
-        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a)')'set ylabel "Energy (THz)"'
         write(outfileindex, '(a)')'#set xtics offset 0, -1'
         write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
         write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(k2len)*Angstrom2atomic, ']'
@@ -406,7 +406,7 @@
         write(outfileindex, '(a)')'#set ytics font ",48"'
         write(outfileindex, '(a)')'unset cbtics'
         write(outfileindex, '(a)')'#set ylabel font ",48"'
-        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a)')'set ylabel "Energy (THz)"'
         write(outfileindex, '(a)')'#set xtics offset 0, -1'
         write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
         write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(k2len)*Angstrom2atomic, ']'
@@ -453,7 +453,7 @@
         write(outfileindex, '(a)')'#set xtics font ",48"'
         write(outfileindex, '(a)')'#set ytics font ",48"'
         write(outfileindex, '(a)')'#set ylabel font ",48"'
-        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a)')'set ylabel "Energy (THz)"'
         write(outfileindex, '(a)')'unset cbtics'
         write(outfileindex, '(a)')'#set xtics offset 0, -1'
         write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
@@ -502,7 +502,7 @@
         write(outfileindex, '(a)')'#set xtics font ",48"'
         write(outfileindex, '(a)')'#set ytics font ",48"'
         write(outfileindex, '(a)')'#set ylabel font ",48"'
-        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a)')'set ylabel "Energy (THz)"'
         write(outfileindex, '(a)')'#set xtics offset 0, -1'
         write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
         write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(k2len)*Angstrom2atomic, ']'
@@ -560,7 +560,7 @@
         write(outfileindex, '(a)')'#set ytics font ",48"'
         write(outfileindex, '(a)')'#set ylabel font ",48"'
         write(outfileindex, '(a)')'unset cbtics'
-        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a)')'set ylabel "Energy (THz)"'
         write(outfileindex, '(a)')'#set xtics offset 0, -1'
         write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
         write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(k2len)*Angstrom2atomic, ']'
@@ -930,8 +930,8 @@ SUBROUTINE surfstat_jdos
     IF(cpuid.eq.0) THEN
         OPEN(unit=jdoslfile, file='dos.jdat_l')
         OPEN(unit=jdosrfile, file='dos.jdat_r')
-        write(jdoslfile, '("#", a12, 3a17)') ' k(1/Ang)', ' E(eV)', 'jdos_l', 'jdos_l_only'
-        write(jdosrfile, '("#", a12, 3a17)') ' k(1/Ang)', ' E(eV)', 'jdos_l', 'jdos_l_only'
+        write(jdoslfile, '("#", a12, 3a17)') ' k(1/Ang)', ' E(THz)', 'jdos_l', 'jdos_l_only'
+        write(jdosrfile, '("#", a12, 3a17)') ' k(1/Ang)', ' E(THz)', 'jdos_l', 'jdos_l_only'
         DO ikp = 1, knv2
             DO j = 1, omeganum
                 WRITE(jdoslfile, 2002) k2len(ikp)*Angstrom2atomic, omega(j)/eV2Hartree, jdos_l(ikp, j), jdos_l_only(ikp, j)

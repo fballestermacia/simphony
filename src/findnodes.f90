@@ -338,7 +338,13 @@
       if (index(KPorTB, 'KP')/=0)then
          call ham_bulk_kp(X, Hamk_bulk)
       else
-         call ham_bulk_atomicgauge(X, Hamk_bulk)
+         !call ham_bulk_atomicgauge(X, Hamk_bulk)
+         if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+            call ham_bulk_LOTO(X, Hamk_bulk)
+         else
+            call ham_bulk_latticegauge(X, Hamk_bulk)
+           
+         endif
       endif
  
       ! diagonalization by call zheev in lapack
