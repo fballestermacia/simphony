@@ -15,7 +15,7 @@ BulkFS_calc           = F
 
 !> slab band structure calculation flags
 SlabBand_calc         = F
-SlabSS_calc           = T
+SlabSS_calc           = F
 SlabArc_calc          = F
 
 !> wire band structure calculation flags
@@ -31,7 +31,7 @@ BerryPhase_calc       = F
 BerryCurvature_calc   = F
 Chern_3D_calc         = F
 Z2_3D_calc            = F
-Wanniercenter_calc    = F
+Wanniercenter_calc    = T
 WeylChirality_calc    = F
 /
  
@@ -108,30 +108,22 @@ G 0.0 0.0 M 0.5 0.5
 
 
 KPLANE_SLAB
--0.5 -0.5
+-0.0 -0.0
 1.0 0.0
 0.0 1.0
 
 
 KPLANE_BULK
--0.00 -0.00 -0.00
-1.00 0.00 0.00
-0.00 1.00 0.00
+-0.50 -0.50 -0.50
+0.00 1.00 1.00
+1.00 0.00 1.00
 
 
 KCUBE_BULK
--0.00 -0.00 -0.00
+-0.50 -0.50 -0.50
 1.00 0.00 0.00
 0.00 1.00 0.00
 0.00 0.00 1.00
-
-
-WEYL_CHIRALITY
-2          ! Num_Weyls
-Direct     ! Direct or Cartesian coordinate
-0.0001       ! Radius of the ball surround a Weyl point
--0.50000000    0.00000000    0.00000000      ! Positions of Weyl points, No. of lines should larger than Num_weyls
--0.00000000    0.50000000   -0.00000000
 
 
 LOTO_DT
