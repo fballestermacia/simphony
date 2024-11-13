@@ -13,6 +13,9 @@ examples/AgP2/*
 !examples/AgP2/pn.in
 !examples/AgP2/AgP2_phononTB_hr.dat
 
+# Ignore most of the scripts in the utility folder
+utility_scripts/*.py
+
 ###### Default ignores for Fortran repositories ######
 # Prerequisites
 *.d
