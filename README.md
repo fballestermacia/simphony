@@ -161,16 +161,21 @@ Note that we start counting the bands at 1, not at 0.
 
 After all this calculations, we can plot the results by reading the *.dat* files or by simply using *gnuplot*, whichever you prefer. In any case, the bulk bands should look something like this:
 
-![AgP2bulkek](images/AgP2bulkek.png)
+![AgP2bulkek](images/AgP2bulkek.svg)
 
 Then, on the 14th band we obtain the Wilson loop:
-![wloop](images/AgP2wcc.png)
+
+![wloop](images/AgP2wcc.svg)
+
 which leads to an *OABR* system.
 
 Therefore, we can obtain the surface states that appear around 10 THz with the SlabSS_calc tag. When we project onto the bulk, we get nothing
-![bulkss](images/surfdos_bulk.png)
+
+![bulkss](images/surfdos_bulk.svg)
+
 and when we project onto one of the surfaces, a band appears:
-![lss](images/surfdos_l.png)
+
+![lss](images/surfdos_l.svg)
 
 It should also be noted, that for these calculations, other parameters must be included in the pn.in file, such as the crystal structure, the high symmetry path, or the surface we are considering for the calculations. For more details, check the examples folder.
 
