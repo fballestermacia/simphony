@@ -180,10 +180,53 @@ and when we project onto one of the surfaces, a band appears:
 It should also be noted, that for these calculations, other parameters must be included in the pn.in file, such as the crystal structure, the high symmetry path, or the surface we are considering for the calculations. For more details, check the examples folder.
 
 
-### Weyl nodes, topological charges and Fermi arcs: $\text{Al}_2\text{ZnTe}_4$
+### Weyl nodes in $\text{Al}_2\text{ZnTe}_4$
 
+In the second example, we will study the Weyl nodes between the 18th and 19th bands of  $\text{Al}_2\text{ZnTe}_4$, a compound belonging to SG 82. Again, this compound is an insulator, so we need to take into account the LO-TO correction. Here, the LO-TO splitting is more prominent and since the system is not cubic, discontinuities appear at $\Gamma$, as we can see in the bands computed by Phonnier using the same procedure described in the previous example:
 
+![alzblk](images/Al2ZnTe4Bulkek.svg)
 
+We start by running the *FindNodes_calc* subroutine, which uses an iterative minimization algorithm to find gapless points between two bands. The input file should be something like this:
+
+```
+&CONTROL
+LOTO_correction       = T 
+FindNodes_calc        = T
+/
+
+&SYSTEM
+NumOccupied = 18 
+/
+
+&PARAMETERS
+Nk1 = 15   
+Nk2 = 15 
+Nk3 = 15  
+Gap_threshold = 0.000001 
+/
+```
+
+The *NumOccupied* tag tells Phonnier to look between the *NumOccupied* and *NumOccupied*+1 bands for points with a gap smaller than *Gap_threshold* in a grid of *Nk1* x *Nk2* x *Nk3* points. The calculation is expensive, so a grid of 15x15x15 is more than enough for a good enough convergence. It is of note, however, that in some systems the long-range interactions might affect the result of the *FindNodes_calc* subroutine.
+
+Phonnier will output a Nodes.dat file with the coordinates of these gapless points. Then, we can take those coordinates to calculate the winding number on a sphere around the Weyl nodes, by setting the *WeylChirality_calc* tag to true in the *&CONTROL* namelist. This subroutine needs the *WEYL_CHIRALITY* card, which includes the coordinates of each point around wich we will calculate the winding number.
+
+```
+WEYL_CHIRALITY
+4          
+Direct     
+0.00001       
+ 0.40836109   -0.40491678   -0.09378520
+-0.40836104    0.40491685    0.09378513
+-0.11256878    0.06227720   -0.38968016
+ 0.11256874   -0.06227727    0.38968020
+```
+
+For simplicity, we will consider only the 4 points located at the $k_z=0$ plane. We can then plot the location of each Weyl node and the asociated winding number:
+
+![1bz](images/Al2ZnTe4nodes.svg)
+![weylchir](images/Al2ZnTe4weylchirality.svg)
+
+It should be of note how the Weyl nodes are related by the symmetries of the system and that they total Chern number is zero.
 ## Installation
 
 ### Prerequisites
@@ -232,15 +275,9 @@ With that, you should be ready to go! Thank you again for using Phonnier and che
 
 ## Roadmap
 
-[x] Add LO-TO splitting to bulk
+[x]Write documentation
 
-[x] Finish Testing Slab Systems
-
-[x] Add the utility scripts to GitHub
-
-[ ] ~~Finish~~ Write documentation
-
-[/] Add examples (still need the Al2ZnTe4 example)
+[x] Add examples
 
 [ ] Continue testing topological quantities with LO-TO
 
