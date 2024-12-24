@@ -143,7 +143,7 @@
      surf_weight_mpi= surf_weight
 #endif
      surf_weight= surf_weight_mpi/ maxval(surf_weight_mpi)
-  
+     ekribbon_mpi = sign(1.0d0,ekribbon_mpi)*SQRT(abs(ekribbon_mpi))/eV2Hartree
      if (cpuid.eq.0) then
         open(unit=100, file='ribbonek.dat',status='unknown')
         do j=1, Ndim1
@@ -164,8 +164,8 @@
         write(stdout,*) 'calculate energy band  done'
      endif
 
-     emin= minval(ekribbon_mpi)-0.5d0
-     emax= maxval(ekribbon_mpi)+0.5d0
+     emin= minval(ekribbon_mpi)-0.1d0*abs(minval(ekribbon_mpi))
+     emax= maxval(ekribbon_mpi)+0.1d0*abs(maxval(ekribbon_mpi))
      !> write script for gnuplot
      if (cpuid==0) then
         open(unit=118, file='ribbonek.gnu')
@@ -186,7 +186,7 @@
         write(118, '(a)')'set view 0,0'
         write(118, '(a)')'#set xtics offset 0, -1'
         write(118, '(a)')'set ylabel offset -1, 0 '
-        write(118, '(a)')'set ylabel "Energy (eV)"'
+        write(118, '(a)')'set ylabel "Energy (THz)"'
         write(118, '(a)')'set xrange [-0.5:0.5]'
         write(118, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
         write(118, '(a)')'rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'
