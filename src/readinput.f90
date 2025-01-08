@@ -3518,12 +3518,12 @@ subroutine readinput
       allocate(Born_Charge(Origin_cell%Num_atoms,3,3))
       allocate(Born_Charge_temp(Origin_cell%Num_atom_type,3,3))
       do i=1,Origin_cell%Num_atom_type
-         read(1001, *)Born_Charge_temp(i,1,:)
-         read(1001, *)Born_Charge_temp(i,2,:)
-         read(1001, *)Born_Charge_temp(i,3,:)
          do j=1,Origin_cell%Num_atoms_eachtype(i)
             it=it+1
-            Born_Charge(it,:,:)=Born_Charge_temp(i,:,:)
+            read(1001, *)Born_Charge_temp(it,1,:)
+            read(1001, *)Born_Charge_temp(it,2,:)
+            read(1001, *)Born_Charge_temp(it,3,:)
+            Born_Charge(it,:,:)=Born_Charge_temp(it,:,:)
             if (cpuid==0) then
                write(stdout,'(a,i3,2X,a6)')'Born_Charge for atom ', it, Origin_cell%atom_name(it)
                write(stdout,'(3f12.5)')Born_Charge(it,1,:)
