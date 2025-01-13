@@ -545,7 +545,7 @@
 
      ! index used to sign irvec     
      real(dp) :: ia,ib,ic
-     integer  :: ii,jj,pp,qq
+     integer  :: ii,jj,pp,qq, iia
 
      ! 
 
@@ -571,18 +571,23 @@
      real(dp) ::  constant_t
      complex(dp), allocatable :: mat1(:, :)
      complex(dp), allocatable :: mat2(:, :)
+     real(dp), allocatable :: pos_cart_ic(:, :)
      integer :: counter
  
      !> k times Born charge
      logical :: atGamma
-     real(dp) :: qeq, temp1(3), temp2, zag(3), zbg(3),  keps(3) = (/eps12,eps12,0.0d0/)
+     real(dp) :: qeq, temp1(3), temp2, zag(3), zbg(3),  keps(3) = (/eps12,eps12,0.0d0/), &
+                  R1(3), R2(3),R3(3), R12_cross(3),angle_t
      complex(dp) :: nac_q
+     real(dp), external :: norm, angle
      
 
      
      allocate(mat1(Num_wann, Num_wann))
      allocate(mat2(Num_wann, Num_wann))
      allocate(nac_correction(Num_wann, Num_wann))
+     allocate(pos_cart_ic(3,  Origin_cell%Num_atoms))
+
      mat1 = 0d0
      mat2 = 0d0
      nac_correction= 0d0
@@ -594,6 +599,7 @@
      temp1(1:2)= (/0.0,0.0/)
      
      k3d(:) = k(1)*Cell_defined_by_surface%reciprocal_lattice(1,:) + k(2)*Cell_defined_by_surface%reciprocal_lattice(2,:) ! ESTO NO ME CONVENCE
+     
      k3d = k3d*Cell_defined_by_surface%cell_parameters(1)/(twopi)
      
      if (abs((k3d(1)**2+k3d(2)**2+k3d(3)**2)).le.eps12)then  !> skip k=0
@@ -627,26 +633,39 @@
             enddo ! qq
           enddo ! pp
       endif
+
+      
+   !   mat1 = 0d0
+   !   nac_correction= 0d0
+   !   call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1,  &
+   !        Cell_defined_by_surface%Atom_position_cart/Cell_defined_by_surface%cell_parameters(1),  &
+   !        Born_Charge(:,:,:), Cell_defined_by_surface%reciprocal_lattice*Cell_defined_by_surface%cell_parameters(1)/(twopi), &
+   !        Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
      
-     nac_correction= 0d0
-     call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1,  &
-          Cell_defined_by_surface%Atom_position_cart/Cell_defined_by_surface%cell_parameters(1),  &
-          Born_Charge(:,:,:), Cell_defined_by_surface%reciprocal_lattice*Cell_defined_by_surface%cell_parameters(1)/(twopi), &
-          Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
-     
-     do ii=1,Num_wann
-        do jj=1, Num_wann
-            pp = Origin_cell%spinorbital_to_atom_index(ii)
-            qq = Origin_cell%spinorbital_to_atom_index(jj)
-            nac_correction(ii,jj) = (mat1(ii,jj) + mat2(ii,jj)*(108.97077184367376*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
-        end do
-     end do
+   !   do ii=1,Num_wann
+   !      do jj=1, Num_wann
+   !          pp = Origin_cell%spinorbital_to_atom_index(ii)
+   !          qq = Origin_cell%spinorbital_to_atom_index(jj)
+   !          nac_correction(ii,jj) = (mat1(ii,jj) + mat2(ii,jj)*(108.97077184367376*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
+   !      end do
+   !   end do
       
      Hij=0.0d0
+      R1=Cell_defined_by_surface%Rua
+      R2=Cell_defined_by_surface%Rub
+      R3=Cell_defined_by_surface%Ruc
 
+      !> R12_cross=R1xR2
+      call cross_product(R1, R2, R12_cross)
+
+      !> angle of R12_cross and R3
+      angle_t= angle(R12_cross, R3)
+      angle_t= angle_t*pi/180d0
+
+      ratio= Vacuum_thickness_in_Angstrom/cos(angle_t)/norm(R3)
      counter = 0
      !> First check the max number of blocks in the hamiltonian matrix so as to add the long range interaction
-     ! counter is the normlization factor, if the supercell is not excesively large, it should coincide with Nrpts, but just to be sure
+     ! counter is the normalization factor, if the supercell is not excesively large, it should coincide with Nrpts, but just to be sure
      do iR=1,Nrpts
         ia=irvec(1,iR)
         ib=irvec(2,iR)
@@ -671,14 +690,35 @@
         call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
         
         inew_ic= int(new_ic)
-         if (abs(new_ic).le.ijmax)then
+        if (abs(new_ic).le.ijmax)then
+            pos_cart_ic=0d0
+            do iia=1, Origin_cell%Num_atoms
+               pos_cart_ic(:, iia)= Origin_cell%Atom_position_cart(:, iia)+ R3*(new_ic-1d0+ratio/2d0)
+            enddo
             
-            kdotr=k(1)*new_ia+k(2)*new_ib
-            ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
+            
+            mat1 = 0d0
+            nac_correction= 0d0
+            call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1,  &
+                  pos_cart_ic/Origin_cell%cell_parameters(1),  &
+                  Born_Charge(:,:,:), Cell_defined_by_surface%reciprocal_lattice*Cell_defined_by_surface%cell_parameters(1)/(twopi), &
+                  Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+            
+            do ii=1,Num_wann
+               do jj=1, Num_wann
+                     pp = Origin_cell%spinorbital_to_atom_index(ii)
+                     qq = Origin_cell%spinorbital_to_atom_index(jj)
+                     nac_correction(ii,jj) = (mat1(ii,jj) + mat2(ii,jj)*(108.97077184367376*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
+               end do
+            end do
+
+           kdotr=k(1)*new_ia+k(2)*new_ib
+           ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
+            
 
             Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
             = Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
-            + HmnR(1:Num_wann,1:Num_wann,iR)*ratio/ndegen(iR)  +nac_correction(1:Num_wann, 1:Num_wann)/counter
+            + (HmnR(:,:,iR)+nac_correction(1:Num_wann, 1:Num_wann)/counter)*ratio/ndegen(iR)  !+nac_correction(1:Num_wann, 1:Num_wann)/counter
          endif
 
      enddo
@@ -699,6 +739,7 @@
      deallocate(mat1)
      deallocate(mat2)
      deallocate(nac_correction)
+     deallocate(pos_cart_ic)
   return
   end subroutine ham_qlayer2qlayer2_LOTO
 
