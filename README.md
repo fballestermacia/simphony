@@ -5,7 +5,7 @@
 
 
 <h1 align="center">Welcome to Simphony!</h3>
- <h3 align="center"><ins>SIM</ins>ulated <ins>PHON</ins>on topolo<ins>Y</ins></h3>
+ <h3 align="center"><ins>SIM</ins>ulated <ins>PHON</ins>on topolog<ins>Y</ins></h3>
 
 This code tries to adapt the Wannier Orbital formalism to the calculation of topological propperties of Phonon systems, with emphasis on polar materials, i.e., in the case of LO-TO splitting.
 
