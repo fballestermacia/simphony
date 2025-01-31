@@ -184,7 +184,7 @@ It should also be noted, that for these calculations, other parameters must be i
 
 In the second example, we will study the Weyl nodes between the 18th and 19th bands of  $\text{Al}_2\text{ZnTe}_4$, a compound belonging to SG 82. Again, this compound is an insulator, so we need to take into account the LO-TO correction. Here, the LO-TO splitting is more prominent and since the system is not cubic, discontinuities appear at $\Gamma$, as we can see in the bands computed by Simphony using the same procedure described in the previous example:
 
-![alzblk](images/Al2ZnTe4Bulkek.svg)
+![alzblk](images/Al2ZnTe4bulkek.svg)
 
 We start by running the *FindNodes_calc* subroutine, which uses an iterative minimization algorithm to find gapless points between two bands. The input file should be something like this:
 
