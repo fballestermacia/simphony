@@ -565,6 +565,220 @@
   end subroutine ham_qlayer2qlayer2
 
 
+!   subroutine long_range_phonon_interaction_real_space(R,tau,Ham,zeu,natoms,map2atoms)
+!    ! This subroutine computes the rigid-ion (long-range) term 
+!    ! of the dynamical matrix in real space, following equation (70)
+!    ! of X. Gonze et al, PRB 55. 10355 (1997).
+!    ! It is intendet to be used in a given supercell, using the irreducible vectors written
+!    ! that are later used for interpolation
+!    !
+!    ! History
+!    !     
+!    !       Jan/22/2025 by Francesc Ballester
+!    !
+
+!    use para
+
+!    implicit none
+
+!    integer :: natoms, map2atoms(natoms)
+!    complex(Dp) :: Ham(3*natoms,3*natoms)
+!    real(Dp) &
+!          R(3),                               & ! irVec
+!          tau(3,natoms),                       & ! atom position
+!          zeu(Origin_cell%Num_atoms,3,3)        ! effective charges
+   
+
+
+!    !  local variables
+
+!    integer :: i,j,ii,jj,na,nb                      !  loop integers
+!    real(Dp) :: einv(3,3), sqrtedet                 !  dielectric tensor inverse and determinant
+!    real(Dp) :: d(3), Delta(3), bigD                !  variables used for computation
+!    real(Dp) :: unitConversor, sumalphabeta         !  just for clarity
+!    real(Dp), external ::  det3
+
+
+!    unitConversor = (108.97077184367376*eV2Hartree)**2
+
+!    sqrtedet = SQRT(det3(Diele_Tensor))
+!    einv(:,:) = Diele_Tensor(:,:)
+   
+
+!    call inv_r(3,einv)
+
+   
+!    do na=1, natoms
+!       do nb=1, natoms
+
+!          d(:) = R(:) + tau(:,nb) - tau(:,na) ! eq 68
+
+!          if (abs((d(1)**2+d(2)**2+d(3)**2)).ge.eps12)then ! skip the d=0 case
+!             do i=1, 3
+!                Delta(i) = einv(i,1)*d(1) + einv(i,2)*d(2) + einv(i,3)*d(3)
+!             end do
+!             bigD = SQRT(Delta(1)*d(1) + Delta(2)*d(2) + Delta(3)*d(3))
+
+!             do i=1, 3
+!                do j=1, 3
+!                   sumalphabeta = 0.0d0
+!                   do ii=1, 3
+!                      do jj=1, 3
+
+!                         sumalphabeta = sumalphabeta +                                     &
+!                                        (zeu(map2atoms(na),i,ii)*zeu(map2atoms(nb),j,jj)/sqrtedet*   &
+!                                        (einv(ii,jj)/bigD**3 - 3*Delta(ii)*Delta(jj)/bigD**5))
+
+
+!                      end do
+!                   end do
+!                   Ham(3*(na-1)+i,3*(nb-1)+j) = Ham(3*(na-1)+i,3*(nb-1)+j) + sumalphabeta/SQRT(Atom_Mass(na)*Atom_Mass(nb))*unitConversor
+!                end do
+!             end do
+!          end if
+
+!       end do
+!    end do
+
+!   return
+!   end subroutine long_range_phonon_interaction_real_space
+
+!   subroutine asr_real_space(nirs,irvecs,tau,Ham,zeu,natoms,map2atoms)
+!    ! Tmimimimimimimimi
+!    ! omimimimimimimimi
+!    ! omimimimimimimimi
+!    ! Imimimimimimimimi
+!    ! tmimimimimimimimi
+!    !
+!    ! History
+!    !     
+!    !       Jan/23/2025 by Francesc Ballester
+!    !
+
+!    use para
+
+!    implicit none
+
+!    integer :: nirs, natoms, map2atoms(natoms), irvecs(3,nirs)
+!    complex(Dp) :: Ham(3*natoms,3*natoms)
+!    real(Dp) &
+!          tau(3,natoms),                       & ! atom position
+!          zeu(Origin_cell%Num_atoms,3,3)        ! effective charges
+   
+
+
+!    !  local variables
+
+!    integer :: i,j,ii,jj,na,nb,inew_ic                 !   
+!    real(Dp) ::  bigR(3),ia,ib,ic,new_ia,new_ib,new_ic              !  
+!    complex(Dp) :: sumforasr(3*natoms,3*natoms)
+
+!    !real(Dp), external ::  det3
+!    sumforasr = 0.0d0
+!    do i=1, nirs
+!       ia=irvec(1,i)
+!       ib=irvec(2,i)
+!       ic=irvec(3,i)
+
+
+      
+!       bigR = ia*Origin_cell%Rua + ib*Origin_cell%Rub + ic*Origin_cell%Ruc
+!       bigR = bigR/Origin_cell%cell_parameters(1)
+!       call long_range_phonon_interaction_real_space(bigR,tau,sumforasr,zeu,natoms,map2atoms)
+!    end do
+
+!    do na=1, natoms
+!       do nb=1, natoms
+!          if (na.ne.nb) then
+!             do i=1, 3
+!                do j=1, 3
+!                   Ham(3*(na-1)+i,3*(na-1)+j) = Ham(3*(na-1)+i,3*(na-1)+j) + sumforasr(3*(na-1)+i,3*(nb-1)+j)
+!                end do
+!             end do
+!          end if
+!       end do
+!    end do
+
+   
+!   return
+!   end subroutine asr_real_space
+
+
+   subroutine FT_long_range_to_R(r,nkft1,nkft2,nkft3, DofR, tau, zeu, rec_lattice, natoms, map2atoms)
+      !
+      !
+      !
+      !
+      !
+      !
+
+      use para
+
+      !implicit none
+
+      integer :: natoms, map2atoms(natoms),nkft1,nkft2,nkft3
+      complex(Dp) :: DofR(3*natoms,3*natoms)
+      real(Dp) &
+            r(3),                               & ! irVec
+            tau(3,natoms),                       & ! atom position
+            rec_lattice(3,3),                   & ! rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi)
+            zeu(Origin_cell%Num_atoms,3,3)        ! effective charges
+      
+
+
+      !  local variables
+
+      integer :: i,j,ii,jj,na,nb, n1, n2, n3, totalnknumber                   !  loop integers
+      real(Dp) :: unitConversor, qdotr, qingrid(3)                !  
+      complex(Dp) :: sumoverq(3*natoms,3*natoms), dummy(3*natoms,3*natoms), expqdotr
+
+      unitConversor = (108.97077184367376*eV2Hartree)**2
+      
+      totalnknumber = 0
+      sumoverq = 0.0d0
+      do n1=-nkft1,nkft1
+         do n2=-nkft2,nkft2
+            do n3=-nkft3,nkft3
+               qingrid(:) = rec_lattice(:,1)*(n1)/dble(nkft1) + &
+                           rec_lattice(:,2)*(n2)/dble(nkft2)  + &
+                           rec_lattice(:,3)*(n3)/dble(nkft3)
+
+               if (abs((qingrid(1)**2+qingrid(2)**2+qingrid(3)**2)).ge.eps12)then
+                  dummy = 0.0d0
+                  qdotr = (n1)/dble(nkft1)*r(1) + (n2)/dble(nkft2)*r(2) + (n3)/dble(nkft3)*r(3)!qingrid(1)*r(1) + qingrid(2)*r(2) + qingrid(3)*r(3)
+                  call long_range_phonon_interaction(0,0,0,qingrid,.false.,1.0d0,dummy,tau,zeu,rec_lattice,natoms, map2atoms)
+                  expqdotr = cos(2d0*pi*qdotr)-zi*sin(2d0*pi*qdotr)!exp(-zi*qdotr*twopi)
+                  sumoverq = sumoverq+dummy*expqdotr
+                  totalnknumber = totalnknumber + 1
+
+               end if
+
+            end do
+         end do
+      end do
+      
+      DofR = sumoverq/dble(totalnknumber)!*2d0*(twopi)**3/Origin_cell%cellvolume
+      
+      do ii=1, 3*natoms
+         do jj=1, 3*natoms
+            i = Origin_cell%spinorbital_to_atom_index(ii)
+            j = Origin_cell%spinorbital_to_atom_index(jj)
+            
+            DofR(ii,jj) = DofR(ii,jj)/SQRT(Atom_Mass(i)*Atom_Mass(j)) 
+            !write(*,*) DofR(ii,jj)
+            !write(*,*) i,j,SQRT(Atom_Mass(i)*Atom_Mass(j)), Atom_Mass(i), Atom_Mass(j)
+         end do
+      end do
+      
+
+
+
+
+      
+      return
+   end subroutine FT_long_range_to_R
+
+
 
   subroutine ham_qlayer2qlayer2_LOTO(k,Hij)
      ! This subroutine caculates Hamiltonian between
@@ -607,7 +821,7 @@
      !> see eqn. (3) in J. Phys.: Condens. Matter 22 (2010) 202201
      complex(Dp),allocatable :: nac_correction(:, :) 
 
-     real(dp) ::  constant_t
+     real(dp) ::  constant_t, R(3)
      complex(dp), allocatable :: mat1(:, :)
      complex(dp), allocatable :: mat2(:, :)
      real(dp), allocatable :: pos_cart_ic(:, :)
@@ -639,7 +853,7 @@
      
      k3d(:) = k(1)*Cell_defined_by_surface%reciprocal_lattice(1,:) + k(2)*Cell_defined_by_surface%reciprocal_lattice(2,:) ! ESTO NO ME CONVENCE
      
-     k3d = k3d*Cell_defined_by_surface%cell_parameters(1)/(twopi)
+     k3d = k3d!*Cell_defined_by_surface%cell_parameters(1)/(twopi)
      
      if (abs((k3d(1)**2+k3d(2)**2+k3d(3)**2)).le.eps12)then  !> skip k=0
          atGamma=.true.
@@ -690,33 +904,33 @@
    !   end do
       
      Hij=0.0d0
-      R1=Cell_defined_by_surface%Rua
-      R2=Cell_defined_by_surface%Rub
-      R3=Cell_defined_by_surface%Ruc
+   !    R1=Cell_defined_by_surface%Rua
+   !    R2=Cell_defined_by_surface%Rub
+   !    R3=Cell_defined_by_surface%Ruc
 
-      !> R12_cross=R1xR2
-      call cross_product(R1, R2, R12_cross)
+   !    !> R12_cross=R1xR2
+   !    call cross_product(R1, R2, R12_cross)
 
-      !> angle of R12_cross and R3
-      angle_t= angle(R12_cross, R3)
-      angle_t= angle_t*pi/180d0
+   !    !> angle of R12_cross and R3
+   !    angle_t= angle(R12_cross, R3)
+   !    angle_t= angle_t*pi/180d0
 
-      ratio= Vacuum_thickness_in_Angstrom/cos(angle_t)/norm(R3)
-     counter = 0
+   !    ratio= Vacuum_thickness_in_Angstrom/cos(angle_t)/norm(R3)
+   !   counter = 0
      !> First check the max number of blocks in the hamiltonian matrix so as to add the long range interaction
      ! counter is the normalization factor, if the supercell is not excesively large, it should coincide with Nrpts, but just to be sure
-     do iR=1,Nrpts
-        ia=irvec(1,iR)
-        ib=irvec(2,iR)
-        ic=irvec(3,iR)
-        !> new lattice
-        call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+   !   do iR=1,Nrpts
+   !      ia=irvec(1,iR)
+   !      ib=irvec(2,iR)
+   !      ic=irvec(3,iR)
+   !      !> new lattice
+   !      call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
         
-         inew_ic= int(new_ic)
-         if (abs(new_ic).le.ijmax)then
-            counter = counter + 1
-         end if
-     end do
+   !       inew_ic= int(new_ic)
+   !       if (abs(new_ic).le.ijmax)then
+   !          counter = counter + 1
+   !       end if
+   !   end do
 
 
      do iR=1,Nrpts
@@ -724,32 +938,57 @@
         ib=irvec(2,iR)
         ic=irvec(3,iR)
 
-      
+
         !> new lattice
         call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
         
         inew_ic= int(new_ic)
         if (abs(new_ic).le.ijmax)then
-            pos_cart_ic=0d0
-            do iia=1, Origin_cell%Num_atoms
-               pos_cart_ic(:, iia)= Origin_cell%Atom_position_cart(:, iia)+ R3*(new_ic-1d0+ratio/2d0)
-            enddo
-            
-            
+            ! pos_cart_ic=0d0
+            ! do iia=1, Origin_cell%Num_atoms
+            !    pos_cart_ic(:, iia)= Origin_cell%Atom_position_cart(:, iia)+ R3*(new_ic-1d0+ratio/2d0)
+            ! enddo
+
             mat1 = 0d0
-            nac_correction= 0d0
-            call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1,  &
-                  pos_cart_ic/Origin_cell%cell_parameters(1),  &
-                  Born_Charge(:,:,:), Cell_defined_by_surface%reciprocal_lattice*Cell_defined_by_surface%cell_parameters(1)/(twopi), &
-                  Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+            !R =(/new_ia, new_ib, new_ic/)
+            ! R(1) = new_ia*Cell_defined_by_surface%lattice(1,1) + new_ib*Cell_defined_by_surface%lattice(1,2) + new_ic*Cell_defined_by_surface%lattice(1,3)
+            ! R(2) = new_ia*Cell_defined_by_surface%lattice(2,1) + new_ib*Cell_defined_by_surface%lattice(2,2) + new_ic*Cell_defined_by_surface%lattice(2,3)
+            ! R(3) = new_ia*Cell_defined_by_surface%lattice(3,1) + new_ib*Cell_defined_by_surface%lattice(3,2) + new_ic*Cell_defined_by_surface%lattice(3,3)
+
+
+            ! R = new_ia*Origin_cell%Rua + new_ib*Origin_cell%Rub + new_ic*Origin_cell%Ruc
+            ! R = R/Origin_cell%cell_parameters(1)
+
+            ! call FT_long_range_to_R(R,3,3,3,mat1,     &
+            !                         Cell_defined_by_surface%Atom_position_cart/Cell_defined_by_surface%cell_parameters(1),  &
+            !                         Born_Charge(:,:,:), Cell_defined_by_surface%reciprocal_lattice*Cell_defined_by_surface%cell_parameters(1)/(twopi), &
+            !                         Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+           
+
+
+            ! call long_range_phonon_interaction_real_space(R, Origin_cell%Atom_position_cart(:, :)/Origin_cell%cell_parameters(1), mat1, Born_Charge(:,:,:), &
+            !       Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
             
-            do ii=1,Num_wann
-               do jj=1, Num_wann
-                     pp = Origin_cell%spinorbital_to_atom_index(ii)
-                     qq = Origin_cell%spinorbital_to_atom_index(jj)
-                     nac_correction(ii,jj) = (mat1(ii,jj) + mat2(ii,jj)*(108.97077184367376*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
-               end do
-            end do
+            ! if ((ia*ia+ib*ib+ic*ic).eq.0)then
+            !    call asr_real_space(Nrpts,irvec,Origin_cell%Atom_position_cart(:, :)/Origin_cell%cell_parameters(1), mat1, Born_Charge(:,:,:), &
+            !       Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+            ! end if
+
+
+            ! mat1 = 0d0
+            ! nac_correction= 0d0
+            ! call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1,  &
+            !       pos_cart_ic/Origin_cell%cell_parameters(1),  &
+            !       Born_Charge(:,:,:), Cell_defined_by_surface%reciprocal_lattice*Cell_defined_by_surface%cell_parameters(1)/(twopi), &
+            !       Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+            
+            ! do ii=1,Num_wann
+            !    do jj=1, Num_wann
+            !          pp = Origin_cell%spinorbital_to_atom_index(ii)
+            !          qq = Origin_cell%spinorbital_to_atom_index(jj)
+            !          nac_correction(ii,jj) = (mat1(ii,jj) + mat2(ii,jj)*(108.97077184367376*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
+            !    end do
+            ! end do
 
            kdotr=k(1)*new_ia+k(2)*new_ib
            ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
@@ -757,7 +996,7 @@
 
             Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
             = Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
-            + (HmnR(:,:,iR)+nac_correction(1:Num_wann, 1:Num_wann)/counter)*ratio/ndegen(iR)  !+nac_correction(1:Num_wann, 1:Num_wann)/counter
+            + (HmnR(:,:,iR))*ratio/ndegen(iR)  !+nac_correction(1:Num_wann, 1:Num_wann)/counter
          endif
 
      enddo

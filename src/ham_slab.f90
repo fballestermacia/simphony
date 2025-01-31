@@ -24,9 +24,9 @@
      ! for LO-TO correction
      real(Dp) :: k3d(3), R1(3), R2(3), R3(3), R12_cross(3),R3_slab(3)
      real(dp) :: temp1(3), temp2, zag(3), zbg(3), keps(3) = (/eps12,eps12,0.0d0/)
-     real(dp) ::  constant_t, ratio, angle_t, volume_slab
-     integer ::  Num_atoms_slab
-     complex(dp), allocatable :: mat2(:,:)
+     real(dp) ::  constant_t, ratio, angle_t, volume_slab, R(3)
+     integer ::  Num_atoms_slab, ia, ib, ic, iR
+     complex(dp) :: mat1(Num_wann,Num_wann)
      real(dp), external :: norm, angle
      integer, allocatable :: maptoprimitive(:), orbitaltoatom(:)
      real(dp), allocatable :: pos_cart(:,:)
@@ -41,12 +41,15 @@
      allocate( Hij(-ijmax:ijmax,Num_wann,Num_wann))
      
      !mat1 = 0.0d0
-     if (LOTO_correction) then
-      call ham_qlayer2qlayer2_LOTO(k,Hij)
-     else
-      call ham_qlayer2qlayer2(k,Hij)
-     end if
+   !   if (LOTO_correction) then
+   !    call ham_qlayer2qlayer2_LOTO(k,Hij)
+   !   else
+   !    call ham_qlayer2qlayer2(k,Hij)
+   !   end if
 
+
+     call ham_qlayer2qlayer2(k,Hij)
+     
      Hamk_slab=0.0d0 
      ! i1 column index
      do i1=1, nslab
@@ -75,6 +78,7 @@
      enddo
 
      deallocate( Hij)
+     
   return
   end subroutine ham_slab
 

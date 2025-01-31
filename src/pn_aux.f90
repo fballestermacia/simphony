@@ -82,29 +82,25 @@
      use para, only : stdout, cpuid, version
      implicit none
      if (cpuid==0) then
-        write(stdout, '(a)') " ----------------------------------------------------------"
-        write(stdout, '(a)') " =========================================================="
-        write(stdout, '(a)') " =       ===  ============================================="
-        write(stdout, '(a)') " =  ====  ==  ============================================="
-        write(stdout, '(a)') " =  ====  ==  ============================================="
-        write(stdout, '(a)') " =  ====  ==  ======   ===  = ===  = ===  ===   ===  =   =="
-        write(stdout, '(a)') " =       ===    ===     ==     ==     ======  =  ==    =  ="
-        write(stdout, '(a)') " =  ========  =  ==  =  ==  =  ==  =  ==  ==     ==  ======"
-        write(stdout, '(a)') " =  ========  =  ==  =  ==  =  ==  =  ==  ==  =====  ======"
-        write(stdout, '(a)') " =  ========  =  ==  =  ==  =  ==  =  ==  ==  =  ==  ======"
-        write(stdout, '(a)') " =  ========  =  ===   ===  =  ==  =  ==  ===   ===  ======"
-        write(stdout, '(a)') " =========================================================="
+        write(stdout, '(a)') '.d88888b  oo                      dP                                  '                           
+        write(stdout, '(a)') '88.    "                          88                                  ' 
+        write(stdout, '(a)') '`Y88888b. dP 88d8b.d8b.  88d888b. 88d888b. .d8888b. 88d888b. dP    dP ' 
+        write(stdout, '(a)') '      `8b 88 88 `88 `88  88   `88 88   `88 88   `88 88   `88 88    88 ' 
+        write(stdout, '(a)') 'd8    .8P 88 88  88  88  88.  .88 88    88 88.  .88 88    88 88.  .88 ' 
+        write(stdout, '(a)') ' Y88888P  dP dP  dP  dP  88Y888P  dP    dP `88888P  dP    dP `8888P88 '
+        write(stdout, '(a)') 'oooooooooooooooooooooooo~88~oooooooooooooooooooooooooooooooooo~~~~.88~'
+        write(stdout, '(a)') '                        dP                                   d8888P   '
         write(stdout, '(a)') "                                                           "
-        write(stdout, '(a)') "               Hi! You are now using Phonnier              "
-        write(stdout, '(a,a10)') "                          Version ", version                             
-        write(stdout, '(a)') "                      I hope I can help!                   "
+        write(stdout, '(a)') "                     Hi! You are now using Simphony              "
+        write(stdout, '(a,a10)') "                      Version ", version                             
+        write(stdout, '(a)') "                          I hope I can help!                   "
         write(stdout, '(a)') "                                                           "
-        write(stdout, '(a)') "                  Author: Francesc Ballester              "
-        write(stdout, '(a)') "               Email: fballestermacia@gmail.com           "
-        write(stdout, '(a)') "               TODO: INCLUDE PAPER AND GITHUB              "
+        write(stdout, '(a)') "                        Author: Francesc Ballester              "
+        write(stdout, '(a)') "                      Email: fballestermacia@gmail.com           "
+        write(stdout, '(a)') "                      TODO: INCLUDE PAPER AND GITHUB              "
         write(stdout, '(a)') "                                                           "
-        write(stdout, '(a)') "         Now, let's start by reading your input file...    "
-        write(stdout, '(a)') " =========================================================="
+        write(stdout, '(a)') "                 Now, let's start by reading your input file...    "
+        write(stdout, '(a)') " ====================================================================="
         write(stdout, '(a)') "                                                           "
      endif
   end subroutine header
@@ -130,7 +126,7 @@
         write(stdout, '(2x,a)') ''
         write(stdout, '(2x,a)') "If you saw any bug or anything odd during execution,        "
         write(stdout, '(2x,a)') "report it at fballestermacia@gmail.com or on github                 "
-        write(stdout, '(2x,a)') "Thank you for using Phonnier!           "
+        write(stdout, '(2x,a)') "Thank you for using Simphony!           "
         write(stdout, '(2x,a)') ''
         write(stdout, '(2x,a)')  "''And then there's quantum, of course.'  The monk sighed. "
         write(stdout, '(2x,a)')  "'There's always bloody quantum.'' - Sir Terry Pratchett, Night Watch"

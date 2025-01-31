@@ -978,12 +978,15 @@
      real(dp), public, save :: Diele_Tensor(3, 3) ! di-electric tensor
      real(dp), allocatable :: Born_Charge(:, :, :)
      real(dp), allocatable :: Atom_Mass(:)
+     logical :: added_LR_in_Real_Space = .false.
 
      real(dp), parameter :: VASPToTHZ= 29.54263748d0 ! By T.T zhang
      
      !> for ASR
      logical :: perm_initialized = .false.
      integer, allocatable :: P(:)
+
+
 
 
      

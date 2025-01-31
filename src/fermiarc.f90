@@ -25,7 +25,7 @@
      integer :: spindosrfile, spindoslfile
 
      ! general loop index
-     integer :: i, j, io, ierr, nkx, nky, Nwann
+     integer :: i, j, io, ierr, nkx, nky, Nwann, iR,ia,ib,ic
 
      ! kpoint loop index
      integer :: ikp, ik1, ik2, iq, Nk1_half, Nk2_half
@@ -35,10 +35,12 @@
      real(dp) :: time_start, time_end
      real(dp) :: omega, k1min_shape, k1max_shape, k2min_shape, k2max_shape
 
-     real(dp) :: k(2)
+     real(dp) :: k(2), R(3)
      real(dp) :: s0(3), s1(3)
      real(dp) :: K2D_vec_a(2), K2D_vec_b(2)
      real(dp) :: sx_bulk, sy_bulk, sz_bulk
+
+     complex(Dp) :: mat1(Num_wann, Num_wann) 
 
      integer , allocatable :: ik12(:,:)
      real(dp), allocatable :: k12(:,:), k12_shape(:,:)
@@ -205,11 +207,25 @@
         k(2)= k12(2, ikp)
 
         call now(time1)
-        if (index(Particle,'phonon')/=0.and.LOTO_correction) then
-           call ham_qlayer2qlayer_LOTO(k,H00,H01)
-        else
-           call ham_qlayer2qlayer(k,H00,H01)
-        endif
+        if((LOTO_correction).and.(.not.added_LR_in_Real_Space))then
+            do iR=1,Nrpts
+               ia=irvec(1,iR)
+               ib=irvec(2,iR)
+               ic=irvec(3,iR)
+               R = ia*Origin_cell%Rua + ib*Origin_cell%Rub + ic*Origin_cell%Ruc
+               R = R/Origin_cell%cell_parameters(1)
+               R = irvec(:,iR)
+               mat1 = 0.0d0
+               call FT_long_range_to_R(R,11,11,11,mat1,     &
+                                       Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1),  &
+                                       Born_Charge(:,:,:), Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi), &
+                                       Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+               HmnR(:,:,iR) = HmnR(:,:,iR)+mat1!/Nrpts
+               added_LR_in_Real_Space = .true.
+            end do   
+        end if
+
+        call ham_qlayer2qlayer(k,H00,H01)
         call now(time2)
         time_q= time_q+time2-time1
 

@@ -1,11 +1,11 @@
 <a name="readme-top"></a>
-![Phonnier_Logo](images/Phonnier_Logo.png)
+![Simphony_Logo](images/Simphony_Logo.png)
 <div align="center">
 
 
 
-<h1 align="center">Welcome to Phonnier!</h3>
- <h3 align="center"><ins>Phon</ins>on Wan<ins>nier</ins></h3>
+<h1 align="center">Welcome to Simphony!</h3>
+ <h3 align="center"><ins>SIM</ins>ulated <ins>PHON</ins>on topolo<ins>Y</ins></h3>
 
 This code tries to adapt the Wannier Orbital formalism to the calculation of topological propperties of Phonon systems, with emphasis on polar materials, i.e., in the case of LO-TO splitting.
 
@@ -16,10 +16,10 @@ This code tries to adapt the Wannier Orbital formalism to the calculation of top
   <summary>Table of Contents</summary>
   <ol>
     <li>
-      <a href="#what-is-phonnier">What is Phonnier?</a>
+      <a href="#what-is-simphony">What is Simphony?</a>
     </li>
     <li>
-      <a href="#how-to-use-phonnier">How to use Phonnier</a>
+      <a href="#how-to-use-simphony">How to use Simphony</a>
     </li>
     <li>
 	<a href="#capabilities">Capabilities</a>
@@ -32,9 +32,9 @@ This code tries to adapt the Wannier Orbital formalism to the calculation of top
 
 
 
-## What is Phonnier?
+## What is Simphony?
 
-Phonnier stants for Phonnon Wannier, a code based on [WannierTools](http://www.wanniertools.com). Phonnier intends to build a Tight-Binding model for phonon systems. 
+Simphony stants for Simulated Phonon Topology, a code based on [WannierTools](http://www.wanniertools.com). Simphony intends to build a Tight-Binding model for phonon systems. 
 
 Since the maximally localized wannier functions for phonons are just delta functions (3 at each atomic position, representing directions x, y and z), the Tight-Binding Hamiltonian is based on the Dynamical Matrix that can be obtained by a previous *ab initio* calculation.
 
@@ -49,9 +49,9 @@ tag to true.
 
 On the *utility_scripts* folder you can also find some python scripts for plotting and for generating the pn.in input file.
 
-## How to use Phonnier
+## How to use Simphony
 
-Once you have installed Phonnier (see <a href="#installation">Installation</a>) and included the [bin](bin) folder in your PATH, you can run Phonnier by executing 
+Once you have installed Simphony (see <a href="#installation">Installation</a>) and included the [bin](bin) folder in your PATH, you can run Simphony by executing 
 ```
 > pn.x
 ```
@@ -69,7 +69,7 @@ Therefore, the workflow usually is to modify by hand the different tags and simu
 
 ### Input Files
 
-Phonnier only needs two input files: *pn.in* and *wannier90_hr.dat*. 
+Simphony only needs two input files: *pn.in* and *wannier90_hr.dat*. 
 
 The latter, as explained above, can be generated automatically using the [QE2TBDAT](utility_scripts/QE2TBDAT) script found on the *utility_scripts* folder. To run it, simply use
 
@@ -78,22 +78,22 @@ The latter, as explained above, can be generated automatically using the [QE2TBD
 ```
 on the folder where you hav stored your *.dyn* files. It will substract the long-range part of the dynamical matrix (if pressent) and generate a *[name]_phononTB_hr.dat*. 
 
-By default, Phonnier searches for a file named *wannier90_hr.dat* on the current directory but the filename can be changed by including the following namelist on your *pn.in* file:
+By default, Simphony searches for a file named *wannier90_hr.dat* on the current directory but the filename can be changed by including the following namelist on your *pn.in* file:
 ```
 &TB_FILE
 Hrfile = 'NAMEOFYOURhr.datFILE'
 /
 ```
 
-The former, however, tells Phonnier about the calculations you want to make and the parameters for those calculations. It also includes the relevant structure information.
+The former, however, tells Simphony about the calculations you want to make and the parameters for those calculations. It also includes the relevant structure information.
 
-A generic pn.in file can be created using the [createPhonnierInput](utility_scripts/createPhonnierInput) script, that reads the crystal structure from your *.dyn* files and writes a *pn.in* file with the main necessary parameters. It also checks wether your system incudes LO-TO correction or not and writes the dielectric tensor and the born effective charges on the input file. 
+A generic pn.in file can be created using the [createSimphonyInput](utility_scripts/createSimphonyInput) script, that reads the crystal structure from your *.dyn* files and writes a *pn.in* file with the main necessary parameters. It also checks wether your system incudes LO-TO correction or not and writes the dielectric tensor and the born effective charges on the input file. 
 
 For examples on input files, we refer to the *examples* directory.
 
 
 ## Capabilities
-Phonnier is intended to be a multipurpose tool for calculating topological quantitites and band structures of phonon systems. What follows is a non-exhaustive list of the main calculations that Phonnier is capable of performing:
+Simphony is intended to be a multipurpose tool for calculating topological quantitites and band structures of phonon systems. What follows is a non-exhaustive list of the main calculations that Simphony is capable of performing:
 <ol>
     <li> Bulk band structure </li>
     <li> Slab band structure </li>
@@ -108,7 +108,7 @@ For more details on how to perform these calculations, check the <a href="#examp
 
 ## Examples
 
-In this section, we will showcase a couple of calculations. It is reccomended that you try to replicate theese examples so as to familiarize yourself with the workflow of Phonnier and to make sure your installation is correct.
+In this section, we will showcase a couple of calculations. It is reccomended that you try to replicate theese examples so as to familiarize yourself with the workflow of Simphony and to make sure your installation is correct.
 
 ### Surface states on an Obstructed Atomic Band Representation: $\text{AgP}_2$ 
 
@@ -182,7 +182,7 @@ It should also be noted, that for these calculations, other parameters must be i
 
 ### Weyl nodes in $\text{Al}_2\text{ZnTe}_4$
 
-In the second example, we will study the Weyl nodes between the 18th and 19th bands of  $\text{Al}_2\text{ZnTe}_4$, a compound belonging to SG 82. Again, this compound is an insulator, so we need to take into account the LO-TO correction. Here, the LO-TO splitting is more prominent and since the system is not cubic, discontinuities appear at $\Gamma$, as we can see in the bands computed by Phonnier using the same procedure described in the previous example:
+In the second example, we will study the Weyl nodes between the 18th and 19th bands of  $\text{Al}_2\text{ZnTe}_4$, a compound belonging to SG 82. Again, this compound is an insulator, so we need to take into account the LO-TO correction. Here, the LO-TO splitting is more prominent and since the system is not cubic, discontinuities appear at $\Gamma$, as we can see in the bands computed by Simphony using the same procedure described in the previous example:
 
 ![alzblk](images/Al2ZnTe4Bulkek.svg)
 
@@ -206,9 +206,9 @@ Gap_threshold = 0.000001
 /
 ```
 
-The *NumOccupied* tag tells Phonnier to look between the *NumOccupied* and *NumOccupied*+1 bands for points with a gap smaller than *Gap_threshold* in a grid of *Nk1* x *Nk2* x *Nk3* points. The calculation is expensive, so a grid of 15x15x15 is more than enough for a good enough convergence. It is of note, however, that in some systems the long-range interactions might affect the result of the *FindNodes_calc* subroutine.
+The *NumOccupied* tag tells Simphony to look between the *NumOccupied* and *NumOccupied*+1 bands for points with a gap smaller than *Gap_threshold* in a grid of *Nk1* x *Nk2* x *Nk3* points. The calculation is expensive, so a grid of 15x15x15 is more than enough for a good enough convergence. It is of note, however, that in some systems the long-range interactions might affect the result of the *FindNodes_calc* subroutine.
 
-Phonnier will output a Nodes.dat file with the coordinates of these gapless points. Then, we can take those coordinates to calculate the winding number on a sphere around the Weyl nodes, by setting the *WeylChirality_calc* tag to true in the *&CONTROL* namelist. This subroutine needs the *WEYL_CHIRALITY* card, which includes the coordinates of each point around wich we will calculate the winding number.
+Simphony will output a Nodes.dat file with the coordinates of these gapless points. Then, we can take those coordinates to calculate the winding number on a sphere around the Weyl nodes, by setting the *WeylChirality_calc* tag to true in the *&CONTROL* namelist. This subroutine needs the *WEYL_CHIRALITY* card, which includes the coordinates of each point around wich we will calculate the winding number.
 
 ```
 WEYL_CHIRALITY
@@ -231,7 +231,7 @@ It should be of note how the Weyl nodes are related by the symmetries of the sys
 
 ### Prerequisites
 
-To install Phonnier you need the following
+To install Simphony you need the following
 <ol>
     <li> A Fortran compiler: gfortran or ifort </li>
     <li> Lapack and Blas libraries </li>
@@ -241,13 +241,13 @@ To install Phonnier you need the following
 
 ### Compilation
 
-To compile Phonnier, clone the repository wherever you want your installation to be, using:
+To compile Simphony, clone the repository wherever you want your installation to be, using:
 ```
-> git clone https://github.com/fballestermacia/phonnier.git
+> git clone https://github.com/fballestermacia/simphony.git
 ```
-or download the zip file directly from the [github repository](https://github.com/fballestermacia/phonnier).
+or download the zip file directly from the [github repository](https://github.com/fballestermacia/simphony).
 
-Then, on the *phonnier/src* directory, copy or rename the Makefile.* that best adjusts to your system and/or needs into a file named simply *Makefile*. 
+Then, on the *simphony/src* directory, copy or rename the Makefile.* that best adjusts to your system and/or needs into a file named simply *Makefile*. 
 
 For most satandard cases, the gfortran installation is enough, so simply by copying the appropiate makefile is enough:
 
@@ -264,14 +264,14 @@ Then run:
 Note: the makefiles are prepared for somewhat standard installations and cases, if this didn't work for your system, you might need to modify them slightly. Allthough if your installation wasn't standard, you probably knew what you were doing and don't need help when modifiying makefiles.
 
 
-Then, inside the *phonnier/bin* directory, an executable file named *pn.x* should appear. Add the *phonnier/bin* folder to your PATH by including the following line
+Then, inside the *simphony/bin* directory, an executable file named *pn.x* should appear. Add the *simphony/bin* folder to your PATH by including the following line
 
 ```
-export PATH=PATHTOYOURPHONNIERINSTALLATION/phonnier/bin:$PATH
+export PATH=PATHTOYOURSimphonyINSTALLATION/simphony/bin:$PATH
 ```
 in your *.bashrc* file in your home directory.
 
-With that, you should be ready to go! Thank you again for using Phonnier and check the <a href="#how-to-use-phonnier">How to use Phonnier</a> section for mor details.
+With that, you should be ready to go! Thank you again for using Simphony and check the <a href="#how-to-use-simphony">How to use Simphony</a> section for mor details.
 
 ## Roadmap
 

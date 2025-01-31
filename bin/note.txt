@@ -5,10 +5,10 @@ After executing
 inside the src/ directory, an executable file named "pn.x" should appear here. 
 If not already done, add this folder to your PATH by including the following line to your .bashrc file:
 
-export PATH=$HOME/bin:PATH_TO_YOUR_PHONNIER_INSTALLATION/bin:$PATH
+export PATH=$HOME/bin:PATH_TO_YOUR_Simphony_INSTALLATION/bin:$PATH
 
 and with that you should be ready to go.
 
-We have also added two simple scripts to generate the input files for Phonnier by reading a QuantumESPRESSO output.
+We have also added two simple scripts to generate the input files for Simphony by reading a QuantumESPRESSO output.
 
-Thank you for using Phonnier!
+Thank you for using Simphony!

@@ -580,10 +580,7 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk
    !
    complex(Dp) :: lrangetensor(3,natoms,3,natoms),lrangematrix(3*natoms,3*natoms)
 
-   integer :: CartToOrb(3) !map cartesian axis to orbital ordering
 
-
-   CartToOrb=(/1,2,3/)
    lrangetensor = 0d0
    lrangematrix = 0d0
 
@@ -1121,8 +1118,8 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
    
     
    q(1) = k(1)*rec_lattice(1,1) + k(2)*rec_lattice(1,2) + k(3)*rec_lattice(1,3)
-   q(2) = k(1)*rec_lattice(2,1) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
-   q(3) = k(1)*rec_lattice(3,1) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to corect units 
+   q(2) = k(1)*rec_lattice(1,2) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
+   q(3) = k(1)*rec_lattice(1,3) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to corect units 
    
    call long_range_phonon_interaction(0,0,0,q,.false.,1.0d0,Hamk_bulk,tau,zeu,rec_lattice,Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
    

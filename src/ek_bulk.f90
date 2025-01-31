@@ -17,9 +17,11 @@ subroutine ek_bulk_line
 
    implicit none
 
-   integer :: ik, il, ig, io, i, j, knv3, ierr
-   real(dp) :: emin,  emax,  k(3)
+   integer :: ik, il, ig, io, i, j, knv3, ierr,iR, ia, ib, ic
+   real(dp) :: emin,  emax,  k(3), R(3) 
    character*40 :: filename
+
+   complex(Dp) :: mat1(Num_wann, Num_wann)
 
    !> eigenvalues of H
    real(Dp), allocatable :: W(:)
@@ -60,6 +62,25 @@ subroutine ek_bulk_line
             !This ensures charge neutrality, although it shouldn't be necessary
             !call impose_ASR_on_eff_charges(Origin_cell%Num_atoms,Origin_cell%Atom_position_direct,Born_Charge)
             !
+            if(added_LR_in_Real_Space)then
+               do iR=1,Nrpts
+                  ia=irvec(1,iR)
+                  ib=irvec(2,iR)
+                  ic=irvec(3,iR)
+                  R = ia*Origin_cell%Rua + ib*Origin_cell%Rub + ic*Origin_cell%Ruc
+                  R = R/Origin_cell%cell_parameters(1)
+                  R = irvec(:,iR)
+                  mat1 = 0.0d0
+                  call FT_long_range_to_R(R,11,11,11,mat1,     &
+                                          Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1),  &
+                                          Born_Charge(:,:,:), Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi), &
+                                          Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+                  
+                  HmnR(:,:,iR) = HmnR(:,:,iR)-mat1!/Nrpts
+                  added_LR_in_Real_Space = .false.
+               end do   
+               
+            end if
             call ham_bulk_LOTO(k, Hamk_bulk)
          else
             call ham_bulk_latticegauge(k, Hamk_bulk)

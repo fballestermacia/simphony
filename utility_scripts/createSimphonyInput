@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 """
-This code generates an input file 'pn.in' which is an input of Phonnier.
+This code generates an input file 'pn.in' which is an input of Simphony.
 Inputs are output files from Quantum Espresso. Mainly the 'name.dat{0,1,2,...}' files, which are read and parsed using SSCHA's CellConstructor.
 
 Usage:
-createPhonnierInput PathTo/name.dyn N_irr_q
+createSimphonyInput PathTo/name.dyn N_irr_q
 
 """
 
@@ -28,12 +28,12 @@ if __name__ == '__main__':
     try:
         dynprefix = str(sys.argv[1])
     except IndexError:
-        raise IndexError('Missing file name name.dyn. Usage: \'createPhonnierInput PathTo/name.dyn N_irr_q\'')
+        raise IndexError('Missing file name name.dyn. Usage: \'createSimphonyInput PathTo/name.dyn N_irr_q\'')
 
     try:
         nqirrs = int(sys.argv[2])
     except IndexError:
-        raise IndexError('Missing number of irreducible q points N_irr_q. Usage: \'createPhonnierInput PathTo/name.dyn N_irr_q\'')
+        raise IndexError('Missing number of irreducible q points N_irr_q. Usage: \'createSimphonyInput PathTo/name.dyn N_irr_q\'')
     
     prefix = dynprefix.split('.dyn')[0]
 

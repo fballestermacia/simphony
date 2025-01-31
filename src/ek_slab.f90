@@ -33,6 +33,12 @@
      ! hamiltonian slab
      complex(Dp),allocatable ::CHamk(:,:)
 
+
+     ! test for loto
+     integer :: iR,ia,ib,ic
+     real(Dp) :: R(3)
+     complex(Dp) :: mat1(Num_wann,Num_wann)
+
      lwork= 16*Nslab*Num_wann
      ierr = 0
 
@@ -61,6 +67,26 @@
      call now(time_start0)
      time_start= time_start0
      time_end  = time_start0
+
+     if((LOTO_correction).and.(.not.added_LR_in_Real_Space))then
+         do iR=1,Nrpts
+            ia=irvec(1,iR)
+            ib=irvec(2,iR)
+            ic=irvec(3,iR)
+            R = ia*Origin_cell%Rua + ib*Origin_cell%Rub + ic*Origin_cell%Ruc
+            R = R/Origin_cell%cell_parameters(1)
+            R = irvec(:,iR)
+            mat1 = 0.0d0
+            call FT_long_range_to_R(R,11,11,11,mat1,     &
+                                    Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1),  &
+                                    Born_Charge(:,:,:), Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi), &
+                                    Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+            HmnR(:,:,iR) = HmnR(:,:,iR)+mat1!/Nrpts
+            added_LR_in_Real_Space = .true.
+         end do   
+         
+      end if
+
      do i= 1+cpuid, knv2, num_cpu
         if (cpuid==0.and. mod(i/num_cpu, 4)==0) &
            write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
@@ -72,9 +98,9 @@
 
         k= k2_path(i, :)
         chamk=0.0d0 
-
+      
         call ham_slab(k,Chamk)
-
+        
 
         eigenvalue=0.0d0
 
@@ -112,6 +138,7 @@
           !enddo ! l
         enddo ! j 
         call now(time_end)
+        
      enddo ! i
 
 #if defined (MPI)
@@ -128,7 +155,7 @@
 #endif
 
      
- 
+      
      !> deal with phonon system
      if (index(Particle,'phonon')/=0) then
         do i=1, knv2
@@ -137,6 +164,7 @@
            enddo
         enddo
      endif
+     
      ekslab_mpi= ekslab_mpi/eV2Hartree
 
      ekslab=ekslab_mpi

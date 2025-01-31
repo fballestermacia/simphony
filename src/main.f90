@@ -1,5 +1,5 @@
 ! #####################################################################
-! Main program of the Phonnier code.
+! Main program of the Simphony code.
 ! Tight-binding software for phonon systems based on WannierTools. 
 ! Tight-binding formated as wannier90_hr.dat files, defined in Wannier90 software package.
 ! See examples forlder for details.
@@ -32,7 +32,7 @@
      real(Dp) :: time_start, time_end, time_init
 
 
-     !> version of Phonnier
+     !> version of Simphony
      version='1.0.0'
 
      ierr = 0
