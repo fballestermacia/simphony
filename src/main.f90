@@ -33,7 +33,7 @@
 
 
      !> version of Simphony
-     version='1.0.0'
+     version='1.1.0'
 
      ierr = 0
      cpuid= 0
