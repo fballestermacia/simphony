@@ -1,0 +1,170 @@
+&TB_FILE
+Hrfile = 'Al2Te4Zn1_phononTB_hr.dat'
+/
+
+&CONTROL
+!> LO-TO correction (if True, long range part of Dynamical matrix must be removed from phononTB_hr.dat)
+LOTO_correction       = T !T
+
+!> bulk band structure calculation flags
+BulkBand_calc         = F !T
+BulkGap_cube_calc     = F
+BulkGap_plane_calc    = F
+BulkFS_calc           = F 
+
+!> slab band structure calculation flags
+SlabBand_calc         = T !T
+SlabSS_calc           = F !T
+SlabArc_calc          = F !T
+
+!> wire band structure calculation flags
+WireBand_calc         = F
+
+!> DOS and JDOS calculation flags
+Dos_calc              = F
+JDos_calc             = F
+
+!> Topological quantities calculation flags
+FindNodes_calc        = F !T
+BerryPhase_calc       = F
+BerryCurvature_calc   = F
+Chern_3D_calc         = F
+Z2_3D_calc            = F
+Wanniercenter_calc    = F !T
+WeylChirality_calc    = F !T
+/
+
+ATOMS
+7
+Direct                          ! Direct or Cartesiann coordinate
+Al1    26.981538       0.7500000000       0.2500000000       0.5000000000 
+Al2    26.981538       0.5000000000       0.5000000000       0.0000000000 
+Zn1    65.38           0.0000000000       0.0000000000       0.0000000000 
+Te1    127.6           0.3676551200       0.4026547000       0.5016418600 
+Te2    127.6           0.5973453000       0.0989871600       0.9650004200 
+Te3    127.6           0.1339867400       0.6323448800       0.0349995800 
+Te4    127.6           0.9010128400       0.8660132600       0.4983581400
+
+
+WEYL_CHIRALITY
+4          ! Num_Weyls
+Direct     ! Direct or Cartesian coordinate
+0.00001       ! Radius of the ball surround a Weyl point
+ 0.40836109   -0.40491678   -0.09378520
+-0.40836104    0.40491685    0.09378513
+-0.11256878    0.06227720   -0.38968016
+ 0.11256874   -0.06227727    0.38968020
+
+&SYSTEM
+NSLAB = 10
+NumOccupied = 18      ! NumOccupied
+/
+
+&PARAMETERS
+Eta_Arc = 0.003    ! infinite small value, like brodening. Too small a value leads to singularities in the Green Function
+E_arc = 9.100    ! energy for calculate Fermi Arc, THz
+OmegaNum = 400     ! omega number
+OmegaMin =  7.5      ! energy interval in unit of THz
+OmegaMax =  10.5     ! energy interval in unit of THz
+Nk1 = 80           ! number k points
+Nk2 = 80           ! number k points
+Nk3 = 80          ! number k points
+NP = 4             ! number of principle layers
+Gap_threshold = 0.0000001 ! threshold for GapCube output
+/
+
+KPLANE_SLAB
+-0.5  -0.5      ! Original point for 2D k plane
+1.0  0.0      ! The first vector to define 2D k plane
+0.0  1.0      ! The second vector to define 2D k plane  for arc plots
+
+KPLANE_BULK
+-0.50  -0.50  -0.50   ! Original point for 3D k plane
+0.00  1.00  0.00   ! The first vector to define 3d k space plane
+0.00  0.00  1.00   ! The second vector to define 3d k space plane
+
+KCUBE_BULK
+-0.50  -0.50  -0.50   ! Original point for 3D k plane
+1.00  0.00  0.00   ! The first vector to define 3d k space plane
+0.00  1.00  0.00   ! The second vector to define 3d k space plane
+0.00  0.00  1.00   ! The third vector to define 3d k cube
+
+LATTICE
+Angstrom
+     -2.9854564100       2.9854564100       5.8814511050
+      2.9854564100      -2.9854564100       5.8814511050
+      2.9854564100       2.9854564100      -5.8814511050
+
+
+SURFACE
+0 1 1
+1 0 1
+
+
+KPATH_SLAB
+5
+G 0.0 0.0 X 0.5 0.0
+X 0.5 0.0 M 0.5 0.5
+M 0.5 0.5 Y 0.0 0.5
+Y 0.0 0.5 G 0.0 0.0
+G 0.0 0.0 M 0.5 0.5
+
+
+
+KPATH_BULK
+7
+P  0.250000  0.250000  0.250000     N  0.000000  0.500000  0.000000
+N  0.000000  0.500000  0.000000     G  0.000000  0.000000  0.000000
+G  0.000000  0.000000  0.000000     M1  0.500000  0.500000 -0.500000
+M2 -0.500000 -0.500000  0.500000     G  0.000000  0.000000  0.000000
+G  0.000000  0.000000  0.000000     X1  0.000000  0.000000  0.500000
+X1  0.000000  0.000000  0.500000     P  0.250000  0.250000  0.250000
+M  0.500000  0.500000  -0.500000    X2  0.000000   0.000000  -0.500000
+
+
+
+
+
+
+LOTO_DT
+          8.778390943438          0.000000007806          0.000000000000
+         -0.000000007806          8.778390943438         -0.000000000000
+          0.000000000000          0.000000000000          8.829776626456
+
+
+LOTO_BC
+      0.223522029685E+01      0.544701068795E-01      0.636321219978E-16
+     -0.544701068795E-01      0.223522029685E+01      0.911189869364E-16
+      0.343582355733E-16      0.343582355733E-16      0.269325544369E+01
+      0.242579940074E+01     -0.468704809087E+00      0.363942240254E-16
+      0.468704809087E+00      0.242579940074E+01     -0.723158746650E-16
+      0.141228455437E-16     -0.968994569188E-16      0.231770869239E+01
+      0.211351596546E+01      0.272340050738E+00      0.293940627970E-15
+     -0.272340050738E+00      0.211351596546E+01      0.292597126302E-15
+      0.351950261673E-14     -0.332110620703E-16      0.190092102461E+01
+     -0.178526424139E+01     -0.413344682794E+00      0.424514950534E+00
+     -0.484308046872E+00     -0.159693870465E+01     -0.429793509147E+00
+      0.458752458466E+00     -0.377316645592E+00     -0.172548520441E+01
+     -0.159693870465E+01      0.484308046872E+00      0.429793509147E+00
+      0.413344682794E+00     -0.178526424139E+01      0.424514950534E+00
+      0.377316645592E+00      0.458752458466E+00     -0.172548520441E+01
+     -0.159693870465E+01      0.484308046872E+00     -0.429793509147E+00
+      0.413344682794E+00     -0.178526424139E+01     -0.424514950534E+00
+     -0.377316645592E+00     -0.458752458466E+00     -0.172548520441E+01
+     -0.178526424139E+01     -0.413344682794E+00     -0.424514950534E+00
+     -0.484308046872E+00     -0.159693870465E+01      0.429793509147E+00
+     -0.458752458466E+00      0.377316645592E+00     -0.172548520441E+01
+
+
+
+
+
+
+
+
+
+
+
+
+
+

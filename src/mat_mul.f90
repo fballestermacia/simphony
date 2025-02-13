@@ -13,7 +13,7 @@
  
      complex(Dp), intent(in)  :: A(nmatdim ,nmatdim)
      complex(Dp), intent(in)  :: B(nmatdim ,nmatdim)
-     complex(Dp), intent(out) :: C(nmatdim,nmatdim)
+     complex(Dp), intent(out) :: C(nmatdim ,nmatdim)
 
      ALPHA=1.0d0 
      BETA=0.0D0

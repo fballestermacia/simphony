@@ -13,6 +13,21 @@ examples/AgP2/*
 !examples/AgP2/pn.in
 !examples/AgP2/AgP2_phononTB_hr.dat
 
+
+!examples/Al2ZnTe4
+
+examples/Al2ZnTe4/* 
+!examples/Al2ZnTe4/pn.in
+!examples/Al2ZnTe4/Al2ZnTe4_phononTB_hr.dat
+
+
+!examples/BHL
+
+examples/BHL/*
+!examples/BHL/pn.in
+!examples/BHL/BHL_phononTB_hr.dat
+
+
 # Ignore most of the scripts in the utility folder
 *.py
 

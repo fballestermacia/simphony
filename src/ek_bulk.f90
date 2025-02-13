@@ -17,7 +17,7 @@ subroutine ek_bulk_line
 
    implicit none
 
-   integer :: ik, il, ig, io, i, j, knv3, ierr,iR, ia, ib, ic
+   integer :: ik, il, ig, io, i, j, knv3, ierr,iR, ia, ib, ic,ii,jj
    real(dp) :: emin,  emax,  k(3), R(3) 
    character*40 :: filename
 
@@ -27,11 +27,13 @@ subroutine ek_bulk_line
    real(Dp), allocatable :: W(:)
 
    ! Hamiltonian of bulk system
-   complex(Dp), allocatable :: Hamk_bulk(:, :)
+   complex(Dp), allocatable :: Hamk_bulk(:, :), eigvatHSP(:,:,:)
 
-   ! eigenectors of H
+   ! eigenvectors of H
    real(dp), allocatable :: eigv(:,:), eigv_mpi(:,:)
    real(dp), allocatable :: weight(:,:,:), weight_mpi(:,:,:), weight_sum(:,:)
+   
+   integer, allocatable :: hspindices(:)
 
    knv3= nk3_band
    allocate(W(Num_wann))
@@ -41,6 +43,8 @@ subroutine ek_bulk_line
    allocate( weight    (NumberofSelectedOrbitals_groups,Num_wann, knv3))
    allocate( weight_mpi(NumberofSelectedOrbitals_groups,Num_wann, knv3))
    allocate( weight_sum(Num_wann, knv3))
+   allocate( eigvatHSP(Nk3lines,Num_wann,Num_wann))
+   allocate(hspindices(Nk3lines))
    W       = 0d0; Hamk_bulk = 0d0
    eigv    = 0d0; eigv_mpi= 0d0
    weight  = 0d0; weight_sum = 0d0; weight_mpi = 0d0
@@ -94,6 +98,16 @@ subroutine ek_bulk_line
       call eigensystem_c('V', 'U', Num_wann ,Hamk_bulk, W)
       eigv(:, ik)= W
       
+      !k3line_start(3,nk3lines)
+      if (Write_eigenstates_at_HSP) then
+         do ii=1,nk3lines
+            if ((k(1).eq.k3line_start(1,ii)).and.(k(2).eq.k3line_start(2,ii)).and.(k(3).eq.k3line_start(3,ii)))then
+               eigvatHSP(ii,:,:) = Hamk_bulk(:,:)
+               hspindices(ii) = ik
+            end if
+         end do
+      end if
+
       
       do j= 1, Num_wann  !> band
            do ig= 1, NumberofSelectedOrbitals_groups
@@ -151,6 +165,21 @@ subroutine ek_bulk_line
          enddo ! i
          close(outfileindex)
       enddo ! il
+
+      if (Write_eigenstates_at_HSP) then
+         open(unit=147, file='bulkeig.dat',status='unknown')
+         write(147, *) nk3lines
+         do ii=1,nk3lines
+            write(147, *) k3points(:,hspindices(ii))
+            do j=1, Num_wann  !< bands
+               write(147, *) j, eigv_mpi(j,hspindices(ii)),eigvatHSP(ii,:,j)
+            end do
+         end do
+         write(147, '(a)') ''
+         close(147)
+      end if
+
+
    endif
 
    outfileindex= outfileindex+ nk3lines+1
@@ -198,6 +227,7 @@ subroutine ek_bulk_line
    deallocate( weight    )
    deallocate( weight_mpi)
    deallocate( weight_sum)
+   deallocate(eigvatHSP)
 
    return
 end subroutine ek_bulk_line

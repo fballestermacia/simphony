@@ -1,0 +1,100 @@
+!> Input file written automatically on 2024-12-20 08:38:45.291228 by F. B. 
+&TB_FILE
+Hrfile = 'BHL_phononTB_hr.dat'
+/
+ 
+&CONTROL
+!> LO-TO correction (if True, long range part of Dynamical matrix must be removed from phononTB_hr.dat)
+LOTO_correction       = F
+
+!> bulk band structure calculation flags
+BulkBand_calc         = T
+BulkGap_cube_calc     = F
+BulkGap_plane_calc    = F
+BulkFS_calc           = F
+
+!> slab band structure calculation flags
+SlabBand_calc         = F
+SlabSS_calc           = F
+SlabArc_calc          = F
+
+!> wire band structure calculation flags
+WireBand_calc         = T
+
+!> DOS and JDOS calculation flags
+Dos_calc              = F
+JDos_calc             = F
+
+!> Topological quantities calculation flags
+FindNodes_calc        = F
+BerryPhase_calc       = F
+BerryCurvature_calc   = F
+Chern_3D_calc         = F
+Z2_3D_calc            = F
+Wanniercenter_calc    = T
+WeylChirality_calc    = F
+/
+ 
+&SYSTEM 
+NSLAB1 = 40
+NSLAB2 = 1
+NumOccupied = 4      !>Index of band taken into account for the calculations
+/
+
+
+&PARAMETERS 
+Nk1 = 150           !>number k points 
+Nk2 = 150           !>number k points 
+/
+
+
+LATTICE
+Angstrom
+        2.1304224900            1.230000000              0.0000000000
+       -2.1304224900            1.230000000              0.0000000000
+        0.0000000000            0.0000000000             6.7100000000
+
+
+ATOMS
+2
+Direct
+C     1              0.3333333333333333  0.6666666666666666  0.5000000000000000
+C     1              0.6666666666666666  0.3333333333333333  0.5100000000000000
+
+ 
+KPATH_BULK
+3
+G 0.000   0.000   0.000  K 0.33333333   0.666666666   0.00000000
+K 0.33333333   0.666666666   0.00000000  M 0.000   0.500   0.000
+M 0.000   0.500   0.000  G 0.000   0.000   0.000
+
+ 
+MILLER_INDEX        ! this is equal to the SURFACE card
+1 0 0
+
+
+KPATH_SLAB
+2
+X 0.5 0.0 G 0.0 0.0
+G 0.0 0.0 X 0.5 0.0
+
+
+
+KPLANE_SLAB
+-0.5 -0.5
+1.0 0.0
+0.0 1.0
+
+
+KPLANE_BULK
+-0.00 -0.00 -0.00
+1.00 0.00 0.00
+0.00 1.00 0.00
+
+
+KCUBE_BULK
+-0.00 -0.00 -0.00
+1.00 0.00 0.00
+0.00 1.00 0.00
+0.00 0.00 1.00
+

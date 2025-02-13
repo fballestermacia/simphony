@@ -28,7 +28,7 @@ subroutine readinput
    integer, allocatable :: iarray_temp(:)
 
    real(dp) :: t1, temp
-   real(dp) :: pos(3), k1(3), k2(3), k(3), kstart(3), kend(3)
+   real(dp) :: pos(3), k1(3), k2(3), k(3), kstart(3), kend(3), dummy1(3,3), dummy2(3,3), metric(3,3), smallh(3), bigH(3), dummyvol
    real(dp) :: R1(3), R2(3), R3(3), Rt(3), Rt2(3)
    real(dp), external :: norm, angle
 
@@ -38,7 +38,7 @@ subroutine readinput
    inquire(file=fname,exist=exists)
    if (exists)then
       if(cpuid==0)write(stdout,*) '  '
-      if(cpuid==0)write(stdout,*) '>>>Read some paramters from pn.in'
+      if(cpuid==0)write(stdout,*) '>>>Read some parameters from pn.in'
       open(unit=1001,file=fname,status='old')
    else
       if(cpuid==0)write(stdout,*)'file' ,fname, 'does not exist'
@@ -137,6 +137,7 @@ subroutine readinput
    !EffectiveMass_calc    = .FALSE.
    FindNodes_calc        = .FALSE.
    LOTO_correction       = .FALSE.
+   Write_eigenstates_at_HSP = .FALSE.
    !Boltz_OHE_calc        = .FALSE.
    !Boltz_Berry_correction= .FALSE.
    !AHC_calc              = .FALSE.
@@ -195,6 +196,7 @@ subroutine readinput
       write(*, *)"WeylChirality_calc"
       write(*, *)"NLChirality_calc"
       write(*, *)"LOTO_correction"
+      write(*, *)"Write_eigenstates_at_HSP"
       !write(*, *)"AHC_calc"
       !write(*, *)"SHC_calc"
       !write(*, *)"Hof_Butt_calc"
@@ -278,6 +280,7 @@ subroutine readinput
       !write(stdout, *) "Boltz_OHE_calc                    : ", Boltz_OHE_calc
       !write(stdout, *) "Boltz_Berry_correction            : ", Boltz_Berry_correction
       write(stdout, *) "LOTO_correction                   : ", LOTO_correction
+      write(stdout, *) "Write_eigenstates_at_HSP          : ", Write_eigenstates_at_HSP
       !write(stdout, *) "OrbitalTexture_calc               : ", OrbitalTexture_calc
       !write(stdout, *) "OrbitalTexture_3D_calc            : ", OrbitalTexture_3D_calc
       !write(stdout, *) "LandauLevel_k_calc                : ", LandauLevel_k_calc
@@ -335,8 +338,8 @@ subroutine readinput
    !> by default we don't set the center atom
    !center_atom_for_electric_field = -1
 
-   !> by default, Vacuum_thickness_in_Angstrom= 20 Angstrom
-   Vacuum_thickness_in_Angstrom = 20d0
+   !> by default, Vacuum_thickness_in_Angstrom= 40 Angstrom
+   Vacuum_thickness_in_Angstrom = 70d0
 
    !> read system parameters from file
    read(1001, SYSTEM, iostat=stat)
@@ -1510,6 +1513,7 @@ subroutine readinput
       call MillerIndicestoumatrix()
    endif
 
+   
 !===============================================================================================================!
 !> SURFACE card
 !===============================================================================================================!
@@ -1550,11 +1554,79 @@ subroutine readinput
       !> R3'=U31*R1+U32*R2+U33*R3
       read(1001, *)Umatrix(1, :)
       read(1001, *)Umatrix(2, :)
-
       Umatrix(3,:)=(/0.0,0.0,1.0/)
       read(1001, *, err=260, iostat=stat)Umatrix(3, :)
 
 260   continue
+
+      !> check whether Umatrix is right
+      !> the volume of the new cell should be the same as the old ones
+      !> Here R1, R2, R3 are vectors defined by SURFACE CARD in original cartesian coordinates
+      R1= Umatrix(1, 1)*Origin_cell%Rua+ Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
+      R2= Umatrix(2, 1)*Origin_cell%Rua+ Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
+      !R3= Umatrix(3, 1)*Origin_cell%Rua+ Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
+
+      metric = 0.0d0
+      dummy1 = 0.0d0
+      dummy2 = 0.0d0
+      
+      
+      dummy1(1,:) = Origin_cell%Rua
+      dummy1(2,:) = Origin_cell%Rub
+      dummy1(3,:) = Origin_cell%Ruc
+
+      dummy2(:,1) = Origin_cell%Rua
+      dummy2(:,2) = Origin_cell%Rub
+      dummy2(:,3) = Origin_cell%Ruc
+      !write(*,*) dummy1
+      !write(*,*) dummy2
+      !call mat_mul(3,dummy1,dummy2,metric)
+
+      metric = MATMUL(dummy1,dummy2)
+
+      dummyvol = 0.0d0
+      dummyvol = metric(1,1)*(metric(2,2)*metric(3,3)-metric(3,2)*metric(2,3)) &
+               +metric(2,1)*(metric(3,2)*metric(1,3)-metric(1,2)*metric(3,3)) &
+               +metric(3,1)*(metric(1,2)*metric(2,3)-metric(2,2)*metric(1,3))
+      dummyvol = sqrt(dummyvol)
+
+      smallh = 0.0d0
+      call cross_product(Umatrix(1, :),Umatrix(2, :), smallh)
+
+      metric = TRANSPOSE(metric)
+      
+
+      call inv_r(3,metric)
+
+
+      bigH = 0.0d0
+      bigH(1) = metric(1,1)*smallh(1) + metric(1,2)*smallh(2) + metric(1,3)*smallh(3)
+      bigH(2) = metric(2,1)*smallh(1) + metric(2,2)*smallh(2) + metric(2,3)*smallh(3)
+      bigH(3) = metric(3,1)*smallh(1) + metric(3,2)*smallh(2) + metric(3,3)*smallh(3)
+
+
+      smallh = dummyvol*bigH/dummyvol**(1.0/3.0)
+
+
+      R3 = (smallh(1)*Origin_cell%Rua+ smallh(2)*Origin_cell%Rub+ smallh(3)*Origin_cell%Ruc)
+
+
+      cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+         +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+         +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
+
+      R3 = R3/(cell_volume2/Origin_cell%CellVolume)
+
+      cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+         +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+         +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
+
+      call inv_r(3,dummy1)
+      Umatrix(3,1) = dummy1(1,1)*R3(1) + dummy1(1,2)*R3(2) + dummy1(1,3)*R3(3)
+      Umatrix(3,2) = dummy1(2,1)*R3(1) + dummy1(2,2)*R3(2) + dummy1(2,3)*R3(3)
+      Umatrix(3,3) = dummy1(3,1)*R3(1) + dummy1(3,2)*R3(2) + dummy1(3,3)*R3(3)
+
+      Umatrix(3,:) = Umatrix(3,:)*2.0d0
 
       if (cpuid==0) then
          write(stdout, '(a)')' '
@@ -1580,8 +1652,8 @@ subroutine readinput
    R3= Umatrix(3, 1)*Origin_cell%Rua+ Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
 
    cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
-      +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
-      +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
+                +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+                +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
 
    if (cell_volume2<0) then
       R3=-R3
@@ -1590,17 +1662,88 @@ subroutine readinput
 
    if (abs(abs(cell_volume2)-abs(Origin_cell%CellVolume))> 0.001d0.and.cpuid==0) then
       write(stdout, '(a)')' '
-      write(stdout, '(2a)')' Warnning: The Umatrix is wrongly set, the new cell', &
+      write(stdout, '(2a)')' Warning: The Umatrix is wrongly set, the new cell', &
          'volume should be the same as the old ones. '
       write(stdout, '(a,2f10.4)')' cell_volume vs cell_volume-new', Origin_cell%CellVolume, cell_volume2
       write(stdout, '(a)')" However, don't worry, Simphony will help you to find a suitable rotation matrix."
-      write(stdout, '(a)')" I am looking for new unit cell atuomatically: "
+      write(stdout, '(a)')" I am looking for new unit cell automatically: "
    endif
    if (abs(abs(cell_volume2)-abs(Origin_cell%CellVolume))> 0.001d0) then
-      call FindTheThirdLatticeVector()
-      R1= Umatrix(1, 1)*Origin_cell%Rua+ Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
-      R2= Umatrix(2, 1)*Origin_cell%Rua+ Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
-      R3= Umatrix(3, 1)*Origin_cell%Rua+ Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
+      !call FindTheThirdLatticeVector()
+      metric = 0.0d0
+      dummy1 = 0.0d0
+      dummy2 = 0.0d0
+      
+      
+      dummy1(1,:) = Origin_cell%Rua
+      dummy1(2,:) = Origin_cell%Rub
+      dummy1(3,:) = Origin_cell%Ruc
+
+      dummy2(:,1) = Origin_cell%Rua
+      dummy2(:,2) = Origin_cell%Rub
+      dummy2(:,3) = Origin_cell%Ruc
+      !write(*,*) dummy1
+      !write(*,*) dummy2
+      !call mat_mul(3,dummy1,dummy2,metric)
+
+      metric = MATMUL(dummy1,dummy2)
+
+      dummyvol = 0.0d0
+      dummyvol = metric(1,1)*(metric(2,2)*metric(3,3)-metric(3,2)*metric(2,3)) &
+               +metric(2,1)*(metric(3,2)*metric(1,3)-metric(1,2)*metric(3,3)) &
+               +metric(3,1)*(metric(1,2)*metric(2,3)-metric(2,2)*metric(1,3))
+      dummyvol = sqrt(dummyvol)
+
+      smallh = 0.0d0
+      call cross_product(Umatrix(1, :),Umatrix(2, :), smallh)
+
+      metric = TRANSPOSE(metric)
+      
+
+      call inv_r(3,metric)
+
+
+      bigH = 0.0d0
+      bigH(1) = metric(1,1)*smallh(1) + metric(1,2)*smallh(2) + metric(1,3)*smallh(3)
+      bigH(2) = metric(2,1)*smallh(1) + metric(2,2)*smallh(2) + metric(2,3)*smallh(3)
+      bigH(3) = metric(3,1)*smallh(1) + metric(3,2)*smallh(2) + metric(3,3)*smallh(3)
+
+
+      smallh = dummyvol*bigH/dummyvol**(1.0/3.0)
+
+
+      R3 = (smallh(1)*Origin_cell%Rua+ smallh(2)*Origin_cell%Rub+ smallh(3)*Origin_cell%Ruc)
+
+
+      cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+         +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+         +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
+
+      R3 = R3/(cell_volume2/Origin_cell%CellVolume)
+
+      cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+         +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+         +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
+
+      call inv_r(3,dummy1)
+      Umatrix(3,1) = dummy1(1,1)*R3(1) + dummy1(1,2)*R3(2) + dummy1(1,3)*R3(3)
+      Umatrix(3,2) = dummy1(2,1)*R3(1) + dummy1(2,2)*R3(2) + dummy1(2,3)*R3(3)
+      Umatrix(3,3) = dummy1(3,1)*R3(1) + dummy1(3,2)*R3(2) + dummy1(3,3)*R3(3)
+
+      write(stdout, '(a)')'  Congratulations, you got a unit cell that has ', &
+         ' the same volume as the original unit cell '
+      write(stdout, '(a)')' The unitary rotation matrix is : '
+      write(stdout, '(3f10.3)')Umatrix(1,:)
+      write(stdout, '(3f10.3)')Umatrix(2,:)
+      write(stdout, '(3f10.3)')Umatrix(3,:)
+
+      write(stdout, '(a)')' '
+      write(stdout, '(a)')'The lattice vectors for new cell are : '
+      write(stdout, '(a,3f10.3)')' R1=', R1
+      write(stdout, '(a,3f10.3)')' R2=', R2
+      write(stdout, '(a,3f10.3)')' R3=', R3
+      write(stdout, '(a)')' Where R1 and R2 are in (hkl) plane'
+
       if (cpuid==0) then
          write(stdout, '(a)')' '
          write(stdout, '(a)')'>> New SURFACE CARD:'
@@ -2168,7 +2311,7 @@ subroutine readinput
    if (.not.lfound .and.(SlabBand_calc .or. SlabSS_calc)) then
       stop 'ERROR: please set KPATH_SLAB for slab band stOrigin_cell%Ructure calculation'
    endif
-
+   
 
    !> read kplane_slab information
    !> default value for KPLANE_SLAB
@@ -4081,7 +4224,7 @@ subroutine MillerIndicestoumatrix()
       enddo
    enddo l1
 
-   !> The last step, find the third vector that makes the new unit cell has
+   !> The last step, find the third vector that makes the new unit cell have
    !> the same volume as the old unit cell
    smallest_volume= 9999999d0
    R1= Umatrix(1, 1)*Origin_cell%Rua+  Umatrix(1, 2)*Origin_cell%Rub+  Umatrix(1, 3)*Origin_cell%Ruc

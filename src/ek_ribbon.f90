@@ -58,6 +58,7 @@
      ! hamiltonian slab
      complex(Dp),allocatable ::z(:,:)
      complex(Dp),allocatable ::CHamk(:,:)
+     complex(Dp),allocatable ::eigenstatesperhsp(:,:,:)
 
 
      Ndim1=Num_wann*nslab1*nslab2
@@ -67,6 +68,7 @@
      allocate(ekribbon_mpi(Ndim1,Nk1))
      allocate(z(Ndim1,Ndim1))
      allocate(CHamk(Ndim1,Ndim1))
+     allocate(eigenstatesperhsp(2,Ndim1,Ndim1))
      allocate(rwork(7*Ndim1))
      allocate(work(lwork))
      allocate(iwork(5*Ndim1))
@@ -110,6 +112,16 @@
         !mdim,eigenvalue,z,Ndim1,work,lwork,rwork,iwork,ifail,info)
 
         ekribbon(:,i)=eigenvalue
+
+        if (Write_eigenstates_at_HSP) then
+         if ((k.eq.0.0d0))then
+            eigenstatesperhsp(1,:,:) = CHamk(:,:)
+         end if
+         if ((k.eq.0.5d0))then
+            eigenstatesperhsp(2,:,:) = CHamk(:,:)
+         end if
+        end if
+            
 
         do j=1, Nslab1* Nslab2* Num_wann  !< bands
            do m=1, Nslab2
@@ -161,6 +173,20 @@
         enddo 
      
         close(100)
+
+        if (Write_eigenstates_at_HSP) then
+         open(unit=137, file='ribboneig.dat',status='unknown')
+         write(137, '(a)') '0.0'
+         do j=1, Nslab1* Nslab2* Num_wann  !< bands
+            write(137, *) j, ekribbon_mpi(j,1),eigenstatesperhsp(1,:,j)
+         end do
+         write(137, '(a)') ''
+         write(137, '(a)') '0.5'
+         do j=1, Nslab1* Nslab2* Num_wann  !< bands
+            write(137, *) j,ekribbon_mpi(j,size(ekribbon_mpi,dim=2)), eigenstatesperhsp(2,:,j)
+         end do
+         close(137)
+        end if
         write(stdout,*) 'calculate energy band  done'
      endif
 
