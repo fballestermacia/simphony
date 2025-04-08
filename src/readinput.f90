@@ -339,7 +339,7 @@ subroutine readinput
    !center_atom_for_electric_field = -1
 
    !> by default, Vacuum_thickness_in_Angstrom= 40 Angstrom
-   Vacuum_thickness_in_Angstrom = 70d0
+   Vacuum_thickness_in_Angstrom = 40d0
 
    !> read system parameters from file
    read(1001, SYSTEM, iostat=stat)
@@ -1559,13 +1559,16 @@ subroutine readinput
 
 260   continue
 
+      
+
       !> check whether Umatrix is right
       !> the volume of the new cell should be the same as the old ones
       !> Here R1, R2, R3 are vectors defined by SURFACE CARD in original cartesian coordinates
       R1= Umatrix(1, 1)*Origin_cell%Rua+ Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
       R2= Umatrix(2, 1)*Origin_cell%Rua+ Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
       !R3= Umatrix(3, 1)*Origin_cell%Rua+ Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
-
+      call FindTheThirdLatticeVector()
+      R3= Umatrix(3, 1)*Origin_cell%Rua+ Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
       metric = 0.0d0
       dummy1 = 0.0d0
       dummy2 = 0.0d0
@@ -1582,7 +1585,7 @@ subroutine readinput
       !write(*,*) dummy2
       !call mat_mul(3,dummy1,dummy2,metric)
 
-      metric = MATMUL(dummy1,dummy2)
+      metric = MATMUL(dummy2,dummy1)
 
       dummyvol = 0.0d0
       dummyvol = metric(1,1)*(metric(2,2)*metric(3,3)-metric(3,2)*metric(2,3)) &
@@ -1605,28 +1608,28 @@ subroutine readinput
       bigH(3) = metric(3,1)*smallh(1) + metric(3,2)*smallh(2) + metric(3,3)*smallh(3)
 
 
-      smallh = dummyvol*bigH/dummyvol**(1.0/3.0)
+      smallh = bigH*dummyvol**(2.0d0/3.0d0)
 
 
-      R3 = (smallh(1)*Origin_cell%Rua+ smallh(2)*Origin_cell%Rub+ smallh(3)*Origin_cell%Ruc)
+      ! R3 = (smallh(1)*Origin_cell%Rua+ smallh(2)*Origin_cell%Rub+ smallh(3)*Origin_cell%Ruc)
 
 
-      cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
-         +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
-         +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
+      ! cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+      !    +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+      !    +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
 
-      R3 = R3/(cell_volume2/Origin_cell%CellVolume)
+      ! R3 = R3/(cell_volume2/Origin_cell%CellVolume)
 
-      cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
-         +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
-         +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
+      ! cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+      !    +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+      !    +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
 
-      call inv_r(3,dummy1)
-      Umatrix(3,1) = dummy1(1,1)*R3(1) + dummy1(1,2)*R3(2) + dummy1(1,3)*R3(3)
-      Umatrix(3,2) = dummy1(2,1)*R3(1) + dummy1(2,2)*R3(2) + dummy1(2,3)*R3(3)
-      Umatrix(3,3) = dummy1(3,1)*R3(1) + dummy1(3,2)*R3(2) + dummy1(3,3)*R3(3)
+      ! call inv_r(3,dummy1)
+      ! Umatrix(3,1) = dummy1(1,1)*R3(1) + dummy1(1,2)*R3(2) + dummy1(1,3)*R3(3)
+      ! Umatrix(3,2) = dummy1(2,1)*R3(1) + dummy1(2,2)*R3(2) + dummy1(2,3)*R3(3)
+      ! Umatrix(3,3) = dummy1(3,1)*R3(1) + dummy1(3,2)*R3(2) + dummy1(3,3)*R3(3)
 
-      Umatrix(3,:) = Umatrix(3,:)*2.0d0
+      ! Umatrix(3,:) = Umatrix(3,:)!*2.0d0
 
       if (cpuid==0) then
          write(stdout, '(a)')' '
@@ -1643,13 +1646,14 @@ subroutine readinput
       endif
    endif
 
-
+   
    !> check whether Umatrix is right
-   !> the volume of the new cell should be the same as the old ones
+   !>                                                                                                 the volume of the new cell should be the same as the old ones
    !> Here R1, R2, R3 are vectors defined by SURFACE CARD in original cartesian coordinates
-   R1= Umatrix(1, 1)*Origin_cell%Rua+ Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
-   R2= Umatrix(2, 1)*Origin_cell%Rua+ Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
-   R3= Umatrix(3, 1)*Origin_cell%Rua+ Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
+   ! R1= Umatrix(1, 1)*Origin_cell%Rua+ Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
+   ! R2= Umatrix(2, 1)*Origin_cell%Rua+ Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
+   ! R3= Umatrix(3, 1)*Origin_cell%Rua+ Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
+   
 
    cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
                 +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
@@ -1849,6 +1853,7 @@ subroutine readinput
    do ia=1, Origin_cell%Num_atoms
       call rotate_newlattice(Origin_cell%Atom_position_direct(:, ia), Rt)
       call transformtohomecell(Rt)
+   
       Atom_position_direct_newcell(:, ia)= Rt
       Cell_defined_by_surface%Atom_position_direct(:, ia)= Rt
       call direct_cart_real_newcell(Rt, Atom_position_cart_newcell(:, ia))
@@ -3722,16 +3727,18 @@ end subroutine readinput
 subroutine rotate_newlattice(R1, R2)
    use para, only : dp, Umatrix
    implicit none
+
    real(dp), intent(in) :: R1(3)
    real(dp), intent(inout) :: R2(3)
    real(dp), allocatable :: Umatrix_inv(:, :)
+
 
    allocate(Umatrix_inv(3, 3))
    Umatrix_inv= Umatrix
 
    call inv_r(3, Umatrix_inv)
    
-
+   
    R2(1)= Umatrix_inv(1, 1)*R1(1)+ Umatrix_inv(2, 1)*R1(2)+ Umatrix_inv(3, 1)*R1(3)
    R2(2)= Umatrix_inv(1, 2)*R1(1)+ Umatrix_inv(2, 2)*R1(2)+ Umatrix_inv(3, 2)*R1(3)
    R2(3)= Umatrix_inv(1, 3)*R1(1)+ Umatrix_inv(2, 3)*R1(2)+ Umatrix_inv(3, 3)*R1(3)
@@ -4488,32 +4495,32 @@ subroutine FindTheThirdLatticeVector()
       + R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
       + R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
 
-   if (cpuid.eq.0) then
-   if (abs(cell_volume- Origin_cell%CellVolume)< eps9) then
-      write(stdout, *)'  Congratulations, you got a unit cell that has ', &
-         ' the same volume as the original unit cell '
-      write(stdout, *)' The unitary rotation matrix is : '
-      write(stdout, '(3f10.3)')Umatrix(1,:)
-      write(stdout, '(3f10.3)')Umatrix(2,:)
-      write(stdout, '(3f10.3)')Umatrix(3,:)
+   ! if (cpuid.eq.0) then
+   ! if (abs(cell_volume- Origin_cell%CellVolume)< eps9) then
+   !    write(stdout, *)'  Congratulations, you got a unit cell that has ', &
+   !       ' the same volume as the original unit cell '
+   !    write(stdout, *)' The unitary rotation matrix is : '
+   !    write(stdout, '(3f10.3)')Umatrix(1,:)
+   !    write(stdout, '(3f10.3)')Umatrix(2,:)
+   !    write(stdout, '(3f10.3)')Umatrix(3,:)
 
-      write(stdout, *)' '
-      write(stdout, *)'The lattice vectors for new cell are : '
-      write(stdout, '(a,3f10.3)')' R1=', R1
-      write(stdout, '(a,3f10.3)')' R2=', R2
-      write(stdout, '(a,3f10.3)')' R3=', R3
-      write(stdout, *)' Where R1, R2, R3 are in cartesian coordinates'
-   else 
-      write(stdout, *) &
-         " Warning:  I am sorry that I can't properly find unit cell with the first two vectors", &
-         " defined in the SURFACE card that have the same volume as the original one." , &
-         " Now, I will use my own method to choose the SURFACE card. But don't worry, ", &
-         " The new surface card we found is just for the surface you defined. However, ", &
-         " you should notice that the first and the second vectors in the SURFACE card ", &
-         " could be changed which would affect the slab reciprocal lattice vectors."
+   !    write(stdout, *)' '
+   !    write(stdout, *)'The lattice vectors for new cell are : '
+   !    write(stdout, '(a,3f10.3)')' R1=', R1
+   !    write(stdout, '(a,3f10.3)')' R2=', R2
+   !    write(stdout, '(a,3f10.3)')' R3=', R3
+   !    write(stdout, *)' Where R1, R2, R3 are in cartesian coordinates'
+   ! else 
+   !    write(stdout, *) &
+   !       " Warning:  I am sorry that I can't properly find unit cell with the first two vectors", &
+   !       " defined in the SURFACE card that have the same volume as the original one." , &
+   !       " Now, I will use my own method to choose the SURFACE card. But don't worry, ", &
+   !       " The new surface card we found is just for the surface you defined. However, ", &
+   !       " you should notice that the first and the second vectors in the SURFACE card ", &
+   !       " could be changed which would affect the slab reciprocal lattice vectors."
 
-   endif
-   endif
+   ! endif
+   ! endif
 
    !> use MillerIndicestoumatrix
    if (abs(cell_volume- Origin_cell%CellVolume)> eps9 ) then
@@ -4767,7 +4774,7 @@ subroutine generate_slab_poscar(cell)
    it= 0
    do ia=1, num_atoms_primitive_cell   
       do i=1, Nslab
-
+         ! write(*,*) cell%Atom_position_cart(:, ia)
          it=it+1
          pos_cart(:, it)= cell%Atom_position_cart(:, ia)+ R3*(i-1d0+ratio/2d0)
          atom_name(it)= cell%atom_name(ia)

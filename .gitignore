@@ -27,6 +27,10 @@ examples/BHL/*
 !examples/BHL/pn.in
 !examples/BHL/BHL_phononTB_hr.dat
 
+utility_scripts/*
+!utility_scripts/QE2TBDAT
+!utility_scripts/createSimphonyInpuy
+
 
 # Ignore most of the scripts in the utility folder
 *.py

@@ -719,16 +719,17 @@
       integer :: natoms, map2atoms(natoms),nkft1,nkft2,nkft3
       complex(Dp) :: DofR(3*natoms,3*natoms)
       real(Dp) &
-            r(3),                               & ! irVec
+            r(3), zag(3), zbg(3),                               & ! irVec
             tau(3,natoms),                       & ! atom position
             rec_lattice(3,3),                   & ! rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi)
-            zeu(Origin_cell%Num_atoms,3,3)        ! effective charges
+            zeu(Origin_cell%Num_atoms,3,3),     &  ! effective charges
+            qeq, constant_t, nac_q
       
 
 
       !  local variables
 
-      integer :: i,j,ii,jj,na,nb, n1, n2, n3, totalnknumber                   !  loop integers
+      integer :: i,j,ii,jj,na,nb, n1, n2, n3, totalnknumber, pp, qq                   !  loop integers
       real(Dp) :: unitConversor, qdotr, qingrid(3)                !  
       complex(Dp) :: sumoverq(3*natoms,3*natoms), dummy(3*natoms,3*natoms), expqdotr
 
@@ -750,7 +751,36 @@
                   expqdotr = cos(2d0*pi*qdotr)-zi*sin(2d0*pi*qdotr)!exp(-zi*qdotr*twopi)
                   sumoverq = sumoverq+dummy*expqdotr
                   totalnknumber = totalnknumber + 1
+               else 
+                  dummy = 0.0d0
+                  qeq = ((qingrid(1)+0.0000001d0)*(Diele_Tensor(1,1)*(qingrid(1)+0.0000001d0)+Diele_Tensor(1,2)*qingrid(2)+Diele_Tensor(1,3)*qingrid(3))+    &
+                  qingrid(2)*(Diele_Tensor(2,1)*(qingrid(1)+0.0000001d0)+Diele_Tensor(2,2)*qingrid(2)+Diele_Tensor(2,3)*qingrid(3))+    &
+                  qingrid(3)*(Diele_Tensor(3,1)*(qingrid(1)+0.0000001d0)+Diele_Tensor(3,2)*qingrid(2)+Diele_Tensor(3,3)*qingrid(3)))
 
+                  constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
+                  do pp = 1,Origin_cell%Num_atoms
+                     do qq = 1,Origin_cell%Num_atoms
+                        do ii=1,3
+                           zag(ii) = (qingrid(1)+0.0000001d0)*Born_Charge(pp,1,ii) +  qingrid(2)*Born_Charge(pp,2,ii) + qingrid(3)*Born_Charge(pp,3,ii)
+                           
+                           zbg(ii) = (qingrid(1)+0.0000001d0)*Born_Charge(qq,1,ii) +  qingrid(2)*Born_Charge(qq,2,ii) + qingrid(3)*Born_Charge(qq,3,ii)
+
+                        end do
+                        
+                        do ii=1,3
+                           do jj=1,3
+                              
+                              nac_q= constant_t*zag(ii)*zbg(jj)/qeq
+
+
+                              dummy(3*(pp-1)+ii,3*(qq-1)+jj) = nac_q*(108.97077184367376*eV2Hartree)**2
+
+
+                           enddo  ! jj
+                        enddo  ! ii
+                     enddo ! qq
+                  enddo ! pp
+                  totalnknumber = totalnknumber + 1
                end if
 
             end do
@@ -975,28 +1005,28 @@
             ! end if
 
 
-            ! mat1 = 0d0
-            ! nac_correction= 0d0
-            ! call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1,  &
-            !       pos_cart_ic/Origin_cell%cell_parameters(1),  &
-            !       Born_Charge(:,:,:), Cell_defined_by_surface%reciprocal_lattice*Cell_defined_by_surface%cell_parameters(1)/(twopi), &
-            !       Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+            mat1 = 0d0
+            nac_correction= 0d0
+            call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1,  &
+                  pos_cart_ic/Origin_cell%cell_parameters(1),  &
+                  Born_Charge(:,:,:), Cell_defined_by_surface%reciprocal_lattice*Cell_defined_by_surface%cell_parameters(1)/(twopi), &
+                  Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
             
-            ! do ii=1,Num_wann
-            !    do jj=1, Num_wann
-            !          pp = Origin_cell%spinorbital_to_atom_index(ii)
-            !          qq = Origin_cell%spinorbital_to_atom_index(jj)
-            !          nac_correction(ii,jj) = (mat1(ii,jj) + mat2(ii,jj)*(108.97077184367376*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
-            !    end do
-            ! end do
-
+            do ii=1,Num_wann
+               do jj=1, Num_wann
+                     pp = Origin_cell%spinorbital_to_atom_index(ii)
+                     qq = Origin_cell%spinorbital_to_atom_index(jj)
+                     nac_correction(ii,jj) = (mat1(ii,jj) + mat2(ii,jj)*(108.97077184367376*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
+               end do
+            end do
+           
            kdotr=k(1)*new_ia+k(2)*new_ib
            ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
             
 
             Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
             = Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
-            + (HmnR(:,:,iR))*ratio/ndegen(iR)  !+nac_correction(1:Num_wann, 1:Num_wann)/counter
+            + (HmnR(:,:,iR))*ratio/ndegen(iR)  +nac_correction(1:Num_wann, 1:Num_wann)/Nrpts
          endif
 
      enddo
@@ -1062,17 +1092,17 @@
         call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
 
 
-        inew_ia= int(new_ia)
+        inew_ia= int(new_ic)
         inew_ib= int(new_ib)
-        if (abs(new_ia).le.ijmax)then
-        if (abs(new_ib).le.ijmax)then
-           kdotr=k*new_ic
-           ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
+        if (abs(new_ic).le.ijmax)then
+         if (abs(new_ib).le.ijmax)then
+            kdotr=k*new_ia
+            ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
 
-           Hij(inew_ia, inew_ib, 1:Num_wann, 1:Num_wann )&
-           =Hij(inew_ia, inew_ib, 1:Num_wann, 1:Num_wann )&
-           +HmnR(:,:,iR)*ratio/ndegen(iR)
-        endif
+            Hij(inew_ia, inew_ib, 1:Num_wann, 1:Num_wann )&
+            =Hij(inew_ia, inew_ib, 1:Num_wann, 1:Num_wann )&
+            +HmnR(:,:,iR)*ratio/ndegen(iR)
+         endif
         endif
 
      enddo

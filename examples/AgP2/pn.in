@@ -14,7 +14,7 @@ BulkGap_plane_calc    = F
 BulkFS_calc           = F
 
 !> slab band structure calculation flags
-SlabBand_calc         = F
+SlabBand_calc         = T
 SlabSS_calc           = F
 SlabArc_calc          = F
 
@@ -31,7 +31,7 @@ BerryPhase_calc       = F
 BerryCurvature_calc   = F
 Chern_3D_calc         = F
 Z2_3D_calc            = F
-Wanniercenter_calc    = T
+Wanniercenter_calc    = F
 WeylChirality_calc    = F
 /
  

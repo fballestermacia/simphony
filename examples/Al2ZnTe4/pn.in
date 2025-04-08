@@ -13,9 +13,9 @@ BulkGap_plane_calc    = F
 BulkFS_calc           = F 
 
 !> slab band structure calculation flags
-SlabBand_calc         = T !T
+SlabBand_calc         = F !T
 SlabSS_calc           = F !T
-SlabArc_calc          = F !T
+SlabArc_calc          = T !T
 
 !> wire band structure calculation flags
 WireBand_calc         = F
@@ -62,21 +62,21 @@ NumOccupied = 18      ! NumOccupied
 
 &PARAMETERS
 Eta_Arc = 0.003    ! infinite small value, like brodening. Too small a value leads to singularities in the Green Function
-E_arc = 9.100    ! energy for calculate Fermi Arc, THz
+E_arc = 9.2200    ! energy for calculate Fermi Arc, THz
 OmegaNum = 400     ! omega number
 OmegaMin =  7.5      ! energy interval in unit of THz
 OmegaMax =  10.5     ! energy interval in unit of THz
-Nk1 = 80           ! number k points
-Nk2 = 80           ! number k points
-Nk3 = 80          ! number k points
+Nk1 = 200           ! number k points
+Nk2 = 200           ! number k points
+Nk3 = 200          ! number k points
 NP = 4             ! number of principle layers
 Gap_threshold = 0.0000001 ! threshold for GapCube output
 /
 
 KPLANE_SLAB
 -0.5  -0.5      ! Original point for 2D k plane
-1.0  0.0      ! The first vector to define 2D k plane
-0.0  1.0      ! The second vector to define 2D k plane  for arc plots
+2.0  0.0      ! The first vector to define 2D k plane
+0.0  2.0      ! The second vector to define 2D k plane  for arc plots
 
 KPLANE_BULK
 -0.50  -0.50  -0.50   ! Original point for 3D k plane
@@ -84,7 +84,7 @@ KPLANE_BULK
 0.00  0.00  1.00   ! The second vector to define 3d k space plane
 
 KCUBE_BULK
--0.50  -0.50  -0.50   ! Original point for 3D k plane
+-0.00  -0.00  -0.00   ! Original point for 3D k plane
 1.00  0.00  0.00   ! The first vector to define 3d k space plane
 0.00  1.00  0.00   ! The second vector to define 3d k space plane
 0.00  0.00  1.00   ! The third vector to define 3d k cube
@@ -116,10 +116,10 @@ KPATH_BULK
 P  0.250000  0.250000  0.250000     N  0.000000  0.500000  0.000000
 N  0.000000  0.500000  0.000000     G  0.000000  0.000000  0.000000
 G  0.000000  0.000000  0.000000     M1  0.500000  0.500000 -0.500000
-M2 -0.500000 -0.500000  0.500000     G  0.000000  0.000000  0.000000
-G  0.000000  0.000000  0.000000     X1  0.000000  0.000000  0.500000
-X1  0.000000  0.000000  0.500000     P  0.250000  0.250000  0.250000
-M  0.500000  0.500000  -0.500000    X2  0.000000   0.000000  -0.500000
+M2 -0.500000  0.500000  0.500000     G  0.000000  0.000000  0.000000
+G  0.000000  0.000000  0.000000     X  0.000000  0.000000  0.500000
+X  0.000000  0.000000  0.500000     P  0.250000  0.250000  0.250000
+M  0.500000  0.500000  0.500000     X1  0.000000  1.000000  0.500000
 
 
 

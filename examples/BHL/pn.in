@@ -14,7 +14,7 @@ BulkGap_plane_calc    = F
 BulkFS_calc           = F
 
 !> slab band structure calculation flags
-SlabBand_calc         = F
+SlabBand_calc         = T
 SlabSS_calc           = F
 SlabArc_calc          = F
 
@@ -36,6 +36,7 @@ WeylChirality_calc    = F
 /
  
 &SYSTEM 
+NSLAB = 10
 NSLAB1 = 40
 NSLAB2 = 1
 NumOccupied = 4      !>Index of band taken into account for the calculations
@@ -50,23 +51,28 @@ Nk2 = 150           !>number k points
 
 LATTICE
 Angstrom
-        2.1304224900            1.230000000              0.0000000000
-       -2.1304224900            1.230000000              0.0000000000
-        0.0000000000            0.0000000000             6.7100000000
+    3.8262214938     0.0000000000     0.0000000000
+   -1.9131107469     3.3136050142     0.0000000000
+    0.0000000000     0.0000000000    16.0000000000
 
 
 ATOMS
 2
 Direct
-C     1              0.3333333333333333  0.6666666666666666  0.5000000000000000
-C     1              0.6666666666666666  0.3333333333333333  0.5100000000000000
+Si     1              0.33333333       0.66666667       0.47250
+Si     1              0.66666667       0.33333333       0.52750 
 
  
 KPATH_BULK
 3
-G 0.000   0.000   0.000  K 0.33333333   0.666666666   0.00000000
-K 0.33333333   0.666666666   0.00000000  M 0.000   0.500   0.000
-M 0.000   0.500   0.000  G 0.000   0.000   0.000
+G 0.000   0.000   0.000  K 0.33333333   -0.333333333   0.00000000
+K 0.33333333   -0.333333333   0.00000000  M 0.500   0.000   0.000
+M 0.500   0.000   0.000  G 0.000   0.000   0.000
+
+
+SURFACE
+0 1 0
+0 0 1
 
  
 MILLER_INDEX        ! this is equal to the SURFACE card
@@ -75,7 +81,7 @@ MILLER_INDEX        ! this is equal to the SURFACE card
 
 KPATH_SLAB
 2
-X 0.5 0.0 G 0.0 0.0
+X -0.5 0.0 G 0.0 0.0
 G 0.0 0.0 X 0.5 0.0
 
 
