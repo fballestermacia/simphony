@@ -137,6 +137,7 @@ subroutine readinput
    !EffectiveMass_calc    = .FALSE.
    FindNodes_calc        = .FALSE.
    LOTO_correction       = .FALSE.
+   added_LR_in_Real_Space = .FALSE.
    Write_eigenstates_at_HSP = .FALSE.
    !Boltz_OHE_calc        = .FALSE.
    !Boltz_Berry_correction= .FALSE.
@@ -3664,7 +3665,7 @@ subroutine readinput
    if (lfound) then
       it=0
       allocate(Born_Charge(Origin_cell%Num_atoms,3,3))
-      allocate(Born_Charge_temp(Origin_cell%Num_atom_type,3,3))
+      allocate(Born_Charge_temp(Origin_cell%Num_atoms,3,3))
       do i=1,Origin_cell%Num_atom_type
          do j=1,Origin_cell%Num_atoms_eachtype(i)
             it=it+1
@@ -3680,7 +3681,7 @@ subroutine readinput
             endif
          enddo
       enddo
-      call impose_ASR_on_eff_charges(Origin_cell%Num_atoms, Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1), Born_Charge)
+      !call impose_ASR_on_eff_charges(Origin_cell%Num_atoms, Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1), Born_Charge)
    else
       if (LOTO_correction) then
          if (cpuid==0) then

@@ -99,14 +99,14 @@ subroutine ek_bulk_line
       eigv(:, ik)= W
       
       !k3line_start(3,nk3lines)
-      if (Write_eigenstates_at_HSP) then
-         do ii=1,nk3lines
-            if ((k(1).eq.k3line_start(1,ii)).and.(k(2).eq.k3line_start(2,ii)).and.(k(3).eq.k3line_start(3,ii)))then
-               eigvatHSP(ii,:,:) = Hamk_bulk(:,:)
-               hspindices(ii) = ik
-            end if
-         end do
-      end if
+      ! if (Write_eigenstates_at_HSP) then
+      !    do ii=1,nk3lines
+      !       if ((k(1).eq.k3line_start(1,ii)).and.(k(2).eq.k3line_start(2,ii)).and.(k(3).eq.k3line_start(3,ii)))then
+      !          eigvatHSP(ii,:,:) = Hamk_bulk(:,:)
+      !          hspindices(ii) = ik
+      !       end if
+      !    end do
+      ! end if
 
       
       do j= 1, Num_wann  !> band
@@ -914,6 +914,9 @@ subroutine ek_bulk_plane
 
    time_start= 0d0
    time_end= 0d0
+   outfileindex= outfileindex+ 1
+   open(unit=outfileindex, file='eigenmodes.dat')
+   write(outfileindex, *)ik
    do ik= 1+cpuid, knv3, num_cpu
       if (cpuid==0.and. mod(ik/num_cpu, 500)==0) &
          write(stdout, '(a, i12, a, i12, a, f10.2, a)') &
@@ -921,8 +924,11 @@ subroutine ek_bulk_plane
          (knv3-ik)*(time_end- time_start)/num_cpu, ' s'
       call now(time_start)
 
-      k = kxy(:, ik)
+      write(outfileindex, *)ik
 
+
+      k = kxy(:, ik)
+      write(outfileindex, '(1000f19.9)')k(:)
       ! generate bulk Hamiltonian
       Hamk_bulk= 0d0
       if (index(KPorTB, 'KP')/=0)then
@@ -939,11 +945,20 @@ subroutine ek_bulk_plane
 
       !> diagonalization by call zheev in lapack
       W= 0d0
-      call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
+      call eigensystem_c( 'V', 'U', Num_wann ,Hamk_bulk, W)
       eigv(:, ik)= W(nband_min:nband_max)
-
+      do j=1, Num_wann
+         W(j)= sqrt(abs(W(j)))*sign(1d0, W(j))
+      enddo
+      write(outfileindex, '(1000f19.9)') W(:)/eV2Hartree
+      do j=1, Num_wann
+         write(outfileindex, *) Hamk_bulk(j,:)
+      end do
+      
+      write(outfileindex, *)
       call now(time_end)
    enddo ! ik
+   close(outfileindex)
 
 #if defined (MPI)
    call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
@@ -3456,7 +3471,7 @@ subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
             " w p pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
       else
          write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-            " w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
+            " w lp lw 0.1 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
       endif
       write(outfileindex, '(2a)')" " 
       write(outfileindex, '(2a)')"# uncomment the following lines to plot the fatband "

@@ -38,6 +38,11 @@
      COMPLEX(DP), ALLOCATABLE  :: sigma_x(:,:), sigma_y(:,:), sigma_z(:,:)
      COMPLEX(DP), ALLOCATABLE  :: ctemp(:,:)
 
+     ! test for loto
+     integer :: iR,ia,ib,ic
+     real(Dp) :: R(3)
+     complex(Dp) :: mat1(Num_wann,Num_wann)
+
 
      !> for special line
     !ke(1,:)=(/0.0d0, 0.00d0/)
@@ -117,6 +122,24 @@
      do i=1,Ndim
         ones(i,i)=1.0d0
      enddo
+     if((LOTO_correction).and.(.not.added_LR_in_Real_Space))then
+         do iR=1,Nrpts
+            ia=irvec(1,iR)
+            ib=irvec(2,iR)
+            ic=irvec(3,iR)
+            R = ia*Origin_cell%Rua + ib*Origin_cell%Rub + ic*Origin_cell%Ruc
+            R = R/Origin_cell%cell_parameters(1)
+            R = irvec(:,iR)
+            mat1 = 0.0d0
+            call FT_long_range_to_R(R,11,11,11,mat1,     &
+                                    Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1),  &
+                                    Born_Charge(:,:,:), Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi), &
+                                    Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+            HmnR(:,:,iR) = HmnR(:,:,iR)+mat1!/Nrpts
+            added_LR_in_Real_Space = .true.
+         end do   
+         
+      end if
 
      time_start= 0d0
      time_end= 0d0

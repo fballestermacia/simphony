@@ -426,6 +426,7 @@
      logical :: Hof_Butt_calc  ! Flag for Hofstader butterfly
      logical :: LandauLevel_B_calc  ! Flag for Hofstader butterfly
      logical :: LOTO_correction  ! Flag for LOTO correction of phonon spectrum 
+     logical :: added_LR_in_Real_Space
      logical :: Write_eigenstates_at_HSP ! Flag for writing the eigenstates at HSP
      logical :: Boltz_OHE_calc  ! Flag for Boltzmann tranport under magnetic field
      logical :: Boltz_Berry_correction  ! Flag for Boltzmann tranport under magnetic field
@@ -478,7 +479,7 @@
                           BerryCurvature_slab_calc, MirrorChern_calc, BerryCurvature_Cube_calc, &
                           Z2_3D_calc, Chern_3D_calc, WeylChirality_calc, NLChirality_calc, &
                           Dos_calc, JDos_calc, EffectiveMass_calc, &
-                          FindNodes_calc, TBtoKP_calc, LOTO_correction, Write_eigenstates_at_HSP, &
+                          FindNodes_calc, TBtoKP_calc, LOTO_correction, added_LR_in_Real_Space, Write_eigenstates_at_HSP, &
                           BulkBand_plane_calc, Hof_Butt_calc, Symmetry_Import_calc, &
                           Boltz_Berry_correction, &
                           Boltz_k_calc, Boltz_evolve_k, Boltz_OHE_calc, AHC_Calc, SHC_calc, &
@@ -979,7 +980,7 @@
      real(dp), public, save :: Diele_Tensor(3, 3) ! di-electric tensor
      real(dp), allocatable :: Born_Charge(:, :, :)
      real(dp), allocatable :: Atom_Mass(:)
-     logical :: added_LR_in_Real_Space = .false.
+     !logical :: added_LR_in_Real_Space = .false.
 
      real(dp), parameter :: VASPToTHZ= 29.54263748d0 ! By T.T zhang
      
