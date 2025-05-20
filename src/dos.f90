@@ -496,24 +496,24 @@ subroutine dos_sub
    if (cpuid==0) then
       open(unit=outfileindex, file='dos.gnu')
       write(outfileindex, '(a)')"set encoding iso_8859_1"
-      write(outfileindex, '(a)')'set terminal  postscript enhanced color font ",24" '
-      write(outfileindex, '(a)')"set output 'dos.eps'"
+      write(outfileindex, '(a)')'set terminal  png truecolor enhanced  font ",24" size 1920, 1680'
+      write(outfileindex, '(a)')"set output 'dos.png'"
       write(outfileindex, '(a)')'set border lw 2'
       write(outfileindex, '(a)')'set autoscale fix'
       write(outfileindex, '(a, f16.6,a)')'set yrange [0:', maxval(dos)*eV2Hartree+0.5, '1]'
       write(outfileindex, '(a)')'set key samplen 0.8 spacing 1 font ",12"'
-      write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
+      write(outfileindex, '(a)')'set xlabel "Frequency (THz)"'
       write(outfileindex, '(a)')'set key title  "Broadening"'
       write(outfileindex, '(a)')'set title "DOS with different broadenings"'
-      write(outfileindex, '(a)')'set ylabel "DOS (states/eV/unit cell)"'
+      write(outfileindex, '(a)')'set ylabel "DOS (states/THz/unit cell)"'
       write(outfileindex, '(a, f6.1, a)')"plot 'dos.dat' u 1:2 w l lw 2 title '",&
-         Eta_array(1)*1000/eV2Hartree, "meV', \"
+         Eta_array(1)*1000/eV2Hartree, "GHz', \"
       do ieta= 2, NumberofEta-1
          write(outfileindex, 202)" '' u 1:", ieta, " w l lw 2 title '", &
-            Eta_array(ieta)*1000/eV2Hartree, "meV', \"
+            Eta_array(ieta)*1000/eV2Hartree, "GHz', \"
       enddo
       write(outfileindex, '(a, f6.1, a)')" '' u 1:10 w l lw 2 title '",&
-         Eta_array(NumberofEta)*1000/eV2Hartree, "meV'"
+         Eta_array(NumberofEta)*1000/eV2Hartree, "GHz'"
       close(outfileindex)
    endif
 202 format(a, i3, a, f6.1, a)

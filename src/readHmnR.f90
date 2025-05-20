@@ -240,7 +240,7 @@ subroutine readNormalHmnR()
          write(stdout, '(50000f7.3)') real(HmnR(i, :, ir0))/eV2Hartree
       enddo
       write(stdout, '(a)')" "
-      write(stdout, '(a)')" >> H00= Hmn(R=0) imagary part"
+      write(stdout, '(a)')" >> H00= Hmn(R=0) imaginary part"
       do i=1, Num_wann
          write(stdout, '(50000f7.3)') aimag(HmnR(i, :, ir0))/eV2Hartree
       enddo

@@ -1651,9 +1651,9 @@ subroutine readinput
    !> check whether Umatrix is right
    !>                                                                                                 the volume of the new cell should be the same as the old ones
    !> Here R1, R2, R3 are vectors defined by SURFACE CARD in original cartesian coordinates
-   ! R1= Umatrix(1, 1)*Origin_cell%Rua+ Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
-   ! R2= Umatrix(2, 1)*Origin_cell%Rua+ Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
-   ! R3= Umatrix(3, 1)*Origin_cell%Rua+ Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
+   R1= Umatrix(1, 1)*Origin_cell%Rua+ Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
+   R2= Umatrix(2, 1)*Origin_cell%Rua+ Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
+   R3= Umatrix(3, 1)*Origin_cell%Rua+ Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
    
 
    cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
@@ -1674,66 +1674,66 @@ subroutine readinput
       write(stdout, '(a)')" I am looking for new unit cell automatically: "
    endif
    if (abs(abs(cell_volume2)-abs(Origin_cell%CellVolume))> 0.001d0) then
-      !call FindTheThirdLatticeVector()
-      metric = 0.0d0
-      dummy1 = 0.0d0
-      dummy2 = 0.0d0
+      call FindTheThirdLatticeVector()
+      ! metric = 0.0d0
+      ! dummy1 = 0.0d0
+      ! dummy2 = 0.0d0
       
       
-      dummy1(1,:) = Origin_cell%Rua
-      dummy1(2,:) = Origin_cell%Rub
-      dummy1(3,:) = Origin_cell%Ruc
+      ! dummy1(1,:) = Origin_cell%Rua
+      ! dummy1(2,:) = Origin_cell%Rub
+      ! dummy1(3,:) = Origin_cell%Ruc
 
-      dummy2(:,1) = Origin_cell%Rua
-      dummy2(:,2) = Origin_cell%Rub
-      dummy2(:,3) = Origin_cell%Ruc
-      !write(*,*) dummy1
-      !write(*,*) dummy2
-      !call mat_mul(3,dummy1,dummy2,metric)
+      ! dummy2(:,1) = Origin_cell%Rua
+      ! dummy2(:,2) = Origin_cell%Rub
+      ! dummy2(:,3) = Origin_cell%Ruc
+      ! !write(*,*) dummy1
+      ! !write(*,*) dummy2
+      ! !call mat_mul(3,dummy1,dummy2,metric)
 
-      metric = MATMUL(dummy1,dummy2)
+      ! metric = MATMUL(dummy1,dummy2)
 
-      dummyvol = 0.0d0
-      dummyvol = metric(1,1)*(metric(2,2)*metric(3,3)-metric(3,2)*metric(2,3)) &
-               +metric(2,1)*(metric(3,2)*metric(1,3)-metric(1,2)*metric(3,3)) &
-               +metric(3,1)*(metric(1,2)*metric(2,3)-metric(2,2)*metric(1,3))
-      dummyvol = sqrt(dummyvol)
+      ! dummyvol = 0.0d0
+      ! dummyvol = metric(1,1)*(metric(2,2)*metric(3,3)-metric(3,2)*metric(2,3)) &
+      !          +metric(2,1)*(metric(3,2)*metric(1,3)-metric(1,2)*metric(3,3)) &
+      !          +metric(3,1)*(metric(1,2)*metric(2,3)-metric(2,2)*metric(1,3))
+      ! dummyvol = sqrt(dummyvol)
 
-      smallh = 0.0d0
-      call cross_product(Umatrix(1, :),Umatrix(2, :), smallh)
+      ! smallh = 0.0d0
+      ! call cross_product(Umatrix(1, :),Umatrix(2, :), smallh)
 
-      metric = TRANSPOSE(metric)
+      ! metric = TRANSPOSE(metric)
       
 
-      call inv_r(3,metric)
+      ! call inv_r(3,metric)
 
 
-      bigH = 0.0d0
-      bigH(1) = metric(1,1)*smallh(1) + metric(1,2)*smallh(2) + metric(1,3)*smallh(3)
-      bigH(2) = metric(2,1)*smallh(1) + metric(2,2)*smallh(2) + metric(2,3)*smallh(3)
-      bigH(3) = metric(3,1)*smallh(1) + metric(3,2)*smallh(2) + metric(3,3)*smallh(3)
+      ! bigH = 0.0d0
+      ! bigH(1) = metric(1,1)*smallh(1) + metric(1,2)*smallh(2) + metric(1,3)*smallh(3)
+      ! bigH(2) = metric(2,1)*smallh(1) + metric(2,2)*smallh(2) + metric(2,3)*smallh(3)
+      ! bigH(3) = metric(3,1)*smallh(1) + metric(3,2)*smallh(2) + metric(3,3)*smallh(3)
 
 
-      smallh = dummyvol*bigH/dummyvol**(1.0/3.0)
+      ! smallh = dummyvol*bigH/dummyvol**(1.0/3.0)
 
 
-      R3 = (smallh(1)*Origin_cell%Rua+ smallh(2)*Origin_cell%Rub+ smallh(3)*Origin_cell%Ruc)
+      ! R3 = (smallh(1)*Origin_cell%Rua+ smallh(2)*Origin_cell%Rub+ smallh(3)*Origin_cell%Ruc)
 
 
-      cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
-         +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
-         +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
+      ! cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+      !    +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+      !    +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
 
-      R3 = R3/(cell_volume2/Origin_cell%CellVolume)
+      ! R3 = R3/(cell_volume2/Origin_cell%CellVolume)
 
-      cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
-         +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
-         +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
+      ! cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+      !    +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+      !    +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
 
-      call inv_r(3,dummy1)
-      Umatrix(3,1) = dummy1(1,1)*R3(1) + dummy1(1,2)*R3(2) + dummy1(1,3)*R3(3)
-      Umatrix(3,2) = dummy1(2,1)*R3(1) + dummy1(2,2)*R3(2) + dummy1(2,3)*R3(3)
-      Umatrix(3,3) = dummy1(3,1)*R3(1) + dummy1(3,2)*R3(2) + dummy1(3,3)*R3(3)
+      ! call inv_r(3,dummy1)
+      ! Umatrix(3,1) = dummy1(1,1)*R3(1) + dummy1(1,2)*R3(2) + dummy1(1,3)*R3(3)
+      ! Umatrix(3,2) = dummy1(2,1)*R3(1) + dummy1(2,2)*R3(2) + dummy1(2,3)*R3(3)
+      ! Umatrix(3,3) = dummy1(3,1)*R3(1) + dummy1(3,2)*R3(2) + dummy1(3,3)*R3(3)
 
       write(stdout, '(a)')'  Congratulations, you got a unit cell that has ', &
          ' the same volume as the original unit cell '
@@ -1761,10 +1761,10 @@ subroutine readinput
    !> print out the new basis
    if (cpuid.eq.0) then
       write(stdout, *)" "
-      write(stdout, *)"The rotated new unit cell in cartesian coordinates : "
-      write(stdout, '(3f12.6)') R1
-      write(stdout, '(3f12.6)') R2
-      write(stdout, '(3f12.6)') R3
+      write(stdout, *)"The rotated new unit cell (Angstrom): "
+      write(stdout, '(3f12.6)') R1/Angstrom2atomic
+      write(stdout, '(3f12.6)') R2/Angstrom2atomic
+      write(stdout, '(3f12.6)') R3/Angstrom2atomic
 
       call get_volume(R1, R2, R3, cell_volume2)
       write(stdout, '(a, f18.5, a)')"New cell's Volume is ", cell_volume2/(Angstrom2atomic**3), 'Ang^3'
@@ -3681,7 +3681,7 @@ subroutine readinput
             endif
          enddo
       enddo
-      !call impose_ASR_on_eff_charges(Origin_cell%Num_atoms, Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1), Born_Charge)
+      call impose_ASR_on_eff_charges(Origin_cell%Num_atoms, Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1), Born_Charge)
    else
       if (LOTO_correction) then
          if (cpuid==0) then

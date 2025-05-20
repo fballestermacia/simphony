@@ -667,13 +667,13 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk
                endif
             
                do na = 1,natoms
-                  zag(:)=g1*zeu(map2atoms(na),1,:)+g2*zeu(map2atoms(na),2,:)+g3*zeu(map2atoms(na),3,:)
+                  zag(:)=g1*zeu( na,1,:)+g2*zeu(na,2,:)+g3*zeu(na,3,:)
                   fnat(:) = 0.d0
                   do nb = 1,natoms
                      arg = 2.d0 * Pi* (g1 * (tau(1,na)-tau(1,nb))+             &
                                        g2 * (tau(2,na)-tau(2,nb))+             &
                                        g3 * (tau(3,na)-tau(3,nb)))
-                     zcg(:) = g1*zeu(map2atoms(nb),1,:) + g2*zeu(map2atoms(nb),2,:) + g3*zeu(map2atoms(nb),3,:)
+                     zcg(:) = g1*zeu(nb,1,:) + g2*zeu(nb,2,:) + g3*zeu(nb,3,:)
 
                      fnat(:) = fnat(:) + zcg(:)*cos(arg)
                   end do
@@ -719,9 +719,9 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk
             
                do nb = 1,natoms
                   
-                  zbg(:)=g1*zeu(map2atoms(nb),1,:)+g2*zeu(map2atoms(nb),2,:)+g3*zeu(map2atoms(nb),3,:)
+                  zbg(:)=g1*zeu(nb,1,:)+g2*zeu(nb,2,:)+g3*zeu(nb,3,:)
                   do na = 1,natoms
-                     zag(:)=g1*zeu(map2atoms(na),1,:)+g2*zeu(map2atoms(na),2,:)+g3*zeu(map2atoms(na),3,:) 
+                     zag(:)=g1*zeu(na,1,:)+g2*zeu(na,2,:)+g3*zeu(na,3,:) 
                   
                      
                      arg = 2.d0*Pi* (g1 * (tau(1,na)-tau(1,nb))+             & 
@@ -1115,7 +1115,6 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
    ! Add long-range interaction
    !Hamk_bulk = 0.0d0
    rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi) !Transform to corect units
-   
     
    q(1) = k(1)*rec_lattice(1,1) + k(2)*rec_lattice(1,2) + k(3)*rec_lattice(1,3)
    q(2) = k(1)*rec_lattice(1,2) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)

@@ -2962,7 +2962,7 @@ subroutine  wannier_center3D_kpath(kpoints, nkp1, nkp2, largest_gap, wcc, Z2)
             if (index(Particle,'phonon')/=0.and.LOTO_correction) then
                call ham_bulk_LOTO(k, Hamk)
             else
-               call ham_bulk_atomicgauge(k, Hamk)
+               call ham_bulk_latticegauge(k, Hamk)
 !~                call ham_bulk_latticegauge    (k, Hamk)
             endif
          endif

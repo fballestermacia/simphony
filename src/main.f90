@@ -88,10 +88,10 @@
      Ndim= Num_wann* Np
  
      !> Check the symmetry operator if Symmetry_Import_calc= T
-     call now(time_start)
-     call symmetry
-     call now(time_end)
-     call print_time_cost(time_start, time_end, 'symmetry')
+   !   call now(time_start)
+   !   call symmetry
+   !   call now(time_end)
+   !   call print_time_cost(time_start, time_end, 'symmetry')
   
   
      if (cpuid==0)then
