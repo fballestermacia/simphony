@@ -368,7 +368,7 @@
      character(80) :: Hrfile             ! filename
      character(80) :: Overlapfile        ! overlap matrix between basis only when Orthogonal_Basis=F
      character(80) :: Particle           ! phonon, electron
-     character(80) :: Package            ! VASP, QE
+     character(80) :: Package            ! QE, Phonopy
      character(80) :: KPorTB             ! KP or TB
      logical       :: Orthogonal_Basis   ! True or False for Orthogonal basis or non-orthogonal basis
      logical :: Is_Sparse_Hr, Is_Sparse, Is_Hrfile
@@ -643,6 +643,12 @@
      !> only used for generating the POSCAR_slab
      real(dp) :: Vacuum_thickness_in_Angstrom
 
+
+     real(dp) :: phpylambda = 1.0d0
+     integer :: num_G
+     real(dp), allocatable :: G_list(:,:)
+     
+
      !> system parameters namelist
      !> Some parameters that relate to the properties of the bulk hamiltonian
      namelist / SYSTEM / Soc, E_fermi, Bx, By, Bz, Btheta, Bphi, surf_onsite, &
@@ -666,6 +672,9 @@
      real(dp),parameter :: hbar= 1.054571817E-34    ! electron charge in SI unit
      real(dp),parameter :: epsilon0= 8.85418781762E-12    ! dielectric constant in SI unit
      real(dp),parameter :: Magneticfluxdensity_atomic=  2.35051756758*1E5    ! magnetic field strength in SI unit
+     real(dp),parameter :: PwscftoTHz = 108.97077d0
+     real(dp),parameter :: PhonopytoTHz = 15.633302
+
 
      real(dp),parameter :: Pi= 3.14159265358979d0  ! circumference ratio pi  
      real(dp),parameter :: twopi=2d0*Pi    ! two times of Pi
@@ -981,6 +990,7 @@
      real(dp), allocatable :: Born_Charge(:, :, :)
      real(dp), allocatable :: Atom_Mass(:)
      !logical :: added_LR_in_Real_Space = .false.
+
 
      real(dp), parameter :: VASPToTHZ= 29.54263748d0 ! By T.T zhang
      

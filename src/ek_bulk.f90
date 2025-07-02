@@ -71,8 +71,6 @@ subroutine ek_bulk_line
                   ia=irvec(1,iR)
                   ib=irvec(2,iR)
                   ic=irvec(3,iR)
-                  R = ia*Origin_cell%Rua + ib*Origin_cell%Rub + ic*Origin_cell%Ruc
-                  R = R/Origin_cell%cell_parameters(1)
                   R = irvec(:,iR)
                   mat1 = 0.0d0
                   call FT_long_range_to_R(R,11,11,11,mat1,     &

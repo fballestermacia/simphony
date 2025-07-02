@@ -639,23 +639,33 @@ end subroutine ek_slab_sparseHR
      ekslab_mpi=0.0d0
      time_start= 0d0
      time_end= 0d0
+     outfileindex= outfileindex+ 1
+     open(unit=outfileindex, file='slabeigenmodes.dat')
+     write(outfileindex, *)ik
      do i=1+cpuid, kn12, num_cpu
         if (cpuid==0.and. mod(i/num_cpu, 100)==0) &
            write(stdout, *) 'SlabBand_plane, ik ', i, 'Nk',nk1*nk2, 'time left', &
            (nk1*nk2-i)*(time_end- time_start)/num_cpu, ' s'
         call now(time_start)
-        
+        write(outfileindex, *)i
         k= k12(:, i)
         chamk=0.0d0 
 
         call ham_slab(k,Chamk)
-
+        write(outfileindex, '(1000f19.9)')k(:)
         eigenvalue=0.0d0
 
         ! diagonal Chamk
         call eigensystem_c('V', 'U', Num_wann*Nslab, CHamk, eigenvalue)
        
         ekslab(:,i)=eigenvalue
+        do j=1, Num_wann*Nslab
+         eigenvalue(j)= sqrt(abs(eigenvalue(j)))*sign(1d0, eigenvalue(j))
+        enddo
+        write(outfileindex, '(1000f19.9)') eigenvalue(:)/eV2Hartree
+        do j=1, Num_wann*Nslab
+         write(outfileindex, *) CHamk(j,:)
+        end do
 
         do j=1, Nslab* Num_wann
            do l=1, Num_wann

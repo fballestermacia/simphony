@@ -54,6 +54,7 @@ subroutine readinput
    Is_Sparse_Hr= .FALSE.
    Is_Sparse   = .FALSE.
    Particle = 'phonon'
+   Package  = 'QE'
    Orthogonal_Basis = .TRUE.
    read(1001, TB_FILE, iostat= stat)
    if (stat/=0) then
@@ -81,7 +82,7 @@ subroutine readinput
    ! end if
    if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight-binding Hamiltonian filename : ",Hrfile
    !if(cpuid==0)write(stdout,'(1x, a, a25)')"System of particle: ", Particle
-   !if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight-binding Hamiltonian obtained from package : ",Package
+   if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight-binding Hamiltonian obtained from package : ",Package
 
    !if (index(Particle, 'electron')==0 .and. index(Particle, 'phonon')==0 &
    !   .and. index(Particle, 'photon')==0) then
@@ -2516,7 +2517,7 @@ subroutine readinput
    if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 2nd vector: ', K3D_vec2_cube
    if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 3rd vector: ', K3D_vec3_cube
    if (cpuid==0) write(stdout, '((a, 3f8.4))')'kCubeVolume: ', kCubeVolume*Angstrom2atomic**3
-   if (cpuid==0) write(stdout, '((a, 3f8.4))')'ReciprocalOrigin_cell%CellVolume: ', &
+   if (cpuid==0) write(stdout, '((a, 3f8.4))')'Origin_cell%ReciprocalCellVolume: ', &
    Origin_cell%ReciprocalCellVolume*Angstrom2atomic**3
    if (.not.lfound .and.(BulkGap_cube_calc)) then
       stop 'ERROR: please set KCUBE_BULK for gap3D calculations'
@@ -3691,6 +3692,45 @@ subroutine readinput
          endif
       endif
    endif
+
+
+!===============================================================================================================!
+!> LOTO_GRID card
+!===============================================================================================================!
+   
+
+   rewind(1001)
+   lfound = .false.
+   do while (.true.)
+      read(1001, *, end= 229)inline
+      inline=upper(inline)
+      if (trim(adjustl(inline))=='LOTO_GRID') then
+         lfound= .true.
+         if (cpuid==0) write(stdout, *)' '
+         if (cpuid==0) write(stdout, *)'We found LOTO_GRID card for phonopy LOTO correction'
+         exit
+      endif
+   enddo
+229 continue
+
+   if (lfound) then
+         read(1001, *) phpylambda
+         read(1001, *) num_G
+         allocate(G_list(num_G,3))
+         do it=1,num_G
+            read(1001, *)G_list(it,:)   
+         end do
+      else
+         if (package.eq.'Phonopy') then
+            if (cpuid==0) then
+               write(stdout, *)"ERROR: please set LOTO_GRID card for LOTO correction of phonon spectrum with phonopy-like grid"
+               stop "ERROR: Check error messages in PN.OUT"
+            endif
+         endif
+      endif
+
+
+
 
    ! build the map between supercell (Origin_cell) and primitive cell (Folded_cell)
    if (BulkBand_unfold_line_calc.or.BulkBand_unfold_plane_calc.or.QPI_unfold_plane_calc.or.Landaulevel_unfold_line_calc)then

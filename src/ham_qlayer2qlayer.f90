@@ -395,7 +395,7 @@
                do jj=1, Num_wann
                      pp = Origin_cell%spinorbital_to_atom_index(ii)
                      qq = Origin_cell%spinorbital_to_atom_index(jj)
-                     nac_correction(ii,jj) = (mat1(ii,jj) + mat2(ii,jj)*(108.97077184367376*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
+                     nac_correction(ii,jj) = (mat1(ii,jj) + mat2(ii,jj)*(PwscftoTHz*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
                end do
             end do
 
@@ -733,7 +733,7 @@
       real(Dp) :: unitConversor, qdotr, qingrid(3)                !  
       complex(Dp) :: sumoverq(3*natoms,3*natoms), dummy(3*natoms,3*natoms), expqdotr
 
-      unitConversor = (108.97077184367376*eV2Hartree)**2
+      unitConversor = (PwscftoTHz*eV2Hartree)**2
       
       totalnknumber = 0
       sumoverq = 0.0d0
@@ -1016,7 +1016,7 @@
                do jj=1, Num_wann
                      pp = Origin_cell%spinorbital_to_atom_index(ii)
                      qq = Origin_cell%spinorbital_to_atom_index(jj)
-                     nac_correction(ii,jj) = (mat1(ii,jj) + mat2(ii,jj)*(108.97077184367376*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
+                     nac_correction(ii,jj) = (mat1(ii,jj) + mat2(ii,jj)*(PwscftoTHz*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
                end do
             end do
            

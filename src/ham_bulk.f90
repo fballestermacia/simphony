@@ -36,7 +36,7 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
    logical :: atGamma
 
    
-
+   atGamma=.false.
    Hamk_bulk=0d0
 
    !> the first atom in home unit cell
@@ -79,7 +79,7 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
       q(3) = k(1)*rec_lattice(3,1) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to corect units 
       
       call long_range_phonon_interaction(0,0,0,q,.false.,1.0d0,mat1,tau,Born_Charge,rec_lattice,Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
-      atGamma=.false.
+
       if (abs((k(1)**2+k(2)**2+k(3)**2)).le.eps12)then  !> skip k=0
          atGamma=.true.
 
@@ -97,25 +97,26 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
       
       mat2 = 0.0d0
       if (atGamma) then
+         
          do pp = 1,Origin_cell%Num_atoms
             do qq = 1,Origin_cell%Num_atoms
                do ii=1,3
-                  zag(ii) = keps(1)*zeu(pp,1,ii) +  keps(2)*zeu(pp,2,ii) + keps(3)*zeu(pp,3,ii)
+                  zag(ii) = keps(1)*Born_Charge(pp,1,ii) +  keps(2)*Born_Charge(pp,2,ii) + keps(3)*Born_Charge(pp,3,ii)
                   
-                  zbg(ii) = keps(1)*zeu(qq,1,ii) +  keps(2)*zeu(qq,2,ii) + keps(3)*zeu(qq,3,ii)
+                  zbg(ii) = keps(1)*Born_Charge(qq,1,ii) +  keps(2)*Born_Charge(qq,2,ii) + keps(3)*Born_Charge(qq,3,ii)
 
                end do
                do ii=1,3
                   do jj=1,3
                      
-                     nac_q= constant_t*zag(ii)*zbg(jj)/qeq
-                     mat2(3*(pp-1)+ii,3*(qq-1)+jj) = nac_q
+                     nac_q= constant_t*zag(ii)*zbg(jj)/qeq!/sqrt(Atom_Mass(pp)*Atom_Mass(qq))!kBorn(jj, CartToOrb(qq))*kBorn(ii, CartToOrb(pp))*constant_t/sqrt(Atom_Mass(ii)*Atom_Mass(jj))
+                     !write(*,*) real(nac_q)
+                     mat2(3*(pp-1)+ii,3*(qq-1)+jj) = mat2(3*(pp-1)+ii,3*(qq-1)+jj) + nac_q!*(108.97077184367376*eV2Hartree)**2!/SQRT(Atom_Mass(pp)*Atom_Mass(qq))
                   
                   enddo  ! jj
                enddo  ! ii
             enddo ! qq
          enddo  ! pp
-         
       end if
       
 
@@ -125,7 +126,7 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
          do jj=1, Num_wann
             pp = Origin_cell%spinorbital_to_atom_index(ii)
             qq = Origin_cell%spinorbital_to_atom_index(jj)
-            Hamk_bulk(ii,jj) = Hamk_bulk(ii,jj) + (mat1(ii,jj) +mat2(ii,jj)*(108.97077184367376*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
+            Hamk_bulk(ii,jj) = Hamk_bulk(ii,jj) + (mat1(ii,jj) +mat2(ii,jj)*(PwscftoTHz*eV2Hartree)**2)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
          end do
       end do
 
@@ -567,10 +568,8 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk
    integer :: na,nb, i,j, m1, m2, m3
    integer :: nr1x, nr2x, nr3x
    real(Dp) :: alph, fac,g1,g2,g3, facgd, arg, gmax, e2
-   !real(DP) :: tau(3,Origin_cell%Num_atoms) 
    real(Dp) :: zag(3),zbg(3),zcg(3), fnat(3), reff(2,2)
    complex(dp) :: facg, fmtx(3,3)
-   !real(Dp) :: q(3) !new k
    
    !
    ! alph is the Ewald parameter, geg is an estimate of G^2
@@ -599,8 +598,6 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk
       end if
    end do   
    
-   !write(*,*) rec_lattice
-   
    if (nfr1 == 1) then
       nr1x=0
    else
@@ -619,7 +616,6 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk
       nr3x = int ( sqrt (geg) / &
                    (sqrt (rec_lattice (1, 3) **2 + rec_lattice (2, 3) **2 + rec_lattice (3, 3) **2) )) + 1
    endif
-   
    ! TESTING
    if (loto_2d) then 
       fac = sign*4*twopi/Origin_cell%CellVolume*0.5d0/rec_lattice(3,3)!*alat 
@@ -635,6 +631,7 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk
    else
      fac = sign/Origin_cell%CellVolume*e2*2.0d0*twopi
    endif
+
 
    do m1 = -nr1x,nr1x
       do m2 = -nr2x,nr2x
@@ -653,21 +650,21 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk
                   r=r/gp2
                endif
             else
-                geg = (g1*(Diele_Tensor(1,1)*g1+Diele_Tensor(1,2)*g2+Diele_Tensor(1,3)*g3)+      &
-                   g2*(Diele_Tensor(2,1)*g1+Diele_Tensor(2,2)*g2+Diele_Tensor(2,3)*g3)+      &
-                   g3*(Diele_Tensor(3,1)*g1+Diele_Tensor(3,2)*g2+Diele_Tensor(3,3)*g3))
+               geg = (g1*(Diele_Tensor(1,1)*g1+Diele_Tensor(1,2)*g2+Diele_Tensor(1,3)*g3)+      &
+                  g2*(Diele_Tensor(2,1)*g1+Diele_Tensor(2,2)*g2+Diele_Tensor(2,3)*g3)+      &
+                  g3*(Diele_Tensor(3,1)*g1+Diele_Tensor(3,2)*g2+Diele_Tensor(3,3)*g3))
             endif
-           
+         
             if (geg > 0.0d0 .and. geg/alph/4.0d0 < gmax ) then
                
                if (loto_2d) then 
-                 facgd = fac*exp(-geg/alph/4.0d0)/SQRT(geg)/(1.0+r*SQRT(geg)) 
+               facgd = fac*exp(-geg/alph/4.0d0)/SQRT(geg)/(1.0+r*SQRT(geg)) 
                else
-                 facgd = fac*exp(-geg/alph/4.0d0)/geg
+               facgd = fac*exp(-geg/alph/4.0d0)/geg
                endif
             
                do na = 1,natoms
-                  zag(:)=g1*zeu( na,1,:)+g2*zeu(na,2,:)+g3*zeu(na,3,:)
+                  zag(:)=g1*zeu(na,1,:)+g2*zeu(na,2,:)+g3*zeu(na,3,:)
                   fnat(:) = 0.d0
                   do nb = 1,natoms
                      arg = 2.d0 * Pi* (g1 * (tau(1,na)-tau(1,nb))+             &
@@ -675,7 +672,7 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk
                                        g3 * (tau(3,na)-tau(3,nb)))
                      zcg(:) = g1*zeu(nb,1,:) + g2*zeu(nb,2,:) + g3*zeu(nb,3,:)
 
-                     fnat(:) = fnat(:) + zcg(:)*cos(arg)
+                     fnat(:) = fnat(:) + zcg(:)*exp(zi*arg)
                   end do
                   fmtx = MATMUL(RESHAPE(zag, (/3,1/)), RESHAPE(fnat, (/1,3/)))
 
@@ -704,16 +701,16 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk
                endif
             else
                geg = (g1*(Diele_Tensor(1,1)*g1+Diele_Tensor(1,2)*g2+Diele_Tensor(1,3)*g3)+      &
-                   g2*(Diele_Tensor(2,1)*g1+Diele_Tensor(2,2)*g2+Diele_Tensor(2,3)*g3)+      &
-                   g3*(Diele_Tensor(3,1)*g1+Diele_Tensor(3,2)*g2+Diele_Tensor(3,3)*g3))
+                  g2*(Diele_Tensor(2,1)*g1+Diele_Tensor(2,2)*g2+Diele_Tensor(2,3)*g3)+      &
+                  g3*(Diele_Tensor(3,1)*g1+Diele_Tensor(3,2)*g2+Diele_Tensor(3,3)*g3))
             endif
             
             if (geg > 0.0_DP .and. geg/alph/4.0_DP < gmax ) then
                
                if (loto_2d) then 
-                 facgd = fac*exp(-geg/alph/4.0d0)/SQRT(geg)/(1.0+r*SQRT(geg))
+               facgd = fac*exp(-geg/alph/4.0d0)/SQRT(geg)/(1.0+r*SQRT(geg))
                else
-                 facgd = fac*exp(-geg/alph/4.0d0)/geg
+               facgd = fac*exp(-geg/alph/4.0d0)/geg
                endif
                !
             
@@ -724,16 +721,16 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk
                      zag(:)=g1*zeu(na,1,:)+g2*zeu(na,2,:)+g3*zeu(na,3,:) 
                   
                      
-                     arg = 2.d0*Pi* (g1 * (tau(1,na)-tau(1,nb))+             & 
-                                       g2 * (tau(2,na)-tau(2,nb))+             &
-                                       g3 * (tau(3,na)-tau(3,nb)))
+                     arg = 2.d0 * Pi * (g1 * (tau(1,na) - tau(1,nb))+             & 
+                                       g2 * (tau(2,na) - tau(2,nb))+             &
+                                       g3 * (tau(3,na) - tau(3,nb)))
                      
                      facg = facgd * exp(zi*arg)
                      do j=1,3
                         do i=1,3
                            
                            lrangetensor(i,na,j,nb) = lrangetensor(i,na,j,nb) + &
-                            facg * zag(i) * zbg(j)
+                           facg * zag(i) * zbg(j)
                         end do
                      end do
                   end do
@@ -744,13 +741,13 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk
    end do
 
 
-   !> Convert to propper units and fold two indices to get a 2D matrix. 
+   !> Convert to propper units and fold two indices to get a matrix. 
    !> Probably not efficient and not necessary, but makes the code clearer as to what we are doing.
    do nb=1,natoms
       do na=1,natoms
          do j=1,3
             do i=1,3
-               lrangematrix(3*(na-1)+i,3*(nb-1)+j) = lrangetensor(i,na,j,nb)*(108.97077184367376*eV2Hartree)**2
+               lrangematrix(3*(na-1)+i,3*(nb-1)+j) = lrangetensor(i,na,j,nb)*(PwscftoTHz*eV2Hartree)**2
             end do
          end do
       end do
@@ -764,6 +761,445 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk
    end do
    return
 end subroutine long_range_phonon_interaction
+
+
+
+
+subroutine long_range_phonon_interaction_phonopy(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk,tau,zeu,rec_lattice,natoms, map2atoms, qdir) 
+   ! This subroutine computes the rigid-ion (long-range) term for q
+   ! X. Gonze et al, PRB 50. 13035 (1994) 
+   ! the Ewald parameter alpha must be large enough to
+   ! have negligible r-space contribution
+   !
+   ! Note that this subroutine is based on the rgd_blk subroutine found on
+   ! SSCHA's CellConstructor, which is based on the subroutine with the same name found 
+   ! on Quantum ESPRESSO's source code
+   !
+   ! History
+   !        
+   !        June/13/2024 by Francesc Ballester
+   use para
+
+   implicit none
+
+   integer :: nfr1, nfr2, nfr3, natoms, map2atoms(natoms)   !  FFT grid             
+   complex(Dp) :: Hamk_bulk(3*natoms, 3*natoms)
+   real(Dp) &
+        q(3),           &! q-vector
+        sign,          &! sign=+/-1.0 ==> add/subtract rigid-ion term
+        tau(3,natoms),  & ! atom position
+        zeu(Origin_cell%Num_atoms,3,3), & ! Effective charges
+        rec_lattice(3,3),&
+        qdir(3)
+   logical :: loto_2d ! 2D LOTO correction 
+
+   
+   ! local variables
+
+   real(Dp):: geg, gp2, r                    !  <q+G| epsil | q+G>,  For 2d loto: gp2, r
+   integer :: na,nb, i,j, m1, m2, m3
+   integer :: nr1x, nr2x, nr3x
+   real(Dp) :: alph, fac,g1,g2,g3,g1_G,g2_G,g3_G, facgd, arg, gmax, e2, factor
+   real(Dp) :: zag(3),zbg(3),zcg(3), fnat(3), reff(2,2)
+   complex(dp) :: facg, fmtx(3,3)
+   
+   !
+   ! alph is the Ewald parameter, geg is an estimate of G^2
+   ! such that the G-space sum is convergent for that alph
+   ! very rough estimate: geg/4/alph > gmax = 14
+   ! (exp (-14) = 10^-6)
+   !
+   complex(Dp) :: lrangetensor(3,natoms,3,natoms),lrangematrix(3*natoms,3*natoms)
+
+
+   lrangetensor = 0d0
+   lrangematrix = 0d0
+
+   e2 = 1.0d0
+
+
+
+   factor = 2.0d0*twopi/Origin_cell%CellVolume*Ang2Bohr*Ang2Bohr * e2   *PhonopytoTHz*PhonopytoTHz*eV2Hartree
+   
+
+   
+   gmax= 14.0d0
+   alph= 1.0d0
+   geg = gmax*alph*4.0d0
+
+   
+
+   
+   if (nfr1 == 1) then
+      nr1x=0
+   else
+      nr1x = int ( sqrt (geg) / &
+                   (sqrt (rec_lattice (1, 1) **2 + rec_lattice (2, 1) **2 + rec_lattice (3, 1) **2) )) + 1
+   endif
+   if (nfr2 == 1) then
+      nr2x=0
+   else
+      nr2x = int ( sqrt (geg) / &
+                   ( sqrt (rec_lattice (1, 2) **2 + rec_lattice (2, 2) **2 + rec_lattice (3, 2) **2) )) + 1
+   endif
+   if (nfr3 == 1) then
+      nr3x=0
+   else
+      nr3x = int ( sqrt (geg) / &
+                   (sqrt (rec_lattice (1, 3) **2 + rec_lattice (2, 3) **2 + rec_lattice (3, 3) **2) )) + 1
+   endif
+   ! TESTING
+   if (loto_2d) then 
+      fac = sign*4*twopi/Origin_cell%CellVolume*0.5d0/rec_lattice(3,3)!*alat 
+      reff=0.0d0
+      do i=1,2
+         do j=1,2
+            reff(i,j)=Diele_Tensor(i,j)*0.5d0*twopi/rec_lattice(3,3) ! (eps)*c/2 in 2pi/a units
+         enddo
+      enddo
+      do i=1,2
+         reff(i,i)=reff(i,i)-0.5d0*twopi/rec_lattice(3,3) ! (-1)*c/2 in 2pi/a units
+      enddo 
+   else
+     fac = sign*factor!/Origin_cell%CellVolume*e2*2.0d0*twopi!*VASPToTHZ
+   endif
+
+
+   do m1 = -nr1x,nr1x
+      do m2 = -nr2x,nr2x
+         do m3 = -nr3x,nr3x
+            
+            g1 = m1*rec_lattice(1,1) + m2*rec_lattice(1,2) + m3*rec_lattice(1,3)
+            g2 = m1*rec_lattice(2,1) + m2*rec_lattice(2,2) + m3*rec_lattice(2,3)
+            g3 = m1*rec_lattice(3,1) + m2*rec_lattice(3,2) + m3*rec_lattice(3,3)
+
+            g1_g = m1*rec_lattice(1,1) + m2*rec_lattice(1,2) + m3*rec_lattice(1,3)
+            g2_g = m1*rec_lattice(2,1) + m2*rec_lattice(2,2) + m3*rec_lattice(2,3)
+            g3_g = m1*rec_lattice(3,1) + m2*rec_lattice(3,2) + m3*rec_lattice(3,3)
+
+            if (abs((g1**2+g2**2+g3**2)).le.eps12)then 
+               g1 = qdir(1)
+               g2 = qdir(2)
+               g3 = qdir(3)
+            end if
+
+            if (loto_2d) then 
+               geg = g1**2 + g2**2 + g3**2
+               r=0.0d0
+               gp2=g1**2+g2**2
+               if (gp2>1.0d-8) then
+                  r=g1*reff(1,1)*g1+g1*reff(1,2)*g2+g2*reff(2,1)*g1+g2*reff(2,2)*g2
+                  r=r/gp2
+               endif
+            else
+               geg = (g1*(Diele_Tensor(1,1)*g1+Diele_Tensor(1,2)*g2+Diele_Tensor(1,3)*g3)+      &
+                  g2*(Diele_Tensor(2,1)*g1+Diele_Tensor(2,2)*g2+Diele_Tensor(2,3)*g3)+      &
+                  g3*(Diele_Tensor(3,1)*g1+Diele_Tensor(3,2)*g2+Diele_Tensor(3,3)*g3))
+            endif
+         
+            if (geg > 0.0d0 .and. geg/alph/4.0d0 < gmax ) then
+               
+               if (loto_2d) then 
+               facgd = fac*exp(-geg/alph/4.0d0)/SQRT(geg)/(1.0+r*SQRT(geg)) 
+               else
+               facgd = fac*exp(-geg/alph/4.0d0)/geg
+               endif
+            
+               do na = 1,natoms
+                  zag(:)=g1*zeu(na,1,:)+g2*zeu(na,2,:)+g3*zeu(na,3,:)
+                  fnat(:) = 0.d0
+                  do nb = 1,natoms
+                     arg = 2.d0 * Pi* (g1 * (tau(1,na)-tau(1,nb))+             &
+                                       g2 * (tau(2,na)-tau(2,nb))+             &
+                                       g3 * (tau(3,na)-tau(3,nb)))
+                     zcg(:) = g1*zeu(nb,1,:) + g2*zeu(nb,2,:) + g3*zeu(nb,3,:)
+
+                     fnat(:) = fnat(:) + zcg(:)*exp(zi*arg)
+                  end do
+                  fmtx = MATMUL(RESHAPE(zag, (/3,1/)), RESHAPE(fnat, (/1,3/)))
+
+                  do j=1,3
+                     do i=1,3
+                        lrangetensor(i,na,j,na) = lrangetensor(i,na,j,na) - facgd * (fmtx(i,j)+conjg(fmtx(j,i)))/2.0d0
+                     end do
+                  end do
+                  
+               end do
+            
+               
+            end if
+            
+            g1 = g1_g + q(1)
+            g2 = g2_g + q(2)
+            g3 = g3_g + q(3)
+            if (abs((g1**2+g2**2+g3**2)).le.eps12)then 
+               g1 = qdir(1)
+               g2 = qdir(2)
+               g3 = qdir(3)
+            end if
+
+
+            if (loto_2d) then
+               geg = g1**2+g2**2+g3**2
+               r=0.0d0
+               gp2=g1**2+g2**2
+               if (gp2>1.0d-8) then
+                  r=g1*reff(1,1)*g1+g1*reff(1,2)*g2+g2*reff(2,1)*g1+g2*reff(2,2)*g2
+                  r=r/gp2
+               endif
+            else
+               geg = (g1*(Diele_Tensor(1,1)*g1+Diele_Tensor(1,2)*g2+Diele_Tensor(1,3)*g3)+      &
+                  g2*(Diele_Tensor(2,1)*g1+Diele_Tensor(2,2)*g2+Diele_Tensor(2,3)*g3)+      &
+                  g3*(Diele_Tensor(3,1)*g1+Diele_Tensor(3,2)*g2+Diele_Tensor(3,3)*g3))
+            endif
+            
+            if (geg > 0.0_DP .and. geg/alph/4.0_DP < gmax ) then
+               
+               if (loto_2d) then 
+               facgd = fac*exp(-geg/alph/4.0d0)/SQRT(geg)/(1.0+r*SQRT(geg))
+               else
+               facgd = fac*exp(-geg/alph/4.0d0)/geg
+               endif
+               !
+            
+               do nb = 1,natoms
+                  
+                  zbg(:)=g1*zeu(nb,1,:)+g2*zeu(nb,2,:)+g3*zeu(nb,3,:)
+                  do na = 1,natoms
+                     zag(:)=g1*zeu(na,1,:)+g2*zeu(na,2,:)+g3*zeu(na,3,:) 
+                     
+                     arg = 2.d0 * Pi * ((g1) * (tau(1,na) - tau(1,nb))+             & 
+                                       (g2) * (tau(2,na) - tau(2,nb))+             &
+                                       (g3) * (tau(3,na) - tau(3,nb)))
+                     
+                     facg = facgd * exp(zi*arg)
+                     do j=1,3
+                        do i=1,3
+                           
+                           lrangetensor(i,na,j,nb) = lrangetensor(i,na,j,nb) + &
+                           facg * zag(i) * zbg(j)
+                        end do
+                     end do
+                  end do
+               end do
+            end if
+         end do
+      end do
+   end do
+
+
+   !> Convert to propper units and fold two indices to get a matrix. 
+   !> Probably not efficient and not necessary, but makes the code clearer as to what we are doing.
+   do nb=1,natoms
+      do na=1,natoms
+         do j=1,3
+            do i=1,3
+               lrangematrix(3*(na-1)+i,3*(nb-1)+j) = lrangetensor(i,na,j,nb)!(PwscftoTHz*eV2Hartree)**2
+            end do
+         end do
+      end do
+   end do
+
+   !> Add the long range interaction to the Dynamical Matrix
+   do na=1,Num_wann
+      do nb=1, Num_wann
+         Hamk_bulk(na,nb) =  lrangematrix(na,nb) + Hamk_bulk(na,nb)
+      end do
+   end do
+   return
+end subroutine long_range_phonon_interaction_phonopy
+
+
+
+
+subroutine add_LR_in_grid(nG,G_vecs,q_v,sign,return_ham,tau,zeu,natoms, qdir)
+   ! This subroutine computes the rigid-ion (long-range) term for q in a set grid of G-vectors
+   ! X. Gonze et al, PRB 50. 13035 (1994) 
+   ! this is done in order to have compatibility with packages like phonopy
+   !
+   !
+   ! History
+   !        
+   !        June/4/2025 by Francesc Ballester
+
+   use para
+
+   implicit none
+
+   integer :: nG, natoms   !  FFT grid             
+   complex(Dp) :: return_ham(3*natoms, 3*natoms)
+   real(Dp) &
+        q_v(3),           &! q-vector
+        sign,          &! sign=+/-1.0 ==> add/subtract rigid-ion term
+        G_vecs(num_G,3), &
+        tau(3,natoms),  & ! atom position
+        zeu(Origin_cell%Num_atoms,3,3),&! Effective charges
+        qdir(3)
+
+
+
+   ! local variables
+
+   real(Dp):: geg, gp2, r                    !  <q+G| epsil | q+G>,  For 2d loto: gp2, r
+   integer :: na,nb, i,j, iG,ii,jj
+   integer :: nr1x, nr2x, nr3x
+   real(Dp) :: alph, fac,g1,g2,g3, facgd, arg, gmax, e2, L2, exponential
+   real(Dp) :: zag(3),zbg(3),zcg(3), fnat(3), reff(2,2),q_k(3)
+   complex(dp) :: facg, fmtx(3,3)
+   
+
+   complex(Dp) :: lrangetensor(3,natoms,3,natoms),lrangematrix(3*natoms,3*natoms), dd_q0(3,natoms,3,natoms),dd(3,natoms,3,natoms),Cdd_q0(3,natoms,3,natoms),Cdd(3,natoms,3,natoms), tosumq0
+
+   lrangetensor = 0d0
+   lrangematrix = 0d0
+   dd_q0 = 0d0
+   dd = 0.0d0
+   Cdd_q0 = 0d0
+   Cdd = 0.0d0
+
+   e2 = 2.0d0*twopi/Origin_cell%CellVolume*Ang2Bohr*Ang2Bohr *PhonopytoTHz*PhonopytoTHz*eV2Hartree!2.0d0
+
+   L2 = 4.0d0*phpylambda*phpylambda
+   fac = sign*e2!*4.0d0*pi/Origin_cell%cellvolume*(Ang2Bohr*Ang2Bohr*Ang2Bohr)!*unit-conversion
+
+   do ig=1,nG
+      g1 = G_vecs(ig,1)
+      g2 = G_vecs(ig,2)
+      g3 = G_vecs(ig,3)
+
+      q_k(:) = G_vecs(ig,:)
+
+      geg = (g1*(Diele_Tensor(1,1)*g1+Diele_Tensor(1,2)*g2+Diele_Tensor(1,3)*g3)+      &
+            g2*(Diele_Tensor(2,1)*g1+Diele_Tensor(2,2)*g2+Diele_Tensor(2,3)*g3)+      &
+            g3*(Diele_Tensor(3,1)*g1+Diele_Tensor(3,2)*g2+Diele_Tensor(3,3)*g3))
+
+      exponential = exp(-geg/L2)
+
+      if (abs(geg) > 0.0d0)then
+         do na=1,natoms
+            do nb=1,natoms
+
+               arg = 2.d0 * Pi* (g1 * (tau(1,na)-tau(1,nb))+             &
+                                 g2 * (tau(2,na)-tau(2,nb))+             &
+                                 g3 * (tau(3,na)-tau(3,nb)))
+               do i=1,3
+                  do j=1,3
+                     dd_q0(i,na,j,nb) =dd_q0(i,na,j,nb) + q_k(i)*q_k(j)/geg*exponential*exp(zi*arg)
+                  end do 
+               end do 
+            end do
+         end do
+      end if
+
+      g1 = G_vecs(ig,1) + q_v(1)
+      g2 = G_vecs(ig,2) + q_v(2)
+      g3 = G_vecs(ig,3) + q_v(3)
+
+      q_k(:) = G_vecs(ig,:) + q_v(:)
+
+      geg = (g1*(Diele_Tensor(1,1)*g1+Diele_Tensor(1,2)*g2+Diele_Tensor(1,3)*g3)+      &
+      g2*(Diele_Tensor(2,1)*g1+Diele_Tensor(2,2)*g2+Diele_Tensor(2,3)*g3)+      &
+      g3*(Diele_Tensor(3,1)*g1+Diele_Tensor(3,2)*g2+Diele_Tensor(3,3)*g3))
+
+      exponential = exp(-geg/L2)
+
+      g1 = G_vecs(ig,1) 
+      g2 = G_vecs(ig,2) 
+      g3 = G_vecs(ig,3) 
+
+      if (abs((g1**2+g2**2+g3**2)).le.eps12)then 
+         g1 = qdir(1)
+         g2 = qdir(2)
+         g3 = qdir(3)
+         q_k(:) = qdir(:)
+         geg = (g1*(Diele_Tensor(1,1)*g1+Diele_Tensor(1,2)*g2+Diele_Tensor(1,3)*g3)+      &
+         g2*(Diele_Tensor(2,1)*g1+Diele_Tensor(2,2)*g2+Diele_Tensor(2,3)*g3)+      &
+         g3*(Diele_Tensor(3,1)*g1+Diele_Tensor(3,2)*g2+Diele_Tensor(3,3)*g3))
+      end if
+
+
+
+      if (abs(geg) > 0.0d0)then
+         do na=1,natoms
+            do nb=1,natoms
+
+               arg = 2.d0 * Pi* (g1 * (tau(1,na)-tau(1,nb))+             &
+                                 g2 * (tau(2,na)-tau(2,nb))+             &
+                                 g3 * (tau(3,na)-tau(3,nb)))
+               do i=1,3
+                  do j=1,3
+                     dd(i,na,j,nb) = dd(i,na,j,nb) + q_k(i)*q_k(j)/geg*exponential*exp(zi*arg)
+                  end do 
+               end do 
+            end do
+         end do
+      end if
+   end do 
+
+
+   do nb=1,natoms
+      do na=1,natoms
+         do j=1,3
+            do i=1,3
+               do jj=1,3
+                  do ii=1,3
+                     Cdd_q0(i,na,j,nb) = Cdd_q0(i,na,j,nb) +dd_q0(i,na,j,nb)*zeu(na,i,ii)*zeu(nb,j,jj)
+                     Cdd(i,na,j,nb)=Cdd(i,na,j,nb) + dd(i,na,j,nb)*zeu(na,i,ii)*zeu(nb,j,jj)
+                  end do
+               end do
+            end do
+         end do
+      end do
+   end do
+
+   
+   do nb=1,natoms
+      do na=1,natoms
+         do j=1,3
+            do i=1,3
+               tosumq0 = 0.0d0
+               if (nb.eq.na)then
+                  tosumq0 = Cdd_q0(i,na,j,nb)
+               end if
+               lrangetensor(i,na,j,nb)= lrangetensor(i,na,j,nb) + Cdd(i,na,j,nb)-tosumq0
+            end do
+         end do
+      end do
+   end do
+
+
+
+   
+
+   !> Convert to propper units and fold two indices to get a matrix. 
+   !> Probably not efficient and not necessary, but makes the code clearer as to what we are doing.
+   do nb=1,natoms
+      do na=1,natoms
+         do j=1,3
+            do i=1,3
+               lrangematrix(3*(na-1)+i,3*(nb-1)+j) = lrangetensor(i,na,j,nb)*fac !*(15.633302300230191*PwscftoTHz*eV2Hartree)**2
+            end do
+         end do
+      end do
+   end do
+
+   !> Add the long range interaction to the Dynamical Matrix
+   do na=1,Num_wann
+      do nb=1, Num_wann
+         return_ham(na,nb) =  lrangematrix(na,nb) + return_ham(na,nb)
+      end do
+   end do
+   return
+
+
+
+
+
+
+end subroutine add_LR_in_grid
+
+
+
 
 subroutine impose_ASR_on_eff_charges (nat, tau, zeu)
    !-----------------------------------------------------------------------
@@ -1105,78 +1541,115 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
          do nn = 1, Num_wann
             qq = Origin_cell%spinorbital_to_atom_index(nn)
             jj = Origin_cell%spinorbital_to_projector_index(nn)
-            Hamk_bulk(mm, nn)= Hamk_bulk(mm, nn) + (HmnR(3*(pp-1)+ii,3*(qq-1)+jj,iR))*ratio/ndegen(iR)*SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
+            Hamk_bulk(mm, nn)= Hamk_bulk(mm, nn) + (HmnR(3*(pp-1)+ii,3*(qq-1)+jj,iR))*ratio/ndegen(iR)!*SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
          end do
       end do
    enddo ! iR
 
-   !call ham_bulk_latticegauge(k,Hamk_bulk)
-   
-   ! Add long-range interaction
-   !Hamk_bulk = 0.0d0
-   rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi) !Transform to corect units
-    
-   q(1) = k(1)*rec_lattice(1,1) + k(2)*rec_lattice(1,2) + k(3)*rec_lattice(1,3)
-   q(2) = k(1)*rec_lattice(1,2) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
-   q(3) = k(1)*rec_lattice(1,3) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to corect units 
-   
-   call long_range_phonon_interaction(0,0,0,q,.false.,1.0d0,Hamk_bulk,tau,zeu,rec_lattice,Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
-   
-   if (abs((k(1)**2+k(2)**2+k(3)**2)).le.eps12)then  !> skip k=0
-      atGamma=.true.
-
-      qeq = (keps(1)*(Diele_Tensor(1,1)*keps(1)+Diele_Tensor(1,2)*keps(2)+Diele_Tensor(1,3)*keps(3))+    &
-            keps(2)*(Diele_Tensor(2,1)*keps(1)+Diele_Tensor(2,2)*keps(2)+Diele_Tensor(2,3)*keps(3))+    &
-            keps(3)*(Diele_Tensor(3,1)*keps(1)+Diele_Tensor(3,2)*keps(2)+Diele_Tensor(3,3)*keps(3)))
-      
-      constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
-
-   endif
-   
    
    
    
    
    mat2 = 0.0d0
-   if (atGamma) then
-      do pp = 1,Origin_cell%Num_atoms
-         do qq = 1,Origin_cell%Num_atoms
-            do ii=1,3
-               zag(ii) = keps(1)*zeu(pp,1,ii) +  keps(2)*zeu(pp,2,ii) + keps(3)*zeu(pp,3,ii)
-               
-               zbg(ii) = keps(1)*zeu(qq,1,ii) +  keps(2)*zeu(qq,2,ii) + keps(3)*zeu(qq,3,ii)
-
-            end do
-            do ii=1,3
-               do jj=1,3
-                  
-                  nac_q= constant_t*zag(ii)*zbg(jj)/qeq!/sqrt(Atom_Mass(pp)*Atom_Mass(qq))!kBorn(jj, CartToOrb(qq))*kBorn(ii, CartToOrb(pp))*constant_t/sqrt(Atom_Mass(ii)*Atom_Mass(jj))
-                  !write(*,*) real(nac_q)
-                  mat2(3*(pp-1)+ii,3*(qq-1)+jj) = nac_q!*(108.97077184367376*eV2Hartree)**2!/SQRT(Atom_Mass(pp)*Atom_Mass(qq))
-               
-               enddo  ! jj
-            enddo  ! ii
-         enddo ! qq
-      enddo  ! pp
+   if (package.eq.'Phonopy')then
+      ! Add long-range interaction
+      rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi) !Transform to cartesian
       
+      q(1) = k(1)*rec_lattice(1,1) + k(2)*rec_lattice(1,2) + k(3)*rec_lattice(1,3)
+      q(2) = k(1)*rec_lattice(1,2) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
+      q(3) = k(1)*rec_lattice(1,3) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to cartesian
+      call long_range_phonon_interaction_phonopy(0,0,0,q,.false.,1.0d0,mat2,tau,zeu,rec_lattice,Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3),keps)
+
+      ! do mm = 1, Num_wann
+      !    pp = Origin_cell%spinorbital_to_atom_index(mm)
+      !    ii = Origin_cell%spinorbital_to_projector_index(mm)
+      !    do nn = 1, Num_wann
+      !       qq = Origin_cell%spinorbital_to_atom_index(nn)
+      !       jj = Origin_cell%spinorbital_to_projector_index(nn)
+
+      !       ratio = 2.d0 * Pi * ((q(1)) * (tau(1,pp) - tau(1,qq))+             & 
+      !                                  (q(2)) * (tau(2,pp) - tau(2,qq))+             &
+      !                                  (q(3)) * (tau(3,pp) - tau(3,qq)))
+      !       mat2(mm, nn)= (mat2(3*(pp-1)+ii,3*(qq-1)+jj))*exp(zi*ratio)!*SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
+      !    end do
+      ! end do
+
+      ! rec_lattice = Origin_cell%reciprocal_lattice!*Origin_cell%cell_parameters(1)/(twopi) !Transform to cartesian
+      
+      ! q(1) = k(1)*rec_lattice(1,1) + k(2)*rec_lattice(1,2) + k(3)*rec_lattice(1,3)
+      ! q(2) = k(1)*rec_lattice(1,2) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
+      ! q(3) = k(1)*rec_lattice(1,3) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to cartesian
+      ! call add_LR_in_grid(num_G,G_list,q,1.0d0,mat2,Origin_cell%Atom_position_cart/Ang2Bohr,zeu,Origin_cell%Num_atoms, keps)
+   else
+      ! Add long-range interaction
+      rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi) !Transform to cartesian
+      
+      q(1) = k(1)*rec_lattice(1,1) + k(2)*rec_lattice(1,2) + k(3)*rec_lattice(1,3)
+      q(2) = k(1)*rec_lattice(1,2) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
+      q(3) = k(1)*rec_lattice(1,3) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to cartesian
+      call long_range_phonon_interaction(0,0,0,q,.false.,1.0d0,mat2,tau,zeu,rec_lattice,Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+   
+      if (abs((k(1)**2+k(2)**2+k(3)**2)).le.eps12)then  !> skip k=0
+         atGamma=.true.
+
+         qeq = (keps(1)*(Diele_Tensor(1,1)*keps(1)+Diele_Tensor(1,2)*keps(2)+Diele_Tensor(1,3)*keps(3))+    &
+               keps(2)*(Diele_Tensor(2,1)*keps(1)+Diele_Tensor(2,2)*keps(2)+Diele_Tensor(2,3)*keps(3))+    &
+               keps(3)*(Diele_Tensor(3,1)*keps(1)+Diele_Tensor(3,2)*keps(2)+Diele_Tensor(3,3)*keps(3)))
+         
+         constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
+
+      endif
+      
+      
+      
+      
+      
+      
+      if (atGamma) then
+         do pp = 1,Origin_cell%Num_atoms
+            do qq = 1,Origin_cell%Num_atoms
+               do ii=1,3
+                  zag(ii) = keps(1)*zeu(pp,1,ii) +  keps(2)*zeu(pp,2,ii) + keps(3)*zeu(pp,3,ii)
+                  
+                  zbg(ii) = keps(1)*zeu(qq,1,ii) +  keps(2)*zeu(qq,2,ii) + keps(3)*zeu(qq,3,ii)
+
+               end do
+               do ii=1,3
+                  do jj=1,3
+                     
+                     nac_q= constant_t*zag(ii)*zbg(jj)/qeq!/sqrt(Atom_Mass(pp)*Atom_Mass(qq))!kBorn(jj, CartToOrb(qq))*kBorn(ii, CartToOrb(pp))*constant_t/sqrt(Atom_Mass(ii)*Atom_Mass(jj))
+                     !write(*,*) real(nac_q)
+                     mat2(3*(pp-1)+ii,3*(qq-1)+jj) = mat2(3*(pp-1)+ii,3*(qq-1)+jj) + nac_q*(PwscftoTHz*eV2Hartree)**2!*(108.97077184367376*eV2Hartree)**2!/SQRT(Atom_Mass(pp)*Atom_Mass(qq))
+                  
+                  enddo  ! jj
+               enddo  ! ii
+            enddo ! qq
+         enddo  ! pp
+         
+      end if
+   
    end if
+   
+   
    
 
 
 
    do ii=1,Num_wann
       do jj=1, Num_wann
-         Hamk_bulk(ii,jj) = Hamk_bulk(ii,jj) +mat2(ii,jj)*(108.97077184367376*eV2Hartree)**2!/sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(na))*Atom_Mass(Origin_cell%spinorbital_to_atom_index(nb)))
+         pp = Origin_cell%spinorbital_to_atom_index(ii)
+         qq = Origin_cell%spinorbital_to_atom_index(jj)
+         Hamk_bulk(ii,jj) = Hamk_bulk(ii,jj) +mat2(ii,jj)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) !/sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(na))*Atom_Mass(Origin_cell%spinorbital_to_atom_index(nb)))
       end do
    end do
 
-   do ii=1,Num_wann
-      do jj=1, Num_wann
-         pp = Origin_cell%spinorbital_to_atom_index(ii)
-         qq = Origin_cell%spinorbital_to_atom_index(jj)
-         Hamk_bulk(ii,jj) = Hamk_bulk(ii,jj)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
-      end do
-   end do
+   ! do ii=1,Num_wann
+   !    do jj=1, Num_wann
+   !       pp = Origin_cell%spinorbital_to_atom_index(ii)
+   !       qq = Origin_cell%spinorbital_to_atom_index(jj)
+   !       Hamk_bulk(ii,jj) = Hamk_bulk(ii,jj)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) 
+   !    end do
+   ! end do
 
 
    
@@ -1197,9 +1670,10 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
             keps(ii) = 0.0d0
          end if
       end do  
+      keps(:) = keps(:)/SQRT(keps(1)**2+keps(2)**2+keps(3)**2)*eps3
    end if
-   
-   
+
+
 
    deallocate(kBorn)
    deallocate(mat1)
