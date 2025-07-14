@@ -3442,7 +3442,7 @@ subroutine readinput
    stat= 0
    NumberofSelectedOccupiedBands= 0
    read(1001, '(A)', err=232, iostat=stat)inline
-   !> get howmany integer numbers specified in the inline string
+   !> get ho many integer numbers specified in the inline string
    call param_get_range_vector('SelectedOccupiedBands',inline,idummy,.true., Selected_Occupiedband_index)
    NumberofSelectedOccupiedBands= idummy
 
@@ -3695,39 +3695,32 @@ subroutine readinput
 
 
 !===============================================================================================================!
-!> LOTO_GRID card
+!> LOTO_INTERPOLATE card
 !===============================================================================================================!
    
+   !> Default values
+   LOTO_grid1 = 11
+   LOTO_grid2 = 11
+   LOTO_grid3 = 11
 
    rewind(1001)
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 229)inline
       inline=upper(inline)
-      if (trim(adjustl(inline))=='LOTO_GRID') then
+      if (trim(adjustl(inline))=='LOTO_INTERPOLATE') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
-         if (cpuid==0) write(stdout, *)'We found LOTO_GRID card for phonopy LOTO correction'
+         if (cpuid==0) write(stdout, *)'We found LOTO_INTERPOLATE card for LOTO interpolation to real space'
          exit
       endif
    enddo
 229 continue
 
    if (lfound) then
-         read(1001, *) phpylambda
-         read(1001, *) num_G
-         allocate(G_list(num_G,3))
-         do it=1,num_G
-            read(1001, *)G_list(it,:)   
-         end do
-      else
-         if (package.eq.'Phonopy') then
-            if (cpuid==0) then
-               write(stdout, *)"ERROR: please set LOTO_GRID card for LOTO correction of phonon spectrum with phonopy-like grid"
-               stop "ERROR: Check error messages in PN.OUT"
-            endif
-         endif
-      endif
+         read(1001, *) LOTO_grid1,LOTO_grid2,LOTO_grid3
+         if (cpuid==0) write(stdout, *)'Grid interpolation parameters:', LOTO_grid1,LOTO_grid2,LOTO_grid3
+   endif
 
 
 

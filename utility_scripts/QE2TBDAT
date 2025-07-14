@@ -281,7 +281,7 @@ if __name__ == '__main__':
         symmetrize = True
     except IndexError:
         symmetrize = False
-        asr = False
+        asr = 'no'
 
     prefix = dynprefix.split('.dyn')[0]
     

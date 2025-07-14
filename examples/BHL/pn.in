@@ -9,34 +9,35 @@ LOTO_correction       = F
 
 !> bulk band structure calculation flags
 BulkBand_calc         = T
+BulkBand_plane_calc   = F
 BulkGap_cube_calc     = F
 BulkGap_plane_calc    = F
-BulkFS_calc           = F
+
 
 !> slab band structure calculation flags
-SlabBand_calc         = T
+SlabBand_calc         = F
 SlabSS_calc           = F
 SlabArc_calc          = F
+SlabBand_plane_calc   = F
 
 !> wire band structure calculation flags
-WireBand_calc         = T
+WireBand_calc         = F
 
-!> DOS and JDOS calculation flags
+!> DOS calculation flags
 Dos_calc              = F
-JDos_calc             = F
+
 
 !> Topological quantities calculation flags
 FindNodes_calc        = F
 BerryPhase_calc       = F
 BerryCurvature_calc   = F
 Chern_3D_calc         = F
-Z2_3D_calc            = F
-Wanniercenter_calc    = T
+Wanniercenter_calc    = F
 WeylChirality_calc    = F
 /
  
 &SYSTEM 
-NSLAB = 10
+NSLAB = 5
 NSLAB1 = 40
 NSLAB2 = 1
 NumOccupied = 4      !>Index of band taken into account for the calculations
@@ -44,8 +45,8 @@ NumOccupied = 4      !>Index of band taken into account for the calculations
 
 
 &PARAMETERS 
-Nk1 = 150           !>number k points 
-Nk2 = 150           !>number k points 
+Nk1 = 151           !>number k points 
+Nk2 = 3           !>number k points 
 /
 
 

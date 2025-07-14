@@ -27,7 +27,7 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
    complex(dp) :: factor
 
    real(dp) :: pos(3), pos1(3), pos2(3), pos_cart(3), pos_direct(3), &
-   keps(3)=(/eps12, eps12, eps12/), rec_lattice(3,3),q(3), zag(3),zbg(3), nac_q,qeq, constant_t
+   keps(3)=(/eps6, eps6, eps6/), rec_lattice(3,3),q(3), zag(3),zbg(3), nac_q,qeq, constant_t
    ! Hamiltonian of bulk system
    complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann)
    complex(dp), allocatable :: mat1(:, :), mat2(:,:)

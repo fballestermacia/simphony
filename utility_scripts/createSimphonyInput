@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 """
-This code generates an input file 'pn.in' which is an input of Simphony.
+This code generates an input file 'pn.in' which is an input of Phonnier.
 Inputs are output files from Quantum Espresso. Mainly the 'name.dat{0,1,2,...}' files, which are read and parsed using SSCHA's CellConstructor.
 
 Usage:
-createSimphonyInput PathTo/name.dyn N_irr_q
+createPhonnierInput PathTo/name.dyn N_irr_q
 
 """
 
@@ -17,6 +17,7 @@ import cellconstructor.Phonons
 import cellconstructor.ForceTensor
 from cellconstructor.Units import MASS_RY_TO_UMA
 import sys
+import seekpath as sk
 
 if __name__ == '__main__':
 
@@ -28,12 +29,12 @@ if __name__ == '__main__':
     try:
         dynprefix = str(sys.argv[1])
     except IndexError:
-        raise IndexError('Missing file name name.dyn. Usage: \'createSimphonyInput PathTo/name.dyn N_irr_q\'')
+        raise IndexError('Missing file name name.dyn. Usage: \'createPhonnierInput PathTo/name.dyn N_irr_q\'')
 
     try:
         nqirrs = int(sys.argv[2])
     except IndexError:
-        raise IndexError('Missing number of irreducible q points N_irr_q. Usage: \'createSimphonyInput PathTo/name.dyn N_irr_q\'')
+        raise IndexError('Missing number of irreducible q points N_irr_q. Usage: \'createPhonnierInput PathTo/name.dyn N_irr_q\'')
     
     prefix = dynprefix.split('.dyn')[0]
 
@@ -54,8 +55,29 @@ if __name__ == '__main__':
     cell = dyn.structure.unit_cell
 
     positions = np.round(CC.Methods.covariant_coordinates(cell, dyn.structure.coords),8) 
-
+    
+    numbers = dyn.structure.get_ityp()
     labels = dyn.structure.atoms
+
+    structure = (cell, positions, numbers)
+
+    path = sk.get_explicit_k_path_orig_cell(structure,with_time_reversal=True, reference_distance=0.05)
+
+    qpath = path['explicit_kpoints_rel']
+    #qpath = CC.Methods.covariant_coordinates(cell, qpath) 
+    
+    segments = path['explicit_segments']
+    qlabels = path['explicit_kpoints_labels']
+    for i in range(len(qlabels)):
+        if qlabels[i]=="GAMMA":
+                qlabels[i] = "G"
+#     print(qpath, segments, labels)
+
+#     for i,s in enumerate(segments):
+#         i1 = s[0]
+#         i2 = s[1]-1
+#         print(qabels[i1], qpath[i1], qlabels[i2], qpath[i2])
+
 
     with open("pn.in", "w") as f:
         f.write("!> Input file written automatically on " + str(datetime.now()) +" by F. B. \n")
@@ -78,8 +100,6 @@ if __name__ == '__main__':
                 + "\n"
                 +"BulkGap_plane_calc    = F"
                 + "\n"
-                +"BulkFS_calc           = F"
-                + "\n"
                 + "\n"
                 +"!> slab band structure calculation flags"
                 + "\n"
@@ -95,11 +115,9 @@ if __name__ == '__main__':
                 +"WireBand_calc         = F"
                 + "\n"
                 + "\n"
-                +"!> DOS and JDOS calculation flags"
+                +"!> DOS calculation flags"
                 + "\n"
                 +"Dos_calc              = F"
-                + "\n"
-                +"JDos_calc             = F"
                 + "\n"
                 + "\n"
                 +"!> Topological quantities calculation flags"
@@ -112,8 +130,6 @@ if __name__ == '__main__':
                 + "\n"
                 +"Chern_3D_calc         = F"
                 + "\n"
-                +"Z2_3D_calc            = F"
-                + "\n"
                 +"Wanniercenter_calc    = F"
                 + "\n"
                 +"WeylChirality_calc    = F"
@@ -123,7 +139,7 @@ if __name__ == '__main__':
 
         f.write("&SYSTEM \n"
                 +"NSLAB = 10\n"
-                +"NumOccupied = 1      !>Index of band taken into account for the calculations\n"
+                +"NumOccupied = 1      !>Automatically selects from band 1 up to band NumOccupied. Overwriten by SELECTED_OCCUPIED_BANDS card\n"
                 +"/\n"
                 +"\n\n")
         
@@ -147,7 +163,7 @@ if __name__ == '__main__':
                 +"{:20.10f}     {:20.10f}       {:20.10f}\n".format(cell[1][0],cell[1][1],cell[1][2])
                 +"{:20.10f}     {:20.10f}       {:20.10f}\n".format(cell[2][0],cell[2][1],cell[2][2])
                 +"\n\n")
-
+        
         f.write("ATOMS\n"
                 +"{}\n".format(num_atom)
                 +"Direct\n")
@@ -156,17 +172,26 @@ if __name__ == '__main__':
         f.write("\n \n")
 
         f.write("KPATH_BULK\n"
-                +"8\n"
-                +"X   0.500000  0.000000  0.500000   W   0.500000  0.250000  0.750000\n"
-                +"W   0.500000  0.250000  0.750000   L   0.500000  0.500000  0.500000\n"
-                +"L   0.500000  0.500000  0.500000   G   0.000000  0.000000  0.000000\n"
-                +"G   0.000000  0.000000  0.000000   X   0.500000  0.000000  0.500000\n"
-                +"X   0.500000  0.000000  0.500000   X1   0.500000  0.500000  1.000000\n"
-                +"X1   0.500000  0.500000  1.000000   K   0.375000  0.375000  0.750000\n"
-                +"K   0.375000  0.375000  0.750000    U   0.125000  0.125000  0.250000\n"
-                +"U   0.125000  0.125000  0.250000   G   0.000000  0.000000  0.000000\n"
-                +"\n \n")
+                +str(len(segments))+"\n")
         
+        for i,s in enumerate(segments):
+                i1 = s[0]
+                i2 = s[1]-1
+                f.write("{}   ".format(qlabels[i1]))
+                f.write("{:20.8f}   ".format(np.round(qpath[i1][0],10)))
+                f.write("{:20.8f}   ".format(np.round(qpath[i1][1],10)))
+                f.write("{:20.8f}   ".format(np.round(qpath[i1][2],10)))
+                f.write("{}   ".format(qlabels[i2]))
+                f.write("{:20.8f}   ".format(np.round(qpath[i2][0],10)))
+                f.write("{:20.8f}   ".format(np.round(qpath[i2][1],10)))
+                f.write("{:20.8f}".format(np.round(qpath[i2][2],10)))
+                f.write("\n")
+        f.write("\n")                
+
+        f.write("SELECTED_OCCUPIED_BANDS\n"
+                +"1-3 !>Selects bands from 1 to 3\n" 
+                +"\n\n")
+
         f.write("SURFACE\n"
                 +"1 0 0\n"
                 +"0 1 0\n" 
@@ -218,3 +243,5 @@ if __name__ == '__main__':
                 f.write("{:20.10f}     {:20.10f}       {:20.10f}\n".format(bc[i][0][0],bc[i][0][1],bc[i][0][2])
                     +"{:20.10f}     {:20.10f}       {:20.10f}\n".format(bc[i][1][0],bc[i][1][1],bc[i][1][2])
                     +"{:20.10f}     {:20.10f}       {:20.10f}\n".format(bc[i][2][0],bc[i][2][1],bc[i][2][2]))
+            f.write("LOTO_INTERPOLATE\n"
+                    +"11 11 11\n\n")

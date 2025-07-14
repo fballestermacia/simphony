@@ -73,7 +73,7 @@ subroutine ek_bulk_line
                   ic=irvec(3,iR)
                   R = irvec(:,iR)
                   mat1 = 0.0d0
-                  call FT_long_range_to_R(R,11,11,11,mat1,     &
+                  call FT_long_range_to_R(R,LOTO_grid1,LOTO_grid2,LOTO_grid3,mat1,     &
                                           Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1),  &
                                           Born_Charge(:,:,:), Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi), &
                                           Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))

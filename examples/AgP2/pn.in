@@ -11,33 +11,31 @@ LOTO_correction       = T
 BulkBand_calc         = F
 BulkGap_cube_calc     = F
 BulkGap_plane_calc    = F
-BulkFS_calc           = F
+
 
 !> slab band structure calculation flags
-SlabBand_calc         = T
+SlabBand_calc         = F
 SlabSS_calc           = F
 SlabArc_calc          = F
 
 !> wire band structure calculation flags
 WireBand_calc         = F
 
-!> DOS and JDOS calculation flags
+!> DOS calculation flags
 Dos_calc              = F
-JDos_calc             = F
 
 !> Topological quantities calculation flags
 FindNodes_calc        = F
 BerryPhase_calc       = F
 BerryCurvature_calc   = F
 Chern_3D_calc         = F
-Z2_3D_calc            = F
-Wanniercenter_calc    = F
+Wanniercenter_calc    = T
 WeylChirality_calc    = F
 /
  
 &SYSTEM 
 NSLAB = 10
-NumOccupied = 14      !>Index of band taken into account for the calculations
+NumOccupied = 1      !>Index of band taken into account for the calculations
 /
 
 
@@ -51,7 +49,7 @@ Nk1 = 50           !>number k points
 Nk2 = 50           !>number k points 
 Nk3 = 50          !>number k points 
 NP = 5             !>number of principle layers 
-Gap_threshold = 0.00001 !>threshold for GapCube output 
+Gap_threshold = 0.00000001 !>threshold for GapCube output 
 /
 
 
@@ -97,6 +95,8 @@ SURFACE
 1 0 0
 0 1 0
 
+SELECTED_OCCUPIED_BANDS
+27-32
 
 KPATH_SLAB
 5
@@ -114,9 +114,9 @@ KPLANE_SLAB
 
 
 KPLANE_BULK
--0.50 -0.50 -0.50
-0.00 1.00 1.00
-1.00 0.00 1.00
+-0.00 -0.00 -0.00
+1.00 0.00 0.00
+0.00 1.00 0.00
 
 
 KCUBE_BULK

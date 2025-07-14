@@ -643,6 +643,8 @@
      !> only used for generating the POSCAR_slab
      real(dp) :: Vacuum_thickness_in_Angstrom
 
+     integer :: LOTO_grid1, LOTO_grid2, LOTO_grid3
+
 
      real(dp) :: phpylambda = 1.0d0
      integer :: num_G
