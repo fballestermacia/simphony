@@ -725,7 +725,8 @@
             zeu(Origin_cell%Num_atoms,3,3),     &  ! effective charges
             qeq, constant_t, nac_q
       
-
+      ! time measurement
+      real(dp) :: time_start, time_end
 
       !  local variables
 
@@ -737,6 +738,11 @@
       
       totalnknumber = 0
       sumoverq = 0.0d0
+
+      time_start= 0d0
+      time_end= 0d0
+      call now(time_start)
+
       do n1=-nkft1,nkft1
          do n2=-nkft2,nkft2
             do n3=-nkft3,nkft3
@@ -787,6 +793,10 @@
          end do
       end do
       
+      call now(time_end)
+
+      call print_time_cost(time_start,time_end, 'transforming DD into real space' )
+
       DofR = sumoverq/dble(totalnknumber)!*2d0*(twopi)**3/Origin_cell%cellvolume
       
       do ii=1, 3*natoms
