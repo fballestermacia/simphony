@@ -1362,162 +1362,162 @@ subroutine fermisurface_stack
    end subroutine gapshape
 
 
-   subroutine get_fermilevel
-      !> Calculate fermilevel for the given hamiltonian
-      use wmpi
-      use para
-      implicit none
+!    subroutine get_fermilevel
+!       !> Calculate fermilevel for the given hamiltonian
+!       use wmpi
+!       use para
+!       implicit none
 
-      integer :: ikx, iky, ikz, io, ik, ik_first, ik_last
+!       integer :: ikx, iky, ikz, io, ik, ik_first, ik_last
 
-      !> number of k points
-      integer :: knv3, ierr, iter, itermax, ibeta
+!       !> number of k points
+!       integer :: knv3, ierr, iter, itermax, ibeta
 
-      !> fermi level
-      real(dp) :: EF, k(3)
+!       !> fermi level
+!       real(dp) :: EF, k(3)
 
-      real(dp) ::  Beta_fake, lmin0, lmax0, lmin, lmax, tot, tot_mpi, lmin_mpi, lmax_mpi
+!       real(dp) ::  Beta_fake, lmin0, lmax0, lmin, lmax, tot, tot_mpi, lmin_mpi, lmax_mpi
 
-      !> fermi-dirac distribution function
-      real(dp), external :: fermi
+!       !> fermi-dirac distribution function
+!       real(dp), external :: fermi
 
-      !> eigen value for each kpoint
-      real(dp), allocatable :: W(:)
-      real(dp), allocatable :: eigvals(:, :)
+!       !> eigen value for each kpoint
+!       real(dp), allocatable :: W(:)
+!       real(dp), allocatable :: eigvals(:, :)
 
-      !> we calculate Fermi level at different temperature
-      integer :: Beta_num
-      real(dp), allocatable :: Beta_array(:), EF_array(:)
+!       !> we calculate Fermi level at different temperature
+!       integer :: Beta_num
+!       real(dp), allocatable :: Beta_array(:), EF_array(:)
 
-      complex(dp), allocatable :: ham(:, :)
+!       complex(dp), allocatable :: ham(:, :)
 
-      knv3= Nk1*Nk2*Nk3
-      call WTGenerateLocalPartition(knv3, num_cpu, cpuid, ik_first, ik_last)
+!       knv3= Nk1*Nk2*Nk3
+!       call WTGenerateLocalPartition(knv3, num_cpu, cpuid, ik_first, ik_last)
 
-      allocate(W(Num_wann))
-      allocate(eigvals(Num_wann, ik_first:ik_last))
-      allocate(ham(Num_wann, Num_wann))
-      eigvals= 0d0
-      ham= 0d0
-      Beta_fake = Beta
-      Beta_num=30
-      allocate(Beta_array(Beta_num), EF_array(Beta_num))
-      Beta_array= 0d0
-      EF_array= 0d0
+!       allocate(W(Num_wann))
+!       allocate(eigvals(Num_wann, ik_first:ik_last))
+!       allocate(ham(Num_wann, Num_wann))
+!       eigvals= 0d0
+!       ham= 0d0
+!       Beta_fake = Beta
+!       Beta_num=30
+!       allocate(Beta_array(Beta_num), EF_array(Beta_num))
+!       Beta_array= 0d0
+!       EF_array= 0d0
 
-      do ibeta=1, Beta_num
-         Beta_array(ibeta)= 11600d0/(10d0+ (300d0-10d0)*(ibeta-1)/(Beta_num-1))
-      enddo
+!       do ibeta=1, Beta_num
+!          Beta_array(ibeta)= 11600d0/(10d0+ (300d0-10d0)*(ibeta-1)/(Beta_num-1))
+!       enddo
 
-      do ik=ik_first, ik_last
+!       do ik=ik_first, ik_last
  
-         ikx= (ik-1)/(nk2*nk3)+1
-         iky= ((ik-1-(ikx-1)*Nk2*Nk3)/nk3)+1
-         ikz= (ik-(iky-1)*Nk3- (ikx-1)*Nk2*Nk3)
-         k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1-1)  &
-          + K3D_vec2_cube*(iky-1)/dble(nk2-1)  &
-          + K3D_vec3_cube*(ikz-1)/dble(nk3-1)
+!          ikx= (ik-1)/(nk2*nk3)+1
+!          iky= ((ik-1-(ikx-1)*Nk2*Nk3)/nk3)+1
+!          ikz= (ik-(iky-1)*Nk3- (ikx-1)*Nk2*Nk3)
+!          k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1-1)  &
+!           + K3D_vec2_cube*(iky-1)/dble(nk2-1)  &
+!           + K3D_vec3_cube*(ikz-1)/dble(nk3-1)
 
-         ham= 0d0
-         call ham_bulk_latticegauge(k, ham)
-         call eigensystem_c( 'N', 'U', num_wann, ham, W)
-         eigvals(:, ik)= W
-      enddo ! ik
+!          ham= 0d0
+!          call ham_bulk_latticegauge(k, ham)
+!          call eigensystem_c( 'N', 'U', num_wann, ham, W)
+!          eigvals(:, ik)= W
+!       enddo ! ik
 
-      ! using bisection algorithm to search the fermi level
-      iter= 0 
-      itermax= 100
-      tot= 9999d0
-      lmin_mpi= minval(eigvals)
-      lmax_mpi= maxval(eigvals)
+!       ! using bisection algorithm to search the fermi level
+!       iter= 0 
+!       itermax= 100
+!       tot= 9999d0
+!       lmin_mpi= minval(eigvals)
+!       lmax_mpi= maxval(eigvals)
 
-#if defined (MPI)
-         call mpi_allreduce(lmin_mpi, lmin, 1, &
-                            mpi_dp, mpi_min, mpi_cmw, ierr)
-         call mpi_allreduce(lmax_mpi, lmax, 1, &
-                            mpi_dp, mpi_max, mpi_cmw, ierr)
-#else
-         lmin= lmin_mpi
-         lmax= lmax_mpi
-#endif
+! #if defined (MPI)
+!          call mpi_allreduce(lmin_mpi, lmin, 1, &
+!                             mpi_dp, mpi_min, mpi_cmw, ierr)
+!          call mpi_allreduce(lmax_mpi, lmax, 1, &
+!                             mpi_dp, mpi_max, mpi_cmw, ierr)
+! #else
+!          lmin= lmin_mpi
+!          lmax= lmax_mpi
+! #endif
  
 
-      if (cpuid==0) write(stdout, *)' Lowest energy level in the whold energy bands', lmin
-      if (cpuid==0) write(stdout, *)' highest energy level in the whold energy bands', lmax
-      lmin0= lmin
-      lmax0= lmax
+!       if (cpuid==0) write(stdout, *)' Lowest energy level in the whold energy bands', lmin
+!       if (cpuid==0) write(stdout, *)' highest energy level in the whold energy bands', lmax
+!       lmin0= lmin
+!       lmax0= lmax
 
-      do ibeta= 1, Beta_num
-         Beta_fake= Beta_array(ibeta)/eV2Hartree
-         lmin= lmin0
-         lmax= lmax0
-         tot= 9999d0
-         iter = 0
+!       do ibeta= 1, Beta_num
+!          Beta_fake= Beta_array(ibeta)/eV2Hartree
+!          lmin= lmin0
+!          lmax= lmax0
+!          tot= 9999d0
+!          iter = 0
          
-         if (cpuid==0) then
-             write(stdout, '(a,f12.6,a,f12.6,a)') ' Beta :' , Beta_fake*eV2Hartree, ' T: ', 11600d0/Beta_fake/eV2Hartree, ' Kelvin'
-         endif
-         do while( abs(tot- Ntotch).gt. eps6 .and. iter.lt.itermax)
+!          if (cpuid==0) then
+!              write(stdout, '(a,f12.6,a,f12.6,a)') ' Beta :' , Beta_fake*eV2Hartree, ' T: ', 11600d0/Beta_fake/eV2Hartree, ' Kelvin'
+!          endif
+!          do while( abs(tot- Ntotch).gt. eps6 .and. iter.lt.itermax)
          
-            iter= iter+ 1
+!             iter= iter+ 1
          
-            EF= (lmin+ lmax)* half
+!             EF= (lmin+ lmax)* half
          
-            tot_mpi= 0d0
-            do ik=ik_first, ik_last
-               do io=1, Num_wann
-                  tot_mpi= tot_mpi+ fermi(eigvals(io, ik)- EF, Beta_fake)
-               enddo ! io
-            enddo ! ik
+!             tot_mpi= 0d0
+!             do ik=ik_first, ik_last
+!                do io=1, Num_wann
+!                   tot_mpi= tot_mpi+ fermi(eigvals(io, ik)- EF, Beta_fake)
+!                enddo ! io
+!             enddo ! ik
          
-            tot = 0d0
-#if defined (MPI)
-            call mpi_allreduce(tot_mpi, tot, 1, &
-                               mpi_dp, mpi_sum, mpi_cmw, ierr)
-#else   
-            tot= tot_mpi
-#endif   
+!             tot = 0d0
+! #if defined (MPI)
+!             call mpi_allreduce(tot_mpi, tot, 1, &
+!                                mpi_dp, mpi_sum, mpi_cmw, ierr)
+! #else   
+!             tot= tot_mpi
+! #endif   
          
-            tot= tot/dble(knv3)
+!             tot= tot/dble(knv3)
          
-            if (SOC==0) then
-               tot= tot*2
-            endif
+!             if (SOC==0) then
+!                tot= tot*2
+!             endif
          
-            !> bisection
-            if (tot > Ntotch)then
-               lmax= EF
-            else
-               lmin= EF
-            endif
+!             !> bisection
+!             if (tot > Ntotch)then
+!                lmax= EF
+!             else
+!                lmin= EF
+!             endif
          
-            if (cpuid==0) then
-                write(stdout, 100)iter, tot-Ntotch, EF/eV2Hartree, '  Charge: ', tot
-            endif
-         100   format(2x,">iter",i4,2x,"diff:",f12.6,2x,"EF: ",f12.6,a,f12.6)
+!             if (cpuid==0) then
+!                 write(stdout, 100)iter, tot-Ntotch, EF/eV2Hartree, '  Charge: ', tot
+!             endif
+!          100   format(2x,">iter",i4,2x,"diff:",f12.6,2x,"EF: ",f12.6,a,f12.6)
          
-         enddo ! bisection
-         EF_array( ibeta) = EF
-      enddo ! ibeta
+!          enddo ! bisection
+!          EF_array( ibeta) = EF
+!       enddo ! ibeta
 
-      E_fermi= EF_array(1)
+!       E_fermi= EF_array(1)
 
-      if (cpuid==0) write(stdout, '(a,f16.6)')" >>Fermi level we found by bisection method  at different temperature: "
+!       if (cpuid==0) write(stdout, '(a,f16.6)')" >>Fermi level we found by bisection method  at different temperature: "
 
-      if (cpuid==0) then
-         write(stdout, '(a, f12.6)') 'Number of electrons : ', Ntotch
-         write(stdout, '(3a12)') 'Beta    ', ' T (Kelvin)  ', ' E_F (eV)   '
-         do ibeta=1, Beta_num
-            write(stdout, '(3f12.6)') Beta_array(ibeta), 11600d0/Beta_array(ibeta), EF_array(ibeta)/eV2Hartree
-         enddo
-         write(stdout, '(3a12)') ' '
-      endif
+!       if (cpuid==0) then
+!          write(stdout, '(a, f12.6)') 'Number of electrons : ', Ntotch
+!          write(stdout, '(3a12)') 'Beta    ', ' T (Kelvin)  ', ' E_F (eV)   '
+!          do ibeta=1, Beta_num
+!             write(stdout, '(3f12.6)') Beta_array(ibeta), 11600d0/Beta_array(ibeta), EF_array(ibeta)/eV2Hartree
+!          enddo
+!          write(stdout, '(3a12)') ' '
+!       endif
 
-      deallocate(W)
-      deallocate(eigvals)
-      deallocate(ham)
-      return
-   end subroutine get_fermilevel
+!       deallocate(W)
+!       deallocate(eigvals)
+!       deallocate(ham)
+!       return
+!    end subroutine get_fermilevel
 
    subroutine get_density
       !> Calculate fermilevel for the given hamiltonian
