@@ -233,211 +233,211 @@ subroutine ek_bulk_line
 end subroutine ek_bulk_line
 
 
-subroutine ek_bulk_line_valley
-   ! Calculate bulk's energy bands using wannier TB method
-   ! Line mode
-   ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
+! subroutine ek_bulk_line_valley
+!    ! Calculate bulk's energy bands using wannier TB method
+!    ! Line mode
+!    ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
-   use wmpi
-   use para
+!    use wmpi
+!    use para
 
-   implicit none
+!    implicit none
 
-   integer :: ik, il, ig, io, i, j, knv3, ierr
-   integer :: ie, ND, NDMAX, ie1, ie2
-   real(dp) :: emin,  emax,  k(3)
-   character*40 :: filename
-   complex(dp), external :: zdotc
+!    integer :: ik, il, ig, io, i, j, knv3, ierr
+!    integer :: ie, ND, NDMAX, ie1, ie2
+!    real(dp) :: emin,  emax,  k(3)
+!    character*40 :: filename
+!    complex(dp), external :: zdotc
 
-   !> eigenvalues of H
-   real(Dp), allocatable :: W(:)
+!    !> eigenvalues of H
+!    real(Dp), allocatable :: W(:)
 
-   ! Hamiltonian of bulk system
-   complex(Dp), allocatable :: psi(:), vpsi(:), valley_k_nd(:, :), psi1(:), psi2(:)
-   complex(Dp), allocatable :: Hamk_bulk(:, :), valley_k(:, :)
-   complex(Dp), allocatable :: VL(:, :), VR(:, :), valley_eig(:)
-   logical, allocatable :: valley_plus(:, :), valley_plus_mpi(:, :)
+!    ! Hamiltonian of bulk system
+!    complex(Dp), allocatable :: psi(:), vpsi(:), valley_k_nd(:, :), psi1(:), psi2(:)
+!    complex(Dp), allocatable :: Hamk_bulk(:, :), valley_k(:, :)
+!    complex(Dp), allocatable :: VL(:, :), VR(:, :), valley_eig(:)
+!    logical, allocatable :: valley_plus(:, :), valley_plus_mpi(:, :)
 
-   ! eigenectors of H
-   real(dp), allocatable :: eigv(:,:), eigv_mpi(:,:)
-   real(dp), allocatable :: weight(:,:), weight_mpi(:,:)
-   real(dp) :: tolde= 1E-4
+!    ! eigenectors of H
+!    real(dp), allocatable :: eigv(:,:), eigv_mpi(:,:)
+!    real(dp), allocatable :: weight(:,:), weight_mpi(:,:)
+!    real(dp) :: tolde= 1E-4
 
-   NDMAX= 12
-   knv3= nk3_band
-   allocate(W(Num_wann))
-   allocate(Hamk_bulk(Num_wann, Num_wann))
-   allocate( eigv    (Num_wann, knv3))
-   allocate( eigv_mpi(Num_wann, knv3))
-   allocate( weight    (Num_wann, knv3))
-   allocate( weight_mpi(Num_wann, knv3))
-   allocate( psi(Num_wann), vpsi(Num_wann))
-   allocate( psi1(Num_wann), psi2(Num_wann))
-   allocate(valley_k(Num_wann, Num_wann))
-   allocate(valley_plus(Num_wann, knv3))
-   allocate(valley_plus_mpi(Num_wann, knv3))
-   allocate( valley_k_nd(NDMAX, NDMAX), valley_eig(NDMAX))
-   allocate( VL(NDMAX, NDMAX), VR(NDMAX, NDMAX))
-   W       = 0d0; Hamk_bulk = 0d0
-   eigv    = 0d0; eigv_mpi= 0d0
-   weight  = 0d0; weight_mpi = 0d0
-   psi     = 0d0; vpsi= 0d0
-   valley_k_nd= 0d0
-   valley_plus= .False.; valley_plus_mpi= .False.
+!    NDMAX= 12
+!    knv3= nk3_band
+!    allocate(W(Num_wann))
+!    allocate(Hamk_bulk(Num_wann, Num_wann))
+!    allocate( eigv    (Num_wann, knv3))
+!    allocate( eigv_mpi(Num_wann, knv3))
+!    allocate( weight    (Num_wann, knv3))
+!    allocate( weight_mpi(Num_wann, knv3))
+!    allocate( psi(Num_wann), vpsi(Num_wann))
+!    allocate( psi1(Num_wann), psi2(Num_wann))
+!    allocate(valley_k(Num_wann, Num_wann))
+!    allocate(valley_plus(Num_wann, knv3))
+!    allocate(valley_plus_mpi(Num_wann, knv3))
+!    allocate( valley_k_nd(NDMAX, NDMAX), valley_eig(NDMAX))
+!    allocate( VL(NDMAX, NDMAX), VR(NDMAX, NDMAX))
+!    W       = 0d0; Hamk_bulk = 0d0
+!    eigv    = 0d0; eigv_mpi= 0d0
+!    weight  = 0d0; weight_mpi = 0d0
+!    psi     = 0d0; vpsi= 0d0
+!    valley_k_nd= 0d0
+!    valley_plus= .False.; valley_plus_mpi= .False.
 
 
-   do ik= 1+cpuid, knv3, num_cpu
+!    do ik= 1+cpuid, knv3, num_cpu
 
-      k = k3points(:, ik)
+!       k = k3points(:, ik)
       
-      ! calculation bulk hamiltonian
-      Hamk_bulk= 0d0
+!       ! calculation bulk hamiltonian
+!       Hamk_bulk= 0d0
 
-      call ham_bulk_atomicgauge(k, Hamk_bulk)
+!       call ham_bulk_atomicgauge(k, Hamk_bulk)
 
-      !> diagonalization by call zheev in lapack
-      W= 0d0
-      call eigensystem_c('V', 'U', Num_wann ,Hamk_bulk, W)
+!       !> diagonalization by call zheev in lapack
+!       W= 0d0
+!       call eigensystem_c('V', 'U', Num_wann ,Hamk_bulk, W)
 
-      !> get the fourier transform of a valley operator
-      call valley_k_atomicgauge(k, valley_k)
+!       !> get the fourier transform of a valley operator
+!       call valley_k_atomicgauge(k, valley_k)
 
-      eigv(:, ik)= W
+!       eigv(:, ik)= W
 
-      !> check the degeneracy of each band
-      IE=1
-      do while (ie.le.Num_wann)
-         ND=1
-         if (ie+ND.le.Num_wann) then
-            do while ((ie+ND).le.Num_wann .and. (W(ie+ND)- W(ie)).lt.tolde)
-               if (ie+ND .ge. Num_wann) exit
-               ND= ND+1
-            enddo
-         endif
+!       !> check the degeneracy of each band
+!       IE=1
+!       do while (ie.le.Num_wann)
+!          ND=1
+!          if (ie+ND.le.Num_wann) then
+!             do while ((ie+ND).le.Num_wann .and. (W(ie+ND)- W(ie)).lt.tolde)
+!                if (ie+ND .ge. Num_wann) exit
+!                ND= ND+1
+!             enddo
+!          endif
 
-         !> if the degeneracy is larger than 1, we need to calculate the matrix
-         valley_k_nd= 0d0
-         do ie1= 1, ND
-            psi1= hamk_bulk(:, IE+ie1-1)
-            do ie2= 1, ND
-               psi2= hamk_bulk(:, IE+ie2-1)
-               vpsi=0d0
-               call zgemv('N', Num_wann, Num_wann, One_complex,  valley_k, Num_wann, psi2, 1, zzero, vpsi, 1)
-               valley_k_nd(ie1, ie2)= zdotc(Num_wann, psi1, 1, vpsi, 1)
-            enddo
-           !if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
-           !write( *, '(a, 2i5, 200f8.3)') "ND, ie1: ", ND, ie1, valley_k_nd(ie1, 1:ND)
-         enddo
+!          !> if the degeneracy is larger than 1, we need to calculate the matrix
+!          valley_k_nd= 0d0
+!          do ie1= 1, ND
+!             psi1= hamk_bulk(:, IE+ie1-1)
+!             do ie2= 1, ND
+!                psi2= hamk_bulk(:, IE+ie2-1)
+!                vpsi=0d0
+!                call zgemv('N', Num_wann, Num_wann, One_complex,  valley_k, Num_wann, psi2, 1, zzero, vpsi, 1)
+!                valley_k_nd(ie1, ie2)= zdotc(Num_wann, psi1, 1, vpsi, 1)
+!             enddo
+!            !if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
+!            !write( *, '(a, 2i5, 200f8.3)') "ND, ie1: ", ND, ie1, valley_k_nd(ie1, 1:ND)
+!          enddo
 
-         !> diagonalize the matrix
-         VL = 0d0; VR= 0d0
-         if (ND>1) then
-            call zgeev_sys(ND, valley_k_nd(1:ND, 1:ND), valley_eig(1:ND),'N',VL(1:ND, 1:ND),"V",VR(1:ND, 1:ND) )
-            do ie1= 1, ND
-               weight(IE+ie1-1, ik) = real(valley_eig(ie1))
-            enddo
-         else
-            valley_eig(1)= valley_k_nd(1, 1)
-            weight(IE, ik) = real(valley_k_nd(1, 1))
-         endif
-         !  if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
-         ! write(*, '(a, 2i5, a, 200f8.3)'), 'ND, ie', ND, ie, '  valley_eig', real(valley_eig(1:ND))
-         !  if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
-         ! print *, ' '
+!          !> diagonalize the matrix
+!          VL = 0d0; VR= 0d0
+!          if (ND>1) then
+!             call zgeev_sys(ND, valley_k_nd(1:ND, 1:ND), valley_eig(1:ND),'N',VL(1:ND, 1:ND),"V",VR(1:ND, 1:ND) )
+!             do ie1= 1, ND
+!                weight(IE+ie1-1, ik) = real(valley_eig(ie1))
+!             enddo
+!          else
+!             valley_eig(1)= valley_k_nd(1, 1)
+!             weight(IE, ik) = real(valley_k_nd(1, 1))
+!          endif
+!          !  if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
+!          ! write(*, '(a, 2i5, a, 200f8.3)'), 'ND, ie', ND, ie, '  valley_eig', real(valley_eig(1:ND))
+!          !  if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
+!          ! print *, ' '
 
-         !> get new eigenvector
-        !do ie1= 1, ND
-        !   psi= 0d0
-        !   do ie2= 1, ND
-        !      psi= psi+ VR(ie2,  ie1)* ham_bulk(:, IE+ie2-1)
-        !   enddo
-        !enddo
+!          !> get new eigenvector
+!         !do ie1= 1, ND
+!         !   psi= 0d0
+!         !   do ie2= 1, ND
+!         !      psi= psi+ VR(ie2,  ie1)* ham_bulk(:, IE+ie2-1)
+!         !   enddo
+!         !enddo
 
-         !> if the degeneracy is larger than 1, we need to calculate the matrix
-         IE= IE+ ND
-      enddo
-      do ie=1, Num_wann
-         if (weight(ie, ik)>0) valley_plus(ie, ik)=.true.
-      enddo
+!          !> if the degeneracy is larger than 1, we need to calculate the matrix
+!          IE= IE+ ND
+!       enddo
+!       do ie=1, Num_wann
+!          if (weight(ie, ik)>0) valley_plus(ie, ik)=.true.
+!       enddo
 
-   enddo ! ik
-
-
-#if defined (MPI)
-   call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
-      mpi_dp,mpi_sum,mpi_cmw,ierr)
-   call mpi_allreduce(weight, weight_mpi,size(weight),&
-      mpi_dp,mpi_sum,mpi_cmw,ierr)
-   call mpi_allreduce(valley_plus, valley_plus_mpi,size(valley_plus),&
-      mpi_logical,mpi_lor,mpi_cmw,ierr)
-#else
-   eigv_mpi= eigv
-   weight_mpi= weight
-   valley_plus_mpi= valley_plus
-#endif
-   eigv_mpi= eigv_mpi/eV2Hartree
-
-   outfileindex= outfileindex+ 1
-   if (cpuid==0)then
-      open(unit=outfileindex, file='bulkek.dat')
-      do i=1, Num_wann
-         do ik=1, knv3
-            write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
-               weight_mpi(i, ik)
-         enddo
-         write(outfileindex, *)' '
-      enddo
-      close(outfileindex)
-   endif
-   outfileindex= outfileindex+ 1
-   if (cpuid==0)then
-      open(unit=outfileindex, file='bulkek_valley_plus.dat')
-      do i=1, Num_wann
-         do ik=1, knv3
-            if (valley_plus_mpi(i, ik)) then
-               write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
-                  weight_mpi(i, ik)
-            endif
-         enddo
-         write(outfileindex, *)' '
-      enddo
-      close(outfileindex)
-   endif
-
-   outfileindex= outfileindex+ 1
-   if (cpuid==0)then
-      open(unit=outfileindex, file='bulkek_valley_minus.dat')
-      do i=1, Num_wann
-         do ik=1, knv3
-            if (.not.valley_plus_mpi(i, ik)) then
-               write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
-                  weight_mpi(i, ik)
-            endif
-         enddo
-         write(outfileindex, *)' '
-      enddo
-      close(outfileindex)
-   endif
+!    enddo ! ik
 
 
+! #if defined (MPI)
+!    call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
+!       mpi_dp,mpi_sum,mpi_cmw,ierr)
+!    call mpi_allreduce(weight, weight_mpi,size(weight),&
+!       mpi_dp,mpi_sum,mpi_cmw,ierr)
+!    call mpi_allreduce(valley_plus, valley_plus_mpi,size(valley_plus),&
+!       mpi_logical,mpi_lor,mpi_cmw,ierr)
+! #else
+!    eigv_mpi= eigv
+!    weight_mpi= weight
+!    valley_plus_mpi= valley_plus
+! #endif
+!    eigv_mpi= eigv_mpi/eV2Hartree
 
-   !> minimum and maximum value of energy bands
-   emin=  minval(eigv_mpi)-0.5d0
-   emax=  maxval(eigv_mpi)+0.5d0
+!    outfileindex= outfileindex+ 1
+!    if (cpuid==0)then
+!       open(unit=outfileindex, file='bulkek.dat')
+!       do i=1, Num_wann
+!          do ik=1, knv3
+!             write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
+!                weight_mpi(i, ik)
+!          enddo
+!          write(outfileindex, *)' '
+!       enddo
+!       close(outfileindex)
+!    endif
+!    outfileindex= outfileindex+ 1
+!    if (cpuid==0)then
+!       open(unit=outfileindex, file='bulkek_valley_plus.dat')
+!       do i=1, Num_wann
+!          do ik=1, knv3
+!             if (valley_plus_mpi(i, ik)) then
+!                write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
+!                   weight_mpi(i, ik)
+!             endif
+!          enddo
+!          write(outfileindex, *)' '
+!       enddo
+!       close(outfileindex)
+!    endif
 
-   call generate_ek_kpath_gnu('bulkek.dat', 'bulkek.gnu', 'bulkek.pdf', &
-                                 emin, emax, knv3, Nk3lines, &
-                                 k3line_name, k3line_stop, k3len)
+!    outfileindex= outfileindex+ 1
+!    if (cpuid==0)then
+!       open(unit=outfileindex, file='bulkek_valley_minus.dat')
+!       do i=1, Num_wann
+!          do ik=1, knv3
+!             if (.not.valley_plus_mpi(i, ik)) then
+!                write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
+!                   weight_mpi(i, ik)
+!             endif
+!          enddo
+!          write(outfileindex, *)' '
+!       enddo
+!       close(outfileindex)
+!    endif
 
-   deallocate(W)
-   deallocate(Hamk_bulk)
-   deallocate( eigv    )
-   deallocate( eigv_mpi)
-   deallocate( weight    )
-   deallocate( weight_mpi)
 
-   return
-end subroutine ek_bulk_line_valley
+
+!    !> minimum and maximum value of energy bands
+!    emin=  minval(eigv_mpi)-0.5d0
+!    emax=  maxval(eigv_mpi)+0.5d0
+
+!    call generate_ek_kpath_gnu('bulkek.dat', 'bulkek.gnu', 'bulkek.pdf', &
+!                                  emin, emax, knv3, Nk3lines, &
+!                                  k3line_name, k3line_stop, k3len)
+
+!    deallocate(W)
+!    deallocate(Hamk_bulk)
+!    deallocate( eigv    )
+!    deallocate( eigv_mpi)
+!    deallocate( weight    )
+!    deallocate( weight_mpi)
+
+!    return
+! end subroutine ek_bulk_line_valley
 
   !>> calculate energy band levels at given kpoints
   subroutine ek_bulk_point_mode
