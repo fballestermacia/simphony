@@ -20,7 +20,7 @@ flag = -O2 -ffree-line-length-512
 libs = -llapack -lblas
  
 main :  $(OBJ)
-	$(f90) $(OBJ) -o wt.x $(libs) 
+	$(f90) $(OBJ) -o pn.x $(libs) 
 	cp -f pn.x ../bin
 
 .SUFFIXES: .o .f90

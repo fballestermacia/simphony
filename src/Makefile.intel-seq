@@ -32,7 +32,7 @@ LIBS = -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \
 # LIBS = -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread
  
 main : $(OBJ)
-	$(F90) $(LFLAG) $(OBJ) -o wt.x $(LIBS)
+	$(F90) $(LFLAG) $(OBJ) -o pn.x $(LIBS)
 	cp -f pn.x ../bin
 
 .SUFFIXES: .o .f90
