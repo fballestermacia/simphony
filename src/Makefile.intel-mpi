@@ -11,7 +11,7 @@ OBJ = module.o sparse.o pn_aux.o math_lib.o mgmres.o  \
 	main.o
 
 # compiler
-F90  = mpif90 -fpp -DMPI -fpe3 -O3 -DARPACK -DINTELMKL  #  -check all -traceback -g
+F90  = mpif90 -fpp -DMPI -fpe3 -O3 -DARPACK -DINTELMKL -fallow-argument-mismatch   #  -check all -traceback -g
 
 INCLUDE = -I${MKLROOT}/include
 WFLAG = -nogen-interface

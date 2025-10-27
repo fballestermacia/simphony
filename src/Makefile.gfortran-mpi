@@ -11,7 +11,7 @@ OBJ = module.o sparse.o pn_aux.o math_lib.o mgmres.o  \
 	main.o
 
 # compiler, here mpif90 should be comipled with gfortran
-F90  = mpif90 -cpp -DMPI -ffree-line-length-512                          
+F90  = mpif90 -cpp -DMPI -ffree-line-length-512 -fallow-argument-mismatch                         
 
 INCLUDE =
 WFLAG = #-Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none \
