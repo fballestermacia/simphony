@@ -60,6 +60,11 @@
      complex(Dp),allocatable ::CHamk(:,:)
      complex(Dp),allocatable ::eigenstatesperhsp(:,:,:)
 
+     ! test for loto
+     integer :: iR,ia,ib,ic
+     real(Dp) :: R(3)
+     complex(Dp) :: mat1(Num_wann,Num_wann)
+
 
      Ndim1=Num_wann*nslab1*nslab2
      lwork=64*Ndim1
@@ -93,6 +98,25 @@
      il= (NumOccupied-2)*Nslab1*Nslab2
      iu= (NumOccupied+2)*Nslab1*Nslab2
      mdim=iu-il+1
+
+     if((LOTO_correction).and.(.not.added_LR_in_Real_Space))then
+         do iR=1,Nrpts
+            ia=irvec(1,iR)
+            ib=irvec(2,iR)
+            ic=irvec(3,iR)
+            R = ia*Origin_cell%Rua + ib*Origin_cell%Rub + ic*Origin_cell%Ruc
+            R = R/Origin_cell%cell_parameters(1)
+            R = irvec(:,iR)
+            mat1 = 0.0d0
+            call FT_long_range_to_R(R,LOTO_grid1,LOTO_grid2,LOTO_grid3,mat1,     &
+                                    Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1),  &
+                                    Born_Charge(:,:,:), Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi), &
+                                    Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+            HmnR(:,:,iR) = HmnR(:,:,iR)+mat1!/Nrpts
+            added_LR_in_Real_Space = .true.
+         end do   
+         
+      end if
 
      if (cpuid==0) write(stdout, *)'number of bands calculating: ',mdim
 

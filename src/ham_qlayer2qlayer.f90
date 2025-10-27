@@ -705,11 +705,11 @@
 
 
    subroutine FT_long_range_to_R(r,nkft1,nkft2,nkft3, DofR, tau, zeu, rec_lattice, natoms, map2atoms)
+      ! This subroutine computes the long-range dipole-dipole interaction
+      ! in a grid of points on the BZ to Fourier interpolate from reciprocañ space to real space
+      ! and then is added to the real space Hamiltonian
       !
-      !
-      !
-      !
-      !
+      ! Aug/2024 by F Ballester
       !
 
       use para
@@ -759,34 +759,34 @@
                   totalnknumber = totalnknumber + 1
                else 
                   dummy = 0.0d0
-                  qeq = ((qingrid(1)+0.0000001d0)*(Diele_Tensor(1,1)*(qingrid(1)+0.0000001d0)+Diele_Tensor(1,2)*qingrid(2)+Diele_Tensor(1,3)*qingrid(3))+    &
-                  qingrid(2)*(Diele_Tensor(2,1)*(qingrid(1)+0.0000001d0)+Diele_Tensor(2,2)*qingrid(2)+Diele_Tensor(2,3)*qingrid(3))+    &
-                  qingrid(3)*(Diele_Tensor(3,1)*(qingrid(1)+0.0000001d0)+Diele_Tensor(3,2)*qingrid(2)+Diele_Tensor(3,3)*qingrid(3)))
+                  ! qeq = ((qingrid(1)+0.0000001d0)*(Diele_Tensor(1,1)*(qingrid(1)+0.0000001d0)+Diele_Tensor(1,2)*qingrid(2)+Diele_Tensor(1,3)*qingrid(3))+    &
+                  ! qingrid(2)*(Diele_Tensor(2,1)*(qingrid(1)+0.0000001d0)+Diele_Tensor(2,2)*qingrid(2)+Diele_Tensor(2,3)*qingrid(3))+    &
+                  ! qingrid(3)*(Diele_Tensor(3,1)*(qingrid(1)+0.0000001d0)+Diele_Tensor(3,2)*qingrid(2)+Diele_Tensor(3,3)*qingrid(3)))
 
-                  constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
-                  do pp = 1,Origin_cell%Num_atoms
-                     do qq = 1,Origin_cell%Num_atoms
-                        do ii=1,3
-                           zag(ii) = (qingrid(1)+0.0000001d0)*Born_Charge(pp,1,ii) +  qingrid(2)*Born_Charge(pp,2,ii) + qingrid(3)*Born_Charge(pp,3,ii)
+                  ! constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
+                  ! do pp = 1,Origin_cell%Num_atoms
+                  !    do qq = 1,Origin_cell%Num_atoms
+                  !       do ii=1,3
+                  !          zag(ii) = (qingrid(1)+0.0000001d0)*Born_Charge(pp,1,ii) +  qingrid(2)*Born_Charge(pp,2,ii) + qingrid(3)*Born_Charge(pp,3,ii)
                            
-                           zbg(ii) = (qingrid(1)+0.0000001d0)*Born_Charge(qq,1,ii) +  qingrid(2)*Born_Charge(qq,2,ii) + qingrid(3)*Born_Charge(qq,3,ii)
+                  !          zbg(ii) = (qingrid(1)+0.0000001d0)*Born_Charge(qq,1,ii) +  qingrid(2)*Born_Charge(qq,2,ii) + qingrid(3)*Born_Charge(qq,3,ii)
 
-                        end do
+                  !       end do
                         
-                        do ii=1,3
-                           do jj=1,3
+                  !       do ii=1,3
+                  !          do jj=1,3
                               
-                              nac_q= constant_t*zag(ii)*zbg(jj)/qeq
+                  !             nac_q= constant_t*zag(ii)*zbg(jj)/qeq
 
 
-                              dummy(3*(pp-1)+ii,3*(qq-1)+jj) = nac_q*(108.97077184367376*eV2Hartree)**2
+                  !             dummy(3*(pp-1)+ii,3*(qq-1)+jj) = nac_q*(108.97077184367376*eV2Hartree)**2
 
 
-                           enddo  ! jj
-                        enddo  ! ii
-                     enddo ! qq
-                  enddo ! pp
-                  totalnknumber = totalnknumber + 1
+                  !          enddo  ! jj
+                  !       enddo  ! ii
+                  !    enddo ! qq
+                  ! enddo ! pp
+                  ! totalnknumber = totalnknumber + 1
                end if
 
             end do

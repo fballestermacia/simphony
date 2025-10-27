@@ -46,6 +46,20 @@
      enddo
      enddo
 
+     !> DEBUG
+     ! if ((k.eq.0.5d0))then
+     !    write(*,*) 'Writing Hamiltonian'
+     !    outfileindex= outfileindex+ 1
+     !    open(unit=outfileindex, file='HamRibbonatK.dat')
+     !    do i1=1, Num_wann*nslab1*nslab2
+     !       do i2=1, Num_wann*nslab1*nslab2
+     !          write(outfileindex, *) REALPART(Hamk_ribbon(i1,i2)), IMAGPART(Hamk_ribbon(i1,i2))
+     !       end do
+     !    end do
+     !    write(outfileindex , *)''
+     !    close(outfileindex)
+     ! end if
+
   return
   end
 

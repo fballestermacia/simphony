@@ -398,6 +398,20 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
    !call mat_mul(Num_wann, mat1, mirror_z, mat2)
    !Hamk_bulk= (Hamk_bulk+ mat2)/2d0
 
+   !> DEBUGGING
+   ! if ((k(1).eq.0.0d0).and.(k(2).eq.0.0d0).and.(k(3).eq.0.0d0))then
+   !    write(*,*) 'Writing Hamiltonian'
+   !    outfileindex= outfileindex+ 1
+   !    open(unit=outfileindex, file='HamBulkatGamma.dat')
+   !    do i1=1, Num_wann
+   !       do i2=1, Num_wann
+   !          write(outfileindex, *) REALPART(Hamk_bulk(i1,i2)), IMAGPART(Hamk_bulk(i1,i2))
+   !       end do
+   !    end do
+   !    write(outfileindex , *)''
+   !    close(outfileindex)
+   ! end if
+
    ! check hermitcity
   !do i1=1, Num_wann
   !   do i2=1, Num_wann
@@ -1652,6 +1666,20 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
          Hamk_bulk(ii,jj) = Hamk_bulk(ii,jj) +mat2(ii,jj)/SQRT(Atom_Mass(pp)*Atom_Mass(qq)) !/sqrt(Atom_Mass(Origin_cell%spinorbital_to_atom_index(na))*Atom_Mass(Origin_cell%spinorbital_to_atom_index(nb)))
       end do
    end do
+
+   !> DEBUGGING
+   ! if ((k(1).eq.0.0d0).and.(k(2).eq.0.0d0).and.(k(3).eq.0.0d0))then
+   !    write(*,*) 'Writing Hamiltonian'
+   !    outfileindex= outfileindex+ 1
+   !    open(unit=outfileindex, file='HamBulkatGamma.dat')
+   !    do i1=1, Num_wann
+   !       do i2=1, Num_wann
+   !          write(outfileindex, *) REALPART(Hamk_bulk(i1,i2)), IMAGPART(Hamk_bulk(i1,i2))
+   !       end do
+   !    end do
+   !    write(outfileindex , *)''
+   !    close(outfileindex)
+   ! end if
 
    ! do ii=1,Num_wann
    !    do jj=1, Num_wann

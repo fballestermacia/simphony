@@ -105,13 +105,13 @@
         if(.not. Is_Sparse_Hr) then
            !> for the dense hr file, we allocate HmnR
            call readNormalHmnR()
-           if (valley_projection_calc) call  read_valley_operator
+         !   if (valley_projection_calc) call  read_valley_operator
         !> sparse hmnr input
         else
            call readSparseHmnR()
 
            !> read valley operator 
-           if (valley_projection_calc) call  readsparse_valley_operator
+         !   if (valley_projection_calc) call  readsparse_valley_operator
 
            !> for non-Orthogonal basis, we have to read the overlap matrix
            if (.not.Orthogonal_Basis) call readsparse_overlap
@@ -153,17 +153,17 @@
       if(cpuid.eq.0)write(stdout, *)'>> Start of calculating bulk band'
       call now(time_start)
       if (Is_Sparse_Hr) then
-         if (valley_projection_calc) then
-            call sparse_ekbulk_valley
-         else
+         ! if (valley_projection_calc) then
+         !    call sparse_ekbulk_valley
+         ! else
             call sparse_ekbulk
-         endif
+         ! endif
       else
-         if (valley_projection_calc) then
-            call ek_bulk_line_valley
-         else
+         ! if (valley_projection_calc) then
+         !    call ek_bulk_line_valley
+         ! else
             call ek_bulk_line
-         endif
+         ! endif
         !call ek_bulk_spin
         !call ek_bulk_mirror_z
       end if

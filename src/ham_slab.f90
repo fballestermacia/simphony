@@ -63,7 +63,20 @@
         enddo ! i2
      enddo ! i1
      
-   
+      
+      !> DEBUG
+      ! if ((k(1).eq.0.5d0).and.(k(2).eq.0.5d0))then
+      !    write(*,*) 'Writing Hamiltonian'
+      !    outfileindex= outfileindex+ 1
+      !    open(unit=outfileindex, file='HamSlabatK_small.dat')
+      !    do i1=1, Num_wann*nslab
+      !       do i2=1, Num_wann*nslab
+      !          write(outfileindex, *) REALPART(Hamk_slab(i1,i2)), IMAGPART(Hamk_slab(i1,i2))
+      !       end do
+      !    end do
+      !    write(outfileindex , *)''
+      !    close(outfileindex)
+      ! end if
      
      
      ! check hermitcity
@@ -71,7 +84,7 @@
      do i1=1,nslab*Num_wann
      do i2=1,nslab*Num_wann
         if(abs(Hamk_slab(i1,i2)-conjg(Hamk_slab(i2,i1))).ge.1e-6)then
-         !write(stdout,*)'there are something wrong with Hamk_slab'
+         !write(stdout,*)'there is something wrong with Hamk_slab'
          !stop
         endif 
      enddo
