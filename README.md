@@ -215,7 +215,7 @@ details regarding the parameters used are found in the *PN.out* output file.
 
 The bulk band calculation results in
 
-![BHLbulkek](images/BHLbulkek.svg)
+![BHLbulkek](images/BHLBulkek.svg)
 
 The WCC calculation considering the lower four bands is
 
