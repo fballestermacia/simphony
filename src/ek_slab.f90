@@ -73,17 +73,18 @@
             ia=irvec(1,iR)
             ib=irvec(2,iR)
             ic=irvec(3,iR)
-            ! R = ia*Origin_cell%Rua + ib*Origin_cell%Rub + ic*Origin_cell%Ruc
-            ! R = R/Origin_cell%cell_parameters(1)
+            R = ia*Origin_cell%Rua + ib*Origin_cell%Rub + ic*Origin_cell%Ruc
+            R = R/Origin_cell%cell_parameters(1)
             R = irvec(:,iR)
             mat1 = 0.0d0
             call FT_long_range_to_R(R,LOTO_grid1,LOTO_grid2,LOTO_grid3,mat1,     &
                                     Origin_cell%Atom_position_cart/Origin_cell%cell_parameters(1),  &
                                     Born_Charge(:,:,:), Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi), &
                                     Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
-            HmnR(:,:,iR) = HmnR(:,:,iR)+mat1/Nrpts
+            HmnR(:,:,iR) = HmnR(:,:,iR)+mat1!/Nrpts
+            added_LR_in_Real_Space = .true.
          end do   
-         added_LR_in_Real_Space = .true.
+         
       end if
 
      do i= 1+cpuid, knv2, num_cpu

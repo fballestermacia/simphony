@@ -240,7 +240,7 @@
      real(Dp),intent(in) :: k(2)
      
      ! wave vector transformed as if it where 3D system for lrange calculation
-     real(Dp) :: k3d(3), keps(3) = (/eps12,0.0d0,0.0d0/)
+     real(Dp) :: k3d(3), keps(3) = (/eps12,eps12,eps12/)
 
      ! H00 Hamiltonian between nearest neighbour-quintuple-layers
 
@@ -291,13 +291,15 @@
      k3d(:) = k(1)*Cell_defined_by_surface%reciprocal_lattice(1,:) + k(2)*Cell_defined_by_surface%reciprocal_lattice(2,:) ! ESTO NO ME CONVENCE
      k3d = k3d*Cell_defined_by_surface%cell_parameters(1)/(twopi)
      
+     if (abs((k3d(1)**2+k3d(2)**2+k3d(3)**2)).le.eps12)then  !> skip k=0
+         atGamma=.true.
 
-      qeq = (keps(1)*(Diele_Tensor(1,1)*keps(1)+Diele_Tensor(1,2)*keps(2)+Diele_Tensor(1,3)*keps(3))+    &
-         keps(2)*(Diele_Tensor(2,1)*keps(1)+Diele_Tensor(2,2)*keps(2)+Diele_Tensor(2,3)*keps(3))+    &
-         keps(3)*(Diele_Tensor(3,1)*keps(1)+Diele_Tensor(3,2)*keps(2)+Diele_Tensor(3,3)*keps(3)))
+         qeq = (keps(1)*(Diele_Tensor(1,1)*keps(1)+Diele_Tensor(1,2)*keps(2)+Diele_Tensor(1,3)*keps(3))+    &
+            keps(2)*(Diele_Tensor(2,1)*keps(1)+Diele_Tensor(2,2)*keps(2)+Diele_Tensor(2,3)*keps(3))+    &
+            keps(3)*(Diele_Tensor(3,1)*keps(1)+Diele_Tensor(3,2)*keps(2)+Diele_Tensor(3,3)*keps(3)))
 
-      constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
-         do pp = 1,Origin_cell%Num_atoms
+         constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
+          do pp = 1,Origin_cell%Num_atoms
             do qq = 1,Origin_cell%Num_atoms
                do ii=1,3
                   zag(ii) = keps(1)*Born_Charge(pp,1,ii) +  keps(2)*Born_Charge(pp,2,ii) + keps(3)*Born_Charge(pp,3,ii)
@@ -317,9 +319,9 @@
 
                   enddo  ! jj
                enddo  ! ii
-            enddo ! qq  
-         enddo ! pp
-
+            enddo ! qq
+          enddo ! pp
+      endif
      
    !   nac_correction= 0d0
    !   call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1,  &
@@ -384,10 +386,10 @@
             
             mat1 = 0d0
             nac_correction= 0d0
-            ! call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1,  &
-            !       pos_cart_ic/Origin_cell%cell_parameters(1),  &
-            !       Born_Charge(:,:,:), Cell_defined_by_surface%reciprocal_lattice*Cell_defined_by_surface%cell_parameters(1)/(twopi), &
-            !       Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+            call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1,  &
+                  pos_cart_ic/Origin_cell%cell_parameters(1),  &
+                  Born_Charge(:,:,:), Cell_defined_by_surface%reciprocal_lattice*Cell_defined_by_surface%cell_parameters(1)/(twopi), &
+                  Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
             
             do ii=1,Num_wann
                do jj=1, Num_wann
@@ -402,7 +404,7 @@
 
            Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
            = Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
-           + (HmnR(1:Num_wann,1:Num_wann,iR)+ nac_correction(1:Num_wann, 1:Num_wann)/Nrpts)*ratio/ndegen(iR) 
+           + (HmnR(1:Num_wann,1:Num_wann,iR)+ nac_correction(1:Num_wann, 1:Num_wann)/counter)*ratio/ndegen(iR) 
         endif
 
      enddo
@@ -740,13 +742,14 @@
       time_start= 0d0
       time_end= 0d0
       call now(time_start)
+
       do n1=-nkft1,nkft1
          do n2=-nkft2,nkft2
             do n3=-nkft3,nkft3
                qingrid(:) = rec_lattice(:,1)*(n1)/dble(nkft1) + &
                            rec_lattice(:,2)*(n2)/dble(nkft2)  + &
                            rec_lattice(:,3)*(n3)/dble(nkft3)
-               ! write(*,*) n1, n2, n3, r, qingrid
+
                if (abs((qingrid(1)**2+qingrid(2)**2+qingrid(3)**2)).ge.eps12)then
                   dummy = 0.0d0
                   qdotr = (n1)/dble(nkft1)*r(1) + (n2)/dble(nkft2)*r(2) + (n3)/dble(nkft3)*r(3)!qingrid(1)*r(1) + qingrid(2)*r(2) + qingrid(3)*r(3)
@@ -756,34 +759,34 @@
                   totalnknumber = totalnknumber + 1
                else 
                   dummy = 0.0d0
-                  qeq = ((qingrid(1)+0.1d0)*(Diele_Tensor(1,1)*(qingrid(1)+0.1d0)+Diele_Tensor(1,2)*qingrid(2)+Diele_Tensor(1,3)*qingrid(3))+    &
-                  qingrid(2)*(Diele_Tensor(2,1)*(qingrid(1)+0.1d0)+Diele_Tensor(2,2)*qingrid(2)+Diele_Tensor(2,3)*qingrid(3))+    &
-                  qingrid(3)*(Diele_Tensor(3,1)*(qingrid(1)+0.1d0)+Diele_Tensor(3,2)*qingrid(2)+Diele_Tensor(3,3)*qingrid(3)))
+                  ! qeq = ((qingrid(1)+0.0000001d0)*(Diele_Tensor(1,1)*(qingrid(1)+0.0000001d0)+Diele_Tensor(1,2)*qingrid(2)+Diele_Tensor(1,3)*qingrid(3))+    &
+                  ! qingrid(2)*(Diele_Tensor(2,1)*(qingrid(1)+0.0000001d0)+Diele_Tensor(2,2)*qingrid(2)+Diele_Tensor(2,3)*qingrid(3))+    &
+                  ! qingrid(3)*(Diele_Tensor(3,1)*(qingrid(1)+0.0000001d0)+Diele_Tensor(3,2)*qingrid(2)+Diele_Tensor(3,3)*qingrid(3)))
 
-                  constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
-                  do pp = 1,Origin_cell%Num_atoms
-                     do qq = 1,Origin_cell%Num_atoms
-                        do ii=1,3
-                           zag(ii) = (qingrid(1)+0.1d0)*Born_Charge(pp,1,ii) +  qingrid(2)*Born_Charge(pp,2,ii) + qingrid(3)*Born_Charge(pp,3,ii)
+                  ! constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
+                  ! do pp = 1,Origin_cell%Num_atoms
+                  !    do qq = 1,Origin_cell%Num_atoms
+                  !       do ii=1,3
+                  !          zag(ii) = (qingrid(1)+0.0000001d0)*Born_Charge(pp,1,ii) +  qingrid(2)*Born_Charge(pp,2,ii) + qingrid(3)*Born_Charge(pp,3,ii)
                            
-                           zbg(ii) = (qingrid(1)+0.1d0)*Born_Charge(qq,1,ii) +  qingrid(2)*Born_Charge(qq,2,ii) + qingrid(3)*Born_Charge(qq,3,ii)
+                  !          zbg(ii) = (qingrid(1)+0.0000001d0)*Born_Charge(qq,1,ii) +  qingrid(2)*Born_Charge(qq,2,ii) + qingrid(3)*Born_Charge(qq,3,ii)
 
-                        end do
+                  !       end do
                         
-                        do ii=1,3
-                           do jj=1,3
+                  !       do ii=1,3
+                  !          do jj=1,3
                               
-                              nac_q= constant_t*zag(ii)*zbg(jj)/qeq
+                  !             nac_q= constant_t*zag(ii)*zbg(jj)/qeq
 
 
-                              dummy(3*(pp-1)+ii,3*(qq-1)+jj) = nac_q
+                  !             dummy(3*(pp-1)+ii,3*(qq-1)+jj) = nac_q*(108.97077184367376*eV2Hartree)**2
 
 
-                           enddo  ! jj
-                        enddo  ! ii
-                     enddo ! qq
-                  enddo ! pp
-                  totalnknumber = totalnknumber + 1
+                  !          enddo  ! jj
+                  !       enddo  ! ii
+                  !    enddo ! qq
+                  ! enddo ! pp
+                  ! totalnknumber = totalnknumber + 1
                end if
 
             end do
@@ -794,7 +797,7 @@
 
       call print_time_cost(time_start,time_end, 'transforming DD into real space' )
 
-      DofR = sumoverq/dble(totalnknumber)*unitConversor!*2d0*(twopi)**3/Origin_cell%cellvolume
+      DofR = sumoverq/dble(totalnknumber)!*2d0*(twopi)**3/Origin_cell%cellvolume
       
       do ii=1, 3*natoms
          do jj=1, 3*natoms
@@ -866,7 +869,7 @@
  
      !> k times Born charge
      logical :: atGamma
-     real(dp) :: qeq, temp1(3), temp2, zag(3), zbg(3),  keps(3) = (/eps12,0.0d0,0.0d0/), &
+     real(dp) :: qeq, temp1(3), temp2, zag(3), zbg(3),  keps(3) = (/eps12,eps12,0.0d0/), &
                   R1(3), R2(3),R3(3), R12_cross(3),angle_t
      complex(dp) :: nac_q
      real(dp), external :: norm, angle
@@ -892,15 +895,15 @@
      
      k3d = k3d!*Cell_defined_by_surface%cell_parameters(1)/(twopi)
      
-   !   if (abs((k3d(1)**2+k3d(2)**2+k3d(3)**2)).le.eps12)then  !> skip k=0
-   !       atGamma=.true.
+     if (abs((k3d(1)**2+k3d(2)**2+k3d(3)**2)).le.eps12)then  !> skip k=0
+         atGamma=.true.
 
-      qeq = (keps(1)*(Diele_Tensor(1,1)*keps(1)+Diele_Tensor(1,2)*keps(2)+Diele_Tensor(1,3)*keps(3))+    &
-         keps(2)*(Diele_Tensor(2,1)*keps(1)+Diele_Tensor(2,2)*keps(2)+Diele_Tensor(2,3)*keps(3))+    &
-         keps(3)*(Diele_Tensor(3,1)*keps(1)+Diele_Tensor(3,2)*keps(2)+Diele_Tensor(3,3)*keps(3)))
+         qeq = (keps(1)*(Diele_Tensor(1,1)*keps(1)+Diele_Tensor(1,2)*keps(2)+Diele_Tensor(1,3)*keps(3))+    &
+            keps(2)*(Diele_Tensor(2,1)*keps(1)+Diele_Tensor(2,2)*keps(2)+Diele_Tensor(2,3)*keps(3))+    &
+            keps(3)*(Diele_Tensor(3,1)*keps(1)+Diele_Tensor(3,2)*keps(2)+Diele_Tensor(3,3)*keps(3)))
 
-      constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
-         do pp = 1,Origin_cell%Num_atoms
+         constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
+          do pp = 1,Origin_cell%Num_atoms
             do qq = 1,Origin_cell%Num_atoms
                do ii=1,3
                   zag(ii) = keps(1)*Born_Charge(pp,1,ii) +  keps(2)*Born_Charge(pp,2,ii) + keps(3)*Born_Charge(pp,3,ii)
@@ -921,8 +924,8 @@
                   enddo  ! jj
                enddo  ! ii
             enddo ! qq
-         enddo ! pp
-      ! endif
+          enddo ! pp
+      endif
 
       
    !   mat1 = 0d0
@@ -1014,10 +1017,10 @@
 
             mat1 = 0d0
             nac_correction= 0d0
-            ! call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1,  &
-            !       pos_cart_ic/Origin_cell%cell_parameters(1),  &
-            !       Born_Charge(:,:,:), Cell_defined_by_surface%reciprocal_lattice*Cell_defined_by_surface%cell_parameters(1)/(twopi), &
-            !       Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+            call long_range_phonon_interaction(0,0,0,k3d(:),.false.,1.0d0,mat1,  &
+                  pos_cart_ic/Origin_cell%cell_parameters(1),  &
+                  Born_Charge(:,:,:), Cell_defined_by_surface%reciprocal_lattice*Cell_defined_by_surface%cell_parameters(1)/(twopi), &
+                  Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
             
             do ii=1,Num_wann
                do jj=1, Num_wann
@@ -1033,7 +1036,7 @@
 
             Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
             = Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
-            + (HmnR(:,:,iR))*ratio/ndegen(iR)  +nac_correction(1:Num_wann, 1:Num_wann)*ratio/ndegen(iR)/Nrpts
+            + (HmnR(:,:,iR))*ratio/ndegen(iR)  +nac_correction(1:Num_wann, 1:Num_wann)/Nrpts
          endif
 
      enddo

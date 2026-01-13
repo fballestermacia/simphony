@@ -41,14 +41,14 @@
      allocate( Hij(-ijmax:ijmax,Num_wann,Num_wann))
      
      !mat1 = 0.0d0
-     if (LOTO_correction) then
-      call ham_qlayer2qlayer2_LOTO(k,Hij)
-     else
-      call ham_qlayer2qlayer2(k,Hij)
-     end if
+   !   if (LOTO_correction) then
+   !    call ham_qlayer2qlayer2_LOTO(k,Hij)
+   !   else
+   !    call ham_qlayer2qlayer2(k,Hij)
+   !   end if
 
 
-   !  call ham_qlayer2qlayer2(k,Hij)
+     call ham_qlayer2qlayer2(k,Hij)
      
      Hamk_slab=0.0d0 
      ! i1 column index

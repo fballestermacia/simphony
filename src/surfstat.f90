@@ -136,8 +136,9 @@
                                     Born_Charge(:,:,:), Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi), &
                                     Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
             HmnR(:,:,iR) = HmnR(:,:,iR)+mat1!/Nrpts
+            added_LR_in_Real_Space = .true.
          end do   
-         added_LR_in_Real_Space = .true.
+         
       end if
 
      time_start= 0d0
