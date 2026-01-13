@@ -956,21 +956,21 @@
    !    angle_t= angle_t*pi/180d0
 
    !    ratio= Vacuum_thickness_in_Angstrom/cos(angle_t)/norm(R3)
-   !   counter = 0
+     counter = 0
      !> First check the max number of blocks in the hamiltonian matrix so as to add the long range interaction
      ! counter is the normalization factor, if the supercell is not excesively large, it should coincide with Nrpts, but just to be sure
-   !   do iR=1,Nrpts
-   !      ia=irvec(1,iR)
-   !      ib=irvec(2,iR)
-   !      ic=irvec(3,iR)
-   !      !> new lattice
-   !      call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+     do iR=1,Nrpts
+        ia=irvec(1,iR)
+        ib=irvec(2,iR)
+        ic=irvec(3,iR)
+        !> new lattice
+        call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
         
-   !       inew_ic= int(new_ic)
-   !       if (abs(new_ic).le.ijmax)then
-   !          counter = counter + 1
-   !       end if
-   !   end do
+         inew_ic= int(new_ic)
+         if (abs(new_ic).le.ijmax)then
+            counter = counter + 1
+         end if
+     end do
 
 
      do iR=1,Nrpts
@@ -1036,7 +1036,7 @@
 
             Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
             = Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
-            + (HmnR(:,:,iR))*ratio/ndegen(iR)  +nac_correction(1:Num_wann, 1:Num_wann)/Nrpts
+            + (HmnR(:,:,iR))*ratio/ndegen(iR)  +nac_correction(1:Num_wann, 1:Num_wann)/counter*ratio/ndegen(iR) 
          endif
 
      enddo
