@@ -3392,7 +3392,6 @@ subroutine  wannier_center3D_weyl_func_kpoints(kpoints, wcc, chirality)
       do ik1=1, Nk1
          k= kpoints(:, ik1, ik2)
 
-
          ! generate bulk Hamiltonian
          if (index(KPorTB, 'KP')/=0)then
             call ham_bulk_kp(k, Hamk)
@@ -3550,7 +3549,7 @@ subroutine  wannier_center3D_weyl_func_sphere(k0, r0, wcc, chirality)
          do ik1=1, NK1
             k_direct= kpoints(:, ik1, ik2)
             call direct_cart_rec(k_direct, k_cart)
-            write(outfileindex, '(6f10.4)') k_cart, k_direct
+            write(outfileindex, '(6f14.8)') k_cart, k_direct
          enddo
       enddo
       close(outfileindex)

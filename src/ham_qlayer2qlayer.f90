@@ -886,7 +886,7 @@
      nac_correction= 0d0
      atGamma = .false.
 
-     
+     call RANDOM_NUMBER(keps)
      
      !>  add loto splitting term
      temp1(1:2)= (/0.0,0.0/)

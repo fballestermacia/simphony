@@ -119,7 +119,7 @@ subroutine dos_sparse
       !> dos(e)= \sum_nk \delta(e-e_nk)
       do ie= 1, NE
          do ib= 1, neval
-            x= omega(ie)- eigval(ib)
+            x= omega(ie)- sign(1.0d0,eigval(ib))*sqrt(abs(eigval(ib)))
             do ieta= 1, NumberofEta
                eta0= eta_array(ieta)
                dos_mpi(ie, ieta) = dos_mpi(ie, ieta)+ delta(eta0, x)
@@ -142,8 +142,8 @@ subroutine dos_sparse
    if (cpuid.eq.0) then
       open(unit=outfileindex, file='dos.dat')
       write(outfileindex, *)'# Density of state of bulk system'
-      write(outfileindex, '(a16, a)')'# E(eV)', 'DOS(E) (states/unit cell/eV)'
-      write(outfileindex, '("#", a, f6.2, 300f16.2)')'Broadening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
+      write(outfileindex, '(a16, a)')'# E(THz)', 'DOS(E) (states/unit cell/THz)'
+      write(outfileindex, '("#", a, f6.2, 300f16.2)')'Broadening \eta (GHz): ', Eta_array(:)*1000d0/eV2Hartree
       do ie=1, NE
          write(outfileindex, '(90f16.6)')omega(ie)/eV2Hartree, dos(ie, :)*eV2Hartree
       enddo ! ie
@@ -161,16 +161,16 @@ subroutine dos_sparse
       write(outfileindex, '(a)')'set autoscale fix'
       write(outfileindex, '(a, f16.6,a)')'set yrange [0:', maxval(dos)*eV2Hartree+0.5, '1]'
       write(outfileindex, '(a)')'set key samplen 0.8 spacing 1 font ",12"'
-      write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
-      write(outfileindex, '(a)')'set ylabel "DOS (states/eV/unit cell)"'
+      write(outfileindex, '(a)')'set xlabel "Energy (THz)"'
+      write(outfileindex, '(a)')'set ylabel "DOS (states/THz/unit cell)"'
       write(outfileindex, '(a, f6.1, a)')"plot 'dos.dat' u 1:2 w l lw 2 title '",&
-         Eta_array(1)*1000/eV2Hartree, "meV', \"
+         Eta_array(1)*1000/eV2Hartree, "GHz', \"
       do ieta= 2, NumberofEta-1
          write(outfileindex, 201)" '' u 1:", ieta, " w l lw 2 title '", &
-            Eta_array(ieta)*1000/eV2Hartree, "meV', \"
+            Eta_array(ieta)*1000/eV2Hartree, "GHz', \"
       enddo
       write(outfileindex, '(a, f6.1, a)')" '' u 1:10 w l lw 2 title '",&
-         Eta_array(NumberofEta)*1000/eV2Hartree, "meV'"
+         Eta_array(NumberofEta)*1000/eV2Hartree, "GHz'"
       close(outfileindex)
    endif
 201 format(a, i3, a, f6.1, a)
@@ -316,7 +316,7 @@ subroutine charge_density_sparse
    if (cpuid.eq.0) then
       open(unit=outfileindex, file='chargedensity.dat')
       write(outfileindex, *)'# Density of state of bulk system'
-      write(outfileindex, '(a16, a)')'# E(eV)', 'chargedensity(E) (states/unit cell/eV)'
+      write(outfileindex, '(a16, a)')'# E(THz)', 'chargedensity(E) (states/unit cell/THz)'
       do ia=1, Origin_cell%Num_atoms
          write(outfileindex, '(90f16.6)')Origin_cell%Atom_position_cart(:, ia), chargedensity(ia)
       enddo ! ia
@@ -334,8 +334,8 @@ subroutine charge_density_sparse
       write(outfileindex, '(a)')'set autoscale fix'
       write(outfileindex, '(a)')'set yrange [0:1]'
       write(outfileindex, '(a)')'unset key'
-      write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
-      write(outfileindex, '(a)')'set ylabel "chargedensity (states/eV/unit cell)"'
+      write(outfileindex, '(a)')'set xlabel "Energy (THz)"'
+      write(outfileindex, '(a)')'set ylabel "chargedensity (states/THz/unit cell)"'
       write(outfileindex, '(a)')"splot 'chargedensity.dat' u 1:2:3 w lp pt 6 ps 0.2 lw 1.0 lc rgb 'black'  "
       close(outfileindex)
    endif
@@ -454,7 +454,7 @@ subroutine dos_sub
       !> get density of state
       do ie= 1, NE
          do ib= 1, iband_tot
-            x= omega(ie)- eigval(ib)
+            x= omega(ie)- sign(1.0d0,eigval(ib))*sqrt(abs(eigval(ib)))
             do ieta= 1, NumberofEta
                eta0= eta_array(ieta)
                dos_mpi(ie, ieta) = dos_mpi(ie, ieta)+ delta(eta0, x)
@@ -483,8 +483,8 @@ subroutine dos_sub
    if (cpuid.eq.0) then
       open(unit=outfileindex, file='dos.dat')
       write(outfileindex, *)'# Density of state of bulk system'
-      write(outfileindex, '(2a16)')'# E(eV)', 'DOS(E) (1/eV)'
-      write(outfileindex, '("#", a, f6.2, 300f16.2)')'Broadening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
+      write(outfileindex, '(2a16)')'# E(THz)', 'DOS(E) (1/THz)'
+      write(outfileindex, '("#", a, f6.2, 300f16.2)')'Broadening \eta (GHz): ', Eta_array(:)*1000d0/eV2Hartree
       do ie=1, NE
          write(outfileindex, '(90f16.6)')omega(ie)/eV2Hartree, dos(ie, :)*eV2Hartree
       enddo ! ie
@@ -657,7 +657,7 @@ subroutine joint_dos
       do ik= 1+cpuid, knv3, num_cpu
          do ib1= 1, iband_tot-1
             do ib2= ib1+1, iband_tot
-               x= omega(ie)- eigval(ib2, ik) + eigval(ib1, ik)
+               x= omega(ie)- sign(1.0d0,eigval(ib2,ik))*sqrt(abs(eigval(ib2,ik))) + sign(1.0d0,eigval(ib1,ik))*sqrt(abs(eigval(ib1,ik)))
                jdos_mpi(ie) = jdos_mpi(ie)+ delta(eta, x)* (fermi_dis(ib1, ik)- fermi_dis(ib2, ik))
             enddo ! ib2
          enddo ! ib1
