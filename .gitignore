@@ -18,7 +18,7 @@ examples/AgP2/*
 
 examples/Al2ZnTe4/* 
 !examples/Al2ZnTe4/pn.in
-!examples/Al2ZnTe4/Al2ZnTe4_phononTB_hr.dat
+!examples/Al2ZnTe4/Al2Te4Zn1_phononTB_hr.dat
 
 
 !examples/BHL
@@ -29,7 +29,7 @@ examples/BHL/*
 
 utility_scripts/*
 !utility_scripts/QE2TBDAT
-!utility_scripts/createSimphonyInpuy
+!utility_scripts/createSimphonyInput
 
 
 # Ignore most of the scripts in the utility folder

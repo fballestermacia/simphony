@@ -15,7 +15,8 @@ BulkGap_plane_calc    = F
 
 
 !> slab band structure calculation flags
-SlabBand_calc         = F
+SlabBand_calc         = T
+apply_ASR         = T
 SlabSS_calc           = F
 SlabArc_calc          = F
 SlabBand_plane_calc   = F
@@ -37,7 +38,7 @@ WeylChirality_calc    = F
 /
  
 &SYSTEM 
-NSLAB = 5
+NSLAB = 40
 NSLAB1 = 40
 NSLAB2 = 1
 NumOccupied = 4      !>Index of band taken into account for the calculations
@@ -45,7 +46,7 @@ NumOccupied = 4      !>Index of band taken into account for the calculations
 
 
 &PARAMETERS 
-Nk1 = 151           !>number k points 
+Nk1 = 51           !>number k points 
 Nk2 = 3           !>number k points 
 /
 
