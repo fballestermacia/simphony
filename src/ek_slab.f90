@@ -101,6 +101,10 @@
       
         call ham_slab(k,Chamk)
         
+        if (apply_ASR) then
+         call apply_ASR_slab(Chamk)
+        endif
+      
 
         eigenvalue=0.0d0
 
