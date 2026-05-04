@@ -2,7 +2,7 @@
 ! Main program of the Simphony code.
 ! Tight-binding software for phonon systems based on WannierTools. 
 ! Tight-binding formated as wannier90_hr.dat files, defined in Wannier90 software package.
-! See examples forlder for details.
+! See examples folder for details.
 !
 ! Reference:
 ! TO BE ADDED
@@ -68,7 +68,7 @@
      call now(time_end)
      call print_time_cost(time_start, time_end, 'readinput')
  
-     !> set Num_wann from wt.in, Num_wann should be consistent with the hr.dat
+     !> set Num_wann from pn.in, Num_wann should be consistent with the hr.dat
      Num_wann= sum(Origin_cell%nprojs)
      !if (SOC>0) num_wann= 2*num_wann
   

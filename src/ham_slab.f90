@@ -47,7 +47,6 @@
       call ham_qlayer2qlayer2(k,Hij)
      end if
 
-
    !   call ham_qlayer2qlayer2(k,Hij)
      
      Hamk_slab=0.0d0 
@@ -81,14 +80,14 @@
      
      ! check hermitcity
 
-     do i1=1,nslab*Num_wann
-     do i2=1,nslab*Num_wann
-        if(abs(Hamk_slab(i1,i2)-conjg(Hamk_slab(i2,i1))).ge.1e-6)then
-         !write(stdout,*)'there is something wrong with Hamk_slab'
-         !stop
-        endif 
-     enddo
-     enddo
+   !   do i1=1,nslab*Num_wann
+   !   do i2=1,nslab*Num_wann
+   !      if(abs(Hamk_slab(i1,i2)-conjg(Hamk_slab(i2,i1))).ge.1e-6)then
+   !       !write(stdout,*)'there is something wrong with Hamk_slab'
+   !       !stop
+   !      endif 
+   !   enddo
+   !   enddo
 
      deallocate( Hij)
      
@@ -346,3 +345,338 @@ end subroutine ham_slab_sparseHR
   return
   end subroutine ham_slab_parallel_B
 
+subroutine apply_ASR_slab(Ham_to_ASR)
+     ! This subroutine is used to apply the ASR for
+     ! slab systems. 
+     !
+     ! We use the scheme based on Eq. (81) of X. Gonze et al, PRB 50. 13035 (1994) 
+     ! 
+     ! History  
+     !       24/04/2026  Francesc Ballester 
+
+  
+     use para
+     implicit none
+
+     ! loop index  
+     integer :: ialpha, ibeta, kappa, kappap, kappapp  
+
+     ! Hamiltonian of slab system to apply the ASR to
+     complex(Dp),intent(out) ::Ham_to_ASR(Num_wann*nslab,Num_wann*nslab) 
+
+     ! Hamiltonian of slab at q=0
+     complex(Dp), allocatable :: Ham0(:,:)
+
+     ! Sum of Hamiltonian of slab at q=0
+     complex(Dp), allocatable :: sum(:,:)
+
+     allocate(Ham0(Num_wann*nslab,Num_wann*nslab))
+     allocate(sum(Num_wann*nslab,3))
+   
+     Ham0 = 0.0d0
+     ! Get H(q=0)
+     call ham_slab((/0.0d0, 0.0d0/),Ham0)
+
+     sum = 0.0d0
+      do kappa=1, Origin_cell%Num_atoms*nslab
+         do ialpha=1, 3
+            do kappapp=1, Origin_cell%Num_atoms*nslab
+               do ibeta=1, 3
+                  sum(3*(kappa-1)+ialpha,ibeta) = sum(3*(kappa-1)+ialpha,ibeta) + Ham0(3*(kappa-1)+ialpha,3*(kappapp-1)+ibeta) 
+               end do
+            enddo
+         end do
+      enddo
+
+
+     do kappa=1, Origin_cell%Num_atoms*nslab
+      do kappap=1, Origin_cell%Num_atoms*nslab
+         do ialpha=1, 3
+            do ibeta=1, 3
+               if (kappa.eq.kappap)then
+                  Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) = Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) - sum(3*(kappap-1)+ialpha,ibeta)
+               endif
+            end do
+         enddo
+      enddo
+     enddo
+
+     
+
+     deallocate(Ham0)
+     deallocate(sum)
+   return
+end subroutine apply_ASR_slab
+
+
+subroutine apply_ASR_RealSpace(irorigin)
+     ! This subroutine is used to apply the ASR for
+     ! slab systems. 
+     !
+     ! We use the scheme based on Eq. (82) of X. Gonze et al, PRB 50. 13035 (1994) 
+     ! 
+     ! History  
+     !       24/04/2026  Francesc Ballester 
+
+  
+     use para
+     implicit none
+
+     ! loop index  
+     integer :: ialpha, ibeta, kappa, kappap, kappapp, irab
+
+     integer, intent(in) :: irorigin ! index of R(ir)=(0, 0, 0)
+
+     ! Hamiltonian of system to apply the ASR to
+   !   complex(Dp),intent(out) ::Ham_to_ASR(Num_wann*nslab,Num_wann*nslab, Nrpts) 
+
+
+     ! Sum of Hamiltonian
+     complex(Dp), allocatable :: sum(:,:)
+
+     allocate(sum(Num_wann,3))
+
+     sum = 0.0d0
+     do kappapp=1, Origin_cell%Num_atoms
+      do kappa=1, Origin_cell%Num_atoms
+         do ialpha=1, 3
+            do ibeta=1, 3
+               do irab=1, Nrpts
+                  if (.not.(irab.eq.irorigin).or.(.not.(kappa.eq.kappapp))) then
+                     sum(3*(kappa-1)+ialpha,ibeta) = sum(3*(kappa-1)+ialpha,ibeta) + HmnR(3*(kappa-1)+ialpha,3*(kappapp-1)+ibeta, irab) 
+                  endif
+               end do
+            end do
+         enddo
+      enddo
+     enddo
+
+   
+     do kappa=1, Origin_cell%Num_atoms
+      do ialpha=1, 3
+         do ibeta=1, 3
+            HmnR(3*(kappa-1)+ialpha,3*(kappa-1)+ibeta,irorigin) = -1.0d0*sum(3*(kappa-1)+ialpha,ibeta)
+         end do
+      enddo
+     enddo
+
+
+     
+
+     deallocate(sum)
+   return
+end subroutine apply_ASR_RealSpace
+
+
+
+subroutine apply_ASR_slab_RealSpace(Ham_to_ASR)
+     ! This subroutine is used to apply the ASR for
+     ! slab systems. 
+     !
+     ! We use the scheme based on Eq. (82) of X. Gonze et al, PRB 50. 13035 (1994) 
+     ! 
+     ! History  
+     !       24/04/2026  Francesc Ballester 
+
+  
+     use para
+     implicit none
+
+     ! loop index  
+     integer :: ialpha, ibeta, kappa, kappap, kappapp, irab
+
+
+   !   Hamiltonian of slab system to apply the ASR to
+     complex(Dp),intent(out) ::Ham_to_ASR(Num_wann*nslab,Num_wann*nslab) 
+
+
+     ! Sum of Hamiltonian
+     complex(Dp), allocatable :: sum(:)
+
+     allocate(sum(Num_wann*nslab))
+
+     sum = 0.0d0
+     do kappapp=1, Num_wann*nslab
+      do kappa=1, Num_wann*nslab
+         if (.not.(kappa.eq.kappapp)) then
+            sum(kappa) = sum(kappa) + Ham_to_ASR(kappa,kappapp) 
+         endif
+      enddo
+     enddo
+
+   
+     do kappa=1, Num_wann*nslab
+      Ham_to_ASR(kappa,kappa) = -1.0d0*sum(kappa)
+     enddo
+
+
+     
+
+     deallocate(sum)
+   return
+end subroutine apply_ASR_slab_RealSpace
+
+
+subroutine apply_ASR_slab_iterative(Ham_to_ASR)
+     ! This subroutine is used to apply the ASR for
+     ! slab systems. 
+     !
+     ! We use the scheme based on https://doi.org/10.1016/j.cpc.2011.04.019
+     ! 
+     ! History  
+     !       24/04/2026  Francesc Ballester 
+
+  
+     use para
+     implicit none
+
+     ! loop index  
+     integer :: ialpha, ibeta, kappa, kappap, kappapp, niters, iiter
+
+     ! Hamiltonian of slab system to apply the ASR to
+     complex(Dp),intent(out) ::Ham_to_ASR(Num_wann*nslab,Num_wann*nslab) 
+
+     ! Hamiltonian of slab at q=0
+     complex(Dp), allocatable :: Ham0(:,:)
+
+     ! Sum of Hamiltonian of slab at q=0
+     complex(Dp), allocatable :: sum(:,:)
+
+     complex(Dp) :: sum0
+
+     allocate(Ham0(Num_wann*nslab,Num_wann*nslab))
+     allocate(sum(Num_wann*nslab,3))
+   
+     Ham0 = 0.0d0
+     ! Get H(q=0)
+     call ham_slab((/0.0d0, 0.0d0/),Ham0)
+    
+
+     niters=100
+     do iiter=1,niters
+
+      !> naive ASR
+      do ialpha=1,3
+         do ibeta=1,3
+            do kappa=1,Origin_cell%Num_atoms*nslab
+               sum0=0.0d0
+               do kappap =1, Origin_cell%Num_atoms*nslab
+                  sum0 = sum0 + Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta)
+               end do
+               sum0 = sum0/(Origin_cell%Num_atoms*nslab)
+               do kappap =1, Origin_cell%Num_atoms*nslab
+                  Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) = Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) - sum0
+               end do
+            enddo
+         enddo
+      enddo
+
+      !> Symmetrize
+      do kappa=1, Origin_cell%Num_atoms*nslab
+         do kappap=kappa, Origin_cell%Num_atoms*nslab
+            sum0=0.0d0
+            do ialpha=1,3
+               do ibeta=1,3
+               sum0 = (Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) + Ham0(3*(kappap-1)+ibeta,3*(kappa-1)+ialpha))*0.5d0
+               Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) = sum0
+               Ham0(3*(kappap-1)+ibeta,3*(kappa-1)+ialpha) = sum0
+               end do
+            end do
+         end do
+      end do
+     enddo
+     !> Symmetric ASR
+      do ialpha=1,3
+         do ibeta=1,3
+            do kappa=1,Origin_cell%Num_atoms*nslab
+               sum0=0.0d0
+               do kappap =1, Origin_cell%Num_atoms*nslab
+                  sum0 = sum0 + Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta)
+               end do
+               sum0 = sum0/(Origin_cell%Num_atoms*nslab-kappa+1)
+               do kappap =1, Origin_cell%Num_atoms*nslab
+                  Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) = Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) - sum0
+                  Ham0(3*(kappap-1)+ibeta,3*(kappa-1)+ialpha) = Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta)
+               end do
+            enddo
+         enddo
+      enddo
+
+
+
+
+
+     !> ASR on the rest?????
+     sum = 0.0d0
+     do kappapp=1, Origin_cell%Num_atoms*nslab
+      do ibeta=1, 3
+         sum(:,ibeta) = sum(:,ibeta) + Ham0(:,3*(kappapp-1)+ibeta) 
+      end do
+     enddo
+     !> skip kappap by imposing delta_kappa,kappap
+     do kappa=1, Origin_cell%Num_atoms*nslab
+         do ialpha=1, 3
+            do ibeta=1, 3
+               Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappa-1)+ibeta) = Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappa-1)+ibeta) - sum(3*(kappa-1)+ialpha,ibeta)
+            end do
+         enddo
+     enddo
+
+     deallocate(Ham0)
+     deallocate(sum)
+   return
+end subroutine apply_ASR_slab_iterative
+
+! subroutine remove_Trans(Ham_to_ASR)
+!      ! This subroutine is used to apply the ASR for
+!      ! slab systems by projecting out directly the translational vectors. 
+!      !
+!      ! 
+!      ! History  
+!      !       24/04/2026  Francesc Ballester 
+
+  
+!      use para
+!      implicit none
+
+!      ! loop index  
+!      integer :: ialpha, ibeta, kappa, kappap, kappapp  
+
+!      ! Hamiltonian of slab system to apply the ASR to
+!      complex(Dp),intent(out) ::Ham_to_ASR(Num_wann,Num_wann) 
+
+!      ! translational projection matrix
+!      complex(Dp), allocatable :: transproj(:,:)
+
+!      ! translational vector
+!      complex(Dp), allocatable :: v1(:)
+
+!      allocate(transproj(Num_wann,Num_wann))
+!      allocate(v1(Num_wann))
+   
+!      transproj = 0.0d0
+
+!      do ialpha=1, Num_wann
+!       transproj(ialpha,ialpha) = 1.0d0
+!      end do
+
+!      do ialpha=1, 3
+!       v1 = 0.0d0
+!       do kappa=1, Origin_cell%Num_atoms
+!          v1(3*(kappa-1)+ialpha) = 1.0d0/sqrt(dble(Origin_cell%Num_atoms))
+!       enddo
+!       do kappap = 1,Num_wann
+!          do kappapp=1, Num_wann
+!             transproj(kappap,kappapp) = transproj(kappap,kappapp) - (v1(kappap) * v1(kappapp))
+!          enddo
+!       enddo 
+!      enddo
+
+!      Ham_to_ASR = MATMUL(Ham_to_ASR, transproj)
+
+!      Ham_to_ASR = MATMUL(transproj, Ham_to_ASR)
+
+!      deallocate(transproj)
+!      deallocate(v1)
+
+! end subroutine remove_Trans

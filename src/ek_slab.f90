@@ -101,12 +101,16 @@
       
         call ham_slab(k,Chamk)
         
+        if (apply_ASR) then
+         call apply_ASR_slab(Chamk)
+        endif
+      
 
         eigenvalue=0.0d0
 
         ! diagonal Chamk
         call eigensystem_c('V', 'U', Num_wann*Nslab, CHamk, eigenvalue)
-       
+
         ekslab(:,i)=eigenvalue
 
         ! H*chamk(:,n)=E(n)*chamk(:,n)

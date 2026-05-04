@@ -91,7 +91,7 @@ subroutine readNormalHmnR()
             enddo
          endif
       enddo
-      !> WannierTools codes use Hatree atomic units
+
       if (index(Particle,'phonon')/=0) then
          HmnR= HmnR*eV2Hartree*eV2Hartree ! from eV to Hartree
       else
@@ -230,6 +230,11 @@ subroutine readNormalHmnR()
          enddo ! nproj
       enddo ! ia
    endif  ! add electric field or not
+
+   if (apply_ASR) then
+      call apply_ASR_RealSpace(ir0)
+   endif
+      
 
    !> write out Hmn(R=0)
    if (cpuid.eq.0 .and. Num_wann< 200)then

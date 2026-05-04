@@ -139,6 +139,7 @@ subroutine readinput
    FindNodes_calc        = .FALSE.
    LOTO_correction       = .FALSE.
    added_LR_in_Real_Space = .FALSE.
+   apply_ASR             = .FALSE.
    Write_eigenstates_at_HSP = .FALSE.
    !Boltz_OHE_calc        = .FALSE.
    !Boltz_Berry_correction= .FALSE.
@@ -198,6 +199,7 @@ subroutine readinput
       write(*, *)"WeylChirality_calc"
       write(*, *)"NLChirality_calc"
       write(*, *)"LOTO_correction"
+      write(*, *)"apply_ASR"
       write(*, *)"Write_eigenstates_at_HSP"
       !write(*, *)"AHC_calc"
       !write(*, *)"SHC_calc"
@@ -282,6 +284,7 @@ subroutine readinput
       !write(stdout, *) "Boltz_OHE_calc                    : ", Boltz_OHE_calc
       !write(stdout, *) "Boltz_Berry_correction            : ", Boltz_Berry_correction
       write(stdout, *) "LOTO_correction                   : ", LOTO_correction
+      write(stdout, *) "apply_ASR                         : ", apply_ASR
       write(stdout, *) "Write_eigenstates_at_HSP          : ", Write_eigenstates_at_HSP
       !write(stdout, *) "OrbitalTexture_calc               : ", OrbitalTexture_calc
       !write(stdout, *) "OrbitalTexture_3D_calc            : ", OrbitalTexture_3D_calc
@@ -2316,7 +2319,7 @@ subroutine readinput
 
 105 continue
    if (.not.lfound .and.(SlabBand_calc .or. SlabSS_calc)) then
-      stop 'ERROR: please set KPATH_SLAB for slab band stOrigin_cell%Ructure calculation'
+      stop 'ERROR: please set KPATH_SLAB for slab band structure calculation'
    endif
    
 
