@@ -428,6 +428,7 @@
      logical :: LOTO_correction  ! Flag for LOTO correction of phonon spectrum 
      logical :: added_LR_in_Real_Space
      logical :: apply_ASR  ! Flag for applying ASR in slabs
+     logical :: apply_ASR  ! Flag for applying ASR in slabs
      logical :: Write_eigenstates_at_HSP ! Flag for writing the eigenstates at HSP
      logical :: Boltz_OHE_calc  ! Flag for Boltzmann tranport under magnetic field
      logical :: Boltz_Berry_correction  ! Flag for Boltzmann tranport under magnetic field
@@ -896,7 +897,8 @@
      real(dp), allocatable    :: crvec(:,:)   ! R coordinates in Cartesian coordinates in units of Angstrom
      complex(dp), allocatable :: HmnR(:,:,:)   ! Hamiltonian m,n are band indexes
      complex(dp), allocatable :: valley_operator_R(:,:,:)   ! Hamiltonian m,n are band indexes
-     
+     complex(dp), allocatable :: HmnR_LR(:,:,:)   ! Long-Range Hamiltonian m,n are band indexes
+     complex(dp), allocatable :: HmnR_LR_sumkappa(:,:,:)
      
      !sparse HmnR arraies
      integer,allocatable :: hicoo(:), hjcoo(:), hirv(:, :)
@@ -997,8 +999,9 @@
 
      real(dp), parameter :: VASPToTHZ= 29.54263748d0 ! By T.T zhang
      
-     !> for ASR
-     !logical :: apply_ASR = .false.
+   !   !> for ASR
+   !   logical :: perm_initialized = .false.
+   !   integer, allocatable :: P(:)
 
 
 

@@ -394,36 +394,11 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
       Hamk_bulk(:, :)= Hamk_bulk(:, :)+ HmnR(:, :, iR)*factor/ndegen(iR)
    enddo ! iR
    
-   !call mat_mul(Num_wann, mirror_z, Hamk_bulk, mat1)
-   !call mat_mul(Num_wann, mat1, mirror_z, mat2)
-   !Hamk_bulk= (Hamk_bulk+ mat2)/2d0
-
-   !> DEBUGGING
    ! if ((k(1).eq.0.0d0).and.(k(2).eq.0.0d0).and.(k(3).eq.0.0d0))then
-   !    write(*,*) 'Writing Hamiltonian'
-   !    outfileindex= outfileindex+ 1
-   !    open(unit=outfileindex, file='HamBulkatGamma.dat')
-   !    do i1=1, Num_wann
-   !       do i2=1, Num_wann
-   !          write(outfileindex, *) REALPART(Hamk_bulk(i1,i2)), IMAGPART(Hamk_bulk(i1,i2))
-   !       end do
-   !    end do
-   !    write(outfileindex , *)''
-   !    close(outfileindex)
-   ! end if
-
-   ! check hermitcity
-  !do i1=1, Num_wann
-  !   do i2=1, Num_wann
-  !      if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
-  !         write(stdout,*)'there is something wrong with Hamk_bulk'
-  !         write(stdout,*)'i1, i2', i1, i2
-  !         write(stdout,*)'value at (i1, i2)', Hamk_bulk(i1, i2)
-  !         write(stdout,*)'value at (i2, i1)', Hamk_bulk(i2, i1)
-  !         !stop
-  !      endif
-  !   enddo
-  !enddo
+   !    print *, K
+   !    print *, Hamk_bulk(1,:)
+   ! endif
+   
 
    return
 end subroutine ham_bulk_latticegauge
@@ -775,6 +750,226 @@ subroutine long_range_phonon_interaction(nfr1,nfr2,nfr3,q,loto_2d,sign,Hamk_bulk
    end do
    return
 end subroutine long_range_phonon_interaction
+
+
+subroutine createHmnr_long_range() 
+   ! This subroutine computes the rigid-ion (long-range) term in real space
+   ! X. Gonze et al, PRB 50. 13035 (1994) 
+   !
+   ! Note that this subroutine is based on the rgd_blk subroutine found on
+   ! SSCHA's CellConstructor, which is based on the subroutine with the same name found 
+   ! on Quantum ESPRESSO's source code
+   !
+   ! History
+   !        
+   !        June/13/2024 by Francesc Ballester
+   use para
+
+   implicit none
+   
+   ! local variables
+
+   real(Dp):: r(3), d(3), delta(3), bigD                    !  Real space vectors
+   integer :: i,j, a, ap, b, bp, iR, kappa, kappap, iR_origin
+   real(Dp) :: e2, detepsilon, epsilonminus1(3,3)
+   
+   
+   real(dp), external :: det3
+   
+
+   if (.not. allocated(HmnR_LR)) allocate(HmnR_LR(Num_wann,Num_wann,nrpts))
+   if (.not. allocated(HmnR_LR_sumkappa)) allocate(HmnR_LR_sumkappa(Num_wann,3,nrpts))
+   HmnR_LR_sumkappa = 0.0d0
+   HmnR_LR = 0.0d0
+   e2 = 2.0d0
+
+   detepsilon = det3(Diele_Tensor)
+
+   
+   epsilonminus1 = Diele_Tensor
+   call inv_r(3,epsilonminus1)
+
+   do iR=1, Nrpts
+      if (iRvec(1,iR).eq.0.and.iRvec(2,iR).eq.0.and.iRvec(3,iR).eq.0) iR_origin = iR
+      do kappa=1, Origin_cell%Num_atoms
+         do kappap=1, Origin_cell%Num_atoms
+            if (.not.((iR.eq.iR_origin).and.(kappa.eq.kappap)))then
+               r(:) = Origin_cell%Atom_position_cart(:,kappap) - Origin_cell%Atom_position_cart(:,kappa)
+               d(:) = iRvec(1,iR)*Origin_cell%lattice(:,1) + iRvec(2,iR)*Origin_cell%lattice(:,2) + iRvec(3,iR)*Origin_cell%lattice(:,3) + r(:)
+               
+               delta = 0.0d0
+               do i=1,3
+                  delta(i) =  epsilonminus1(i,1)*d(1) +&
+                              epsilonminus1(i,2)*d(2) +&
+                              epsilonminus1(i,3)*d(3)
+               enddo
+               bigD = sqrt(delta(1)*d(1)+&
+                           delta(2)*d(2)+& 
+                           delta(3)*d(3))
+               do a=1,3
+                  do b=1,3
+                     do ap=1,3
+                        do bp = 1,3
+                           HmnR_LR(3*(kappa-1)+a, 3*(kappap-1)+b, iR) =&
+                           HmnR_LR(3*(kappa-1)+a, 3*(kappap-1)+b, iR) +&
+                           e2*Born_Charge(kappa, ap, a)/sqrt(detepsilon) * Born_Charge(kappap, bp, b)*&
+                           (epsilonminus1(ap,bp)/(bigD**3) - 3.0d0*delta(ap)*delta(bp)/(bigD**5))
+                        enddo
+                     enddo 
+                  enddo
+               enddo
+            endif
+         enddo
+      enddo
+   enddo 
+
+   ! print*, 'start onsite'
+   ! do kappa=1, Origin_cell%Num_atoms
+   !    print*,HmnR_LR(3*(kappa-1)+1:3*(kappa-1)+3, 3*(kappa-1)+1:3*(kappa-1)+3, iR_origin)
+   ! enddo 
+   ! print*, 'end onsite'
+
+   !> now the on-site terms obtained by the ASR
+   do iR=1, Nrpts
+      do kappa=1, Origin_cell%Num_atoms
+         do a=1, 3
+            do b=1, 3
+               do kappap=1, Origin_cell%Num_atoms
+                  if (.not.((iR.eq.iR_origin).and.(kappa.eq.kappap)))then
+                     HmnR_LR(3*(kappa-1)+a, 3*(kappa-1)+b, iR_origin) =&
+                     HmnR_LR(3*(kappa-1)+a, 3*(kappa-1)+b, iR_origin) -&
+                     HmnR_LR(3*(kappa-1)+a, 3*(kappap-1)+b, iR) !+ HmnR_LR(3*(kappa-1)+b, 3*(kappap-1)+a, iR))
+                  endif
+               enddo
+            enddo
+         enddo
+      enddo
+   enddo
+
+
+
+   ! print*, 'start onsite post'
+   ! do kappa=1, Origin_cell%Num_atoms
+   !    print*,HmnR_LR(3*(kappa-1)+1:3*(kappa-1)+3, 3*(kappa-1)+1:3*(kappa-1)+3, iR_origin)
+   ! enddo 
+   ! print*, 'end onsite post'
+
+   do kappap=1, Origin_cell%Num_atoms
+      HmnR_LR_sumkappa(:,:,:) = HmnR_LR_sumkappa(:,:,:) + HmnR_LR(:, 3*(kappap-1)+1:3*(kappap-1)+3, :)
+   enddo
+   
+
+
+   ! print *, 'start hmnrlr'
+   !> Finally convert from IFC to dynmat (atm we change later, now simply correct units)
+   ! do iR=1, Nrpts
+   !    do kappa=1, Origin_cell%Num_atoms
+   !       do a=1, 3
+   !          do b=1, 3
+   !             do kappap=1, Origin_cell%Num_atoms
+   !                HmnR_LR(3*(kappa-1)+a, 3*(kappa-1)+b, iR) =&
+   !                HmnR_LR(3*(kappa-1)+a, 3*(kappa-1)+b, iR)/sqrt(Atom_Mass(kappa)*Atom_Mass(kappap))*&
+   !                (PwscftoTHz*eV2Hartree)**2
+   !                ! print *, HmnR_LR(3*(kappa-1)+a, 3*(kappa-1)+b, iR)
+   !             enddo
+   !          enddo
+   !       enddo
+   !    enddo
+   ! enddo
+   ! HmnR_LR = HmnR_LR*(PwscftoTHz*eV2Hartree)**2
+   ! HmnR_LR_sumkappa = HmnR_LR_sumkappa*(PwscftoTHz*eV2Hartree)**2
+   ! do kappa=1, Origin_cell%Num_atoms
+   !    HmnR_LR_sumkappa(3*(kappa-1)+1:3*(kappa-1)+3,:,:) = HmnR_LR_sumkappa(3*(kappa-1)+1:3*(kappa-1)+3,:,:)/Atom_Mass(kappa)*&
+   !    (PwscftoTHz*eV2Hartree)**2
+   ! enddo
+   ! print *, 'end hmnrlr'
+   return
+end subroutine createHmnr_long_range
+
+
+subroutine long_range_phonon_interaction_real_space(q,sign,Hamk_bulk) 
+   ! This subroutine computes the rigid-ion (long-range) term for q
+   ! X. Gonze et al, PRB 50. 13035 (1994) 
+   ! the Ewald parameter alpha must be large enough to
+   ! have negligible r-space contribution
+   !
+   ! Note that this subroutine is based on the rgd_blk subroutine found on
+   ! SSCHA's CellConstructor, which is based on the subroutine with the same name found 
+   ! on Quantum ESPRESSO's source code
+   !
+   ! History
+   !        
+   !        June/13/2024 by Francesc Ballester
+   use para
+
+   implicit none
+       
+   complex(Dp), intent(inout) :: Hamk_bulk(Num_wann, Num_wann)
+   real(Dp) &
+        q(3),           &! q-vector
+        sign            ! sign=+/-1.0 ==> add/subtract rigid-ion term
+
+   
+   ! local variables
+
+  
+   integer :: na,nb, i,j, m1, m2, m3, iR, kappa
+   complex(Dp) :: phasefactor
+   real(Dp) :: qdotr
+
+   
+   !
+   ! In the reciprocal space Ewald sum
+   ! we have an error on the G-space sum of
+   ! exp(-14) \approx 10^-6
+   ! which after successive FT can accumulate
+   ! and probably is a source of error in the slab calculation
+   !
+   complex(Dp) :: lrange_sumkappa(Num_wann,3),lrangematrix(Num_wann,Num_wann)
+
+
+   lrange_sumkappa = 0d0
+   lrangematrix = 0d0
+
+
+   
+
+   
+   ! Just in case for numerical errors or divergences
+   ! do i=1,3
+   !    if (abs(q(i)).le.eps12/1000)then
+   !       q(i) = 0.0d0
+   !    end if
+   ! end do   
+
+   do iR=1, Nrpts
+      qdotr = q(1)*irvec(1,iR) + q(2)*irvec(2,iR) + q(3)*irvec(3,iR)
+      phasefactor= (cos(twopi*qdotr) + zi*sin(twopi*qdotr))
+
+      lrangematrix(:,:) = lrangematrix(:,:) +&
+                          HmnR_LR(:,:,iR)*phasefactor/ndegen(iR)
+      
+      lrange_sumkappa(:,:) = lrange_sumkappa(:,:) +&
+                             HmnR_LR_sumkappa(:,:,iR)/ndegen(iR)
+   enddo
+
+
+
+
+   do kappa = 1, Origin_cell%Num_atoms
+      lrangematrix(3*(kappa-1)+1:3*(kappa-1)+3, 3*(kappa-1)+1:3*(kappa-1)+3) =&
+      lrangematrix(3*(kappa-1)+1:3*(kappa-1)+3, 3*(kappa-1)+1:3*(kappa-1)+3) -&
+      lrange_sumkappa(3*(kappa-1)+1:3*(kappa-1)+3,:)
+   enddo
+
+   !> Add the long range interaction to the Dynamical Matrix
+   do na=1,Num_wann
+      do nb=1, Num_wann
+         Hamk_bulk(na,nb) =  sign*lrangematrix(na,nb)*(PwscftoTHz*eV2Hartree)**2 + Hamk_bulk(na,nb)
+      end do
+   end do
+   return
+end subroutine long_range_phonon_interaction_real_space
 
 
 
@@ -1609,6 +1804,7 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
       time_end= 0d0
       call now(time_start)
       call long_range_phonon_interaction(0,0,0,q,.false.,1.0d0,mat2,tau,zeu,rec_lattice,Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3))
+      ! call long_range_phonon_interaction_real_space(k,1.0d0, mat2)
       call now(time_end)
 
       !call print_time_cost(time_start,time_end, 'computing DD interaction' )
@@ -1623,7 +1819,6 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
          constant_t= 2.0d0*4.0d0*Pi/Origin_cell%CellVolume
 
       endif
-      
       
       
       
@@ -1670,15 +1865,13 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
    !> DEBUGGING
    ! if ((k(1).eq.0.0d0).and.(k(2).eq.0.0d0).and.(k(3).eq.0.0d0))then
    !    write(*,*) 'Writing Hamiltonian'
-   !    outfileindex= outfileindex+ 1
-   !    open(unit=outfileindex, file='HamBulkatGamma.dat')
+   !    ! outfileindex= outfileindex+ 1
+   !    ! open(unit=outfileindex, file='HamBulkatGamma.dat')
    !    do i1=1, Num_wann
-   !       do i2=1, Num_wann
-   !          write(outfileindex, *) REALPART(Hamk_bulk(i1,i2)), IMAGPART(Hamk_bulk(i1,i2))
-   !       end do
+   !       write(*, *) Hamk_bulk(i1,:)
    !    end do
-   !    write(outfileindex , *)''
-   !    close(outfileindex)
+   !    write(* , *)''
+   !    ! close(outfileindex)
    ! end if
 
    ! do ii=1,Num_wann

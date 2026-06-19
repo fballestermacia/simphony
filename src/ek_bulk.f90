@@ -479,8 +479,12 @@ end subroutine ek_bulk_line
 
         !> calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk_latticegauge(k, Hamk_bulk)
-       !call ham_bulk    (k, Hamk_bulk)
+        if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+         call ham_bulk_LOTO(k, Hamk_bulk)
+        else
+         call ham_bulk_latticegauge(k, Hamk_bulk)
+        endif
+
 
         !> diagonalization by call zheev in lapack
         W= 0d0
@@ -510,7 +514,14 @@ end subroutine ek_bulk_line
      eigv_mpi= eigv
      weight_mpi= weight
 #endif
-
+     
+     if (index(Particle,'phonon')/=0) then
+      do ik=1, Nk3_point_mode
+         do j=1, Num_wann
+            eigv_mpi(j, ik)= sqrt(abs(eigv_mpi(j, ik)))*sign(1d0, eigv_mpi(j, ik))
+         enddo
+      enddo
+     endif
      eigv_mpi= eigv_mpi/eV2Hartree
      weight= weight_mpi/maxval(weight_mpi)*255d0
 

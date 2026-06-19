@@ -94,6 +94,7 @@ subroutine readNormalHmnR()
 
       if (index(Particle,'phonon')/=0) then
          HmnR= HmnR*eV2Hartree*eV2Hartree ! from eV to Hartree
+         if (LOTO_correction) call createHmnr_long_range()
       else
          HmnR= HmnR*eV2Hartree ! from eV to Hartree
       endif
@@ -231,10 +232,10 @@ subroutine readNormalHmnR()
       enddo ! ia
    endif  ! add electric field or not
 
-   if (apply_ASR) then
-      call apply_ASR_RealSpace(ir0)
-   endif
-      
+   ! if (apply_ASR) then
+   !    call apply_ASR_RealSpace(ir0)
+   ! endif
+
 
    !> write out Hmn(R=0)
    if (cpuid.eq.0 .and. Num_wann< 200)then

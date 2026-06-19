@@ -288,11 +288,8 @@
      !>  add loto splitting term
    !   temp1(1:2)= (/0.0,0.0/)
      
-   !   k3d(:) = k(1)*Cell_defined_by_surface%reciprocal_lattice(1,:) + k(2)*Cell_defined_by_surface%reciprocal_lattice(2,:) 
-   !   k3d = k3d*Cell_defined_by_surface%cell_parameters(1)/(twopi)
-
-     temp1(:) = k(1)*Cell_defined_by_surface%reciprocal_lattice(1,:) + k(2)*Cell_defined_by_surface%reciprocal_lattice(2,:) 
-     call latticetransform(temp1(1), temp1(2), temp1(3), k3d(1), k3d(2), k3d(3))
+     k3d(:) = k(1)*Cell_defined_by_surface%reciprocal_lattice(:,1) + k(2)*Cell_defined_by_surface%reciprocal_lattice(:,2) 
+     k3d = k3d*Cell_defined_by_surface%cell_parameters(1)/(twopi)
      
      if (abs((k3d(1)**2+k3d(2)**2+k3d(3)**2)).le.eps12)then  !> skip k=0
          atGamma=.true.
@@ -562,10 +559,6 @@
   return
   end subroutine ham_qlayer2qlayer2
 
-
-
-
-
    subroutine FT_long_range_to_R(r,nkft1,nkft2,nkft3, DofR, tau, zeu, rec_lattice, natoms, map2atoms)
       ! This subroutine computes the long-range dipole-dipole interaction
       ! in a grid of points on the BZ to Fourier interpolate from reciprocañ space to real space
@@ -753,16 +746,13 @@
      !>  add loto splitting term
    !   temp1(1:2)= (/0.0,0.0/)
      
-   !   k3d(:) = k(1)*Cell_defined_by_surface%reciprocal_lattice(1,:) + k(2)*Cell_defined_by_surface%reciprocal_lattice(2,:) 
-     temp1(:) = k(1)*Cell_defined_by_surface%reciprocal_lattice(1,:) + k(2)*Cell_defined_by_surface%reciprocal_lattice(2,:) 
-     call latticetransform(temp1(1), temp1(2), temp1(3), k3d(1), k3d(2), k3d(3))
-
-
-   !   k3d = k3d!*Cell_defined_by_surface%cell_parameters(1)/(twopi)
+     k3d(:) = k(1)*Cell_defined_by_surface%reciprocal_lattice(:,1) + k(2)*Cell_defined_by_surface%reciprocal_lattice(:,2) 
+     
+     k3d = k3d*Cell_defined_by_surface%cell_parameters(1)/(twopi)
      
      if (abs((k3d(1)**2+k3d(2)**2+k3d(3)**2)).le.eps12)then  !> skip k=0
          atGamma=.true.
-
+         
          qeq = (keps(1)*(Diele_Tensor(1,1)*keps(1)+Diele_Tensor(1,2)*keps(2)+Diele_Tensor(1,3)*keps(3))+    &
             keps(2)*(Diele_Tensor(2,1)*keps(1)+Diele_Tensor(2,2)*keps(2)+Diele_Tensor(2,3)*keps(3))+    &
             keps(3)*(Diele_Tensor(3,1)*keps(1)+Diele_Tensor(3,2)*keps(2)+Diele_Tensor(3,3)*keps(3)))
