@@ -896,7 +896,8 @@
      real(dp), allocatable    :: crvec(:,:)   ! R coordinates in Cartesian coordinates in units of Angstrom
      complex(dp), allocatable :: HmnR(:,:,:)   ! Hamiltonian m,n are band indexes
      complex(dp), allocatable :: valley_operator_R(:,:,:)   ! Hamiltonian m,n are band indexes
-     
+     complex(dp), allocatable :: HmnR_LR(:,:,:)   ! Long-Range Hamiltonian m,n are band indexes
+     complex(dp), allocatable :: HmnR_LR_sumkappa(:,:,:)
      
      !sparse HmnR arraies
      integer,allocatable :: hicoo(:), hjcoo(:), hirv(:, :)

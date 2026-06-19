@@ -288,7 +288,7 @@
      !>  add loto splitting term
      temp1(1:2)= (/0.0,0.0/)
      
-     k3d(:) = k(1)*Cell_defined_by_surface%reciprocal_lattice(1,:) + k(2)*Cell_defined_by_surface%reciprocal_lattice(2,:) ! ESTO NO ME CONVENCE
+     k3d(:) = k(1)*Cell_defined_by_surface%reciprocal_lattice(:,1) + k(2)*Cell_defined_by_surface%reciprocal_lattice(:,2) 
      k3d = k3d*Cell_defined_by_surface%cell_parameters(1)/(twopi)
      
      if (abs((k3d(1)**2+k3d(2)**2+k3d(3)**2)).le.eps12)then  !> skip k=0
@@ -564,146 +564,6 @@
   return
   end subroutine ham_qlayer2qlayer2
 
-
-!   subroutine long_range_phonon_interaction_real_space(R,tau,Ham,zeu,natoms,map2atoms)
-!    ! This subroutine computes the rigid-ion (long-range) term 
-!    ! of the dynamical matrix in real space, following equation (70)
-!    ! of X. Gonze et al, PRB 55. 10355 (1997).
-!    ! It is intendet to be used in a given supercell, using the irreducible vectors written
-!    ! that are later used for interpolation
-!    !
-!    ! History
-!    !     
-!    !       Jan/22/2025 by Francesc Ballester
-!    !
-
-!    use para
-
-!    implicit none
-
-!    integer :: natoms, map2atoms(natoms)
-!    complex(Dp) :: Ham(3*natoms,3*natoms)
-!    real(Dp) &
-!          R(3),                               & ! irVec
-!          tau(3,natoms),                       & ! atom position
-!          zeu(Origin_cell%Num_atoms,3,3)        ! effective charges
-   
-
-
-!    !  local variables
-
-!    integer :: i,j,ii,jj,na,nb                      !  loop integers
-!    real(Dp) :: einv(3,3), sqrtedet                 !  dielectric tensor inverse and determinant
-!    real(Dp) :: d(3), Delta(3), bigD                !  variables used for computation
-!    real(Dp) :: unitConversor, sumalphabeta         !  just for clarity
-!    real(Dp), external ::  det3
-
-
-!    unitConversor = (108.97077184367376*eV2Hartree)**2
-
-!    sqrtedet = SQRT(det3(Diele_Tensor))
-!    einv(:,:) = Diele_Tensor(:,:)
-   
-
-!    call inv_r(3,einv)
-
-   
-!    do na=1, natoms
-!       do nb=1, natoms
-
-!          d(:) = R(:) + tau(:,nb) - tau(:,na) ! eq 68
-
-!          if (abs((d(1)**2+d(2)**2+d(3)**2)).ge.eps12)then ! skip the d=0 case
-!             do i=1, 3
-!                Delta(i) = einv(i,1)*d(1) + einv(i,2)*d(2) + einv(i,3)*d(3)
-!             end do
-!             bigD = SQRT(Delta(1)*d(1) + Delta(2)*d(2) + Delta(3)*d(3))
-
-!             do i=1, 3
-!                do j=1, 3
-!                   sumalphabeta = 0.0d0
-!                   do ii=1, 3
-!                      do jj=1, 3
-
-!                         sumalphabeta = sumalphabeta +                                     &
-!                                        (zeu(map2atoms(na),i,ii)*zeu(map2atoms(nb),j,jj)/sqrtedet*   &
-!                                        (einv(ii,jj)/bigD**3 - 3*Delta(ii)*Delta(jj)/bigD**5))
-
-
-!                      end do
-!                   end do
-!                   Ham(3*(na-1)+i,3*(nb-1)+j) = Ham(3*(na-1)+i,3*(nb-1)+j) + sumalphabeta/SQRT(Atom_Mass(na)*Atom_Mass(nb))*unitConversor
-!                end do
-!             end do
-!          end if
-
-!       end do
-!    end do
-
-!   return
-!   end subroutine long_range_phonon_interaction_real_space
-
-!   subroutine asr_real_space(nirs,irvecs,tau,Ham,zeu,natoms,map2atoms)
-!    ! Tmimimimimimimimi
-!    ! omimimimimimimimi
-!    ! omimimimimimimimi
-!    ! Imimimimimimimimi
-!    ! tmimimimimimimimi
-!    !
-!    ! History
-!    !     
-!    !       Jan/23/2025 by Francesc Ballester
-!    !
-
-!    use para
-
-!    implicit none
-
-!    integer :: nirs, natoms, map2atoms(natoms), irvecs(3,nirs)
-!    complex(Dp) :: Ham(3*natoms,3*natoms)
-!    real(Dp) &
-!          tau(3,natoms),                       & ! atom position
-!          zeu(Origin_cell%Num_atoms,3,3)        ! effective charges
-   
-
-
-!    !  local variables
-
-!    integer :: i,j,ii,jj,na,nb,inew_ic                 !   
-!    real(Dp) ::  bigR(3),ia,ib,ic,new_ia,new_ib,new_ic              !  
-!    complex(Dp) :: sumforasr(3*natoms,3*natoms)
-
-!    !real(Dp), external ::  det3
-!    sumforasr = 0.0d0
-!    do i=1, nirs
-!       ia=irvec(1,i)
-!       ib=irvec(2,i)
-!       ic=irvec(3,i)
-
-
-      
-!       bigR = ia*Origin_cell%Rua + ib*Origin_cell%Rub + ic*Origin_cell%Ruc
-!       bigR = bigR/Origin_cell%cell_parameters(1)
-!       call long_range_phonon_interaction_real_space(bigR,tau,sumforasr,zeu,natoms,map2atoms)
-!    end do
-
-!    do na=1, natoms
-!       do nb=1, natoms
-!          if (na.ne.nb) then
-!             do i=1, 3
-!                do j=1, 3
-!                   Ham(3*(na-1)+i,3*(na-1)+j) = Ham(3*(na-1)+i,3*(na-1)+j) + sumforasr(3*(na-1)+i,3*(nb-1)+j)
-!                end do
-!             end do
-!          end if
-!       end do
-!    end do
-
-   
-!   return
-!   end subroutine asr_real_space
-
-
    subroutine FT_long_range_to_R(r,nkft1,nkft2,nkft3, DofR, tau, zeu, rec_lattice, natoms, map2atoms)
       ! This subroutine computes the long-range dipole-dipole interaction
       ! in a grid of points on the BZ to Fourier interpolate from reciprocañ space to real space
@@ -886,18 +746,18 @@
      nac_correction= 0d0
      atGamma = .false.
 
-     call RANDOM_NUMBER(keps)
+     !call RANDOM_NUMBER(keps)
      
      !>  add loto splitting term
      temp1(1:2)= (/0.0,0.0/)
      
-     k3d(:) = k(1)*Cell_defined_by_surface%reciprocal_lattice(1,:) + k(2)*Cell_defined_by_surface%reciprocal_lattice(2,:) ! ESTO NO ME CONVENCE
+     k3d(:) = k(1)*Cell_defined_by_surface%reciprocal_lattice(:,1) + k(2)*Cell_defined_by_surface%reciprocal_lattice(:,2) 
      
-     k3d = k3d!*Cell_defined_by_surface%cell_parameters(1)/(twopi)
+     k3d = k3d*Cell_defined_by_surface%cell_parameters(1)/(twopi)
      
      if (abs((k3d(1)**2+k3d(2)**2+k3d(3)**2)).le.eps12)then  !> skip k=0
          atGamma=.true.
-
+         
          qeq = (keps(1)*(Diele_Tensor(1,1)*keps(1)+Diele_Tensor(1,2)*keps(2)+Diele_Tensor(1,3)*keps(3))+    &
             keps(2)*(Diele_Tensor(2,1)*keps(1)+Diele_Tensor(2,2)*keps(2)+Diele_Tensor(2,3)*keps(3))+    &
             keps(3)*(Diele_Tensor(3,1)*keps(1)+Diele_Tensor(3,2)*keps(2)+Diele_Tensor(3,3)*keps(3)))

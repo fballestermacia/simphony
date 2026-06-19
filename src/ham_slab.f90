@@ -49,7 +49,8 @@
 
 
    !   call ham_qlayer2qlayer2(k,Hij)
-     
+
+
      Hamk_slab=0.0d0 
      ! i1 column index
      do i1=1, nslab
@@ -84,7 +85,7 @@
      do i1=1,nslab*Num_wann
      do i2=1,nslab*Num_wann
         if(abs(Hamk_slab(i1,i2)-conjg(Hamk_slab(i2,i1))).ge.1e-6)then
-         !write(stdout,*)'there is something wrong with Hamk_slab'
+         write(stdout,*)'there is something wrong with Hamk_slab'
          !stop
         endif 
      enddo
@@ -360,54 +361,271 @@ subroutine apply_ASR_slab(Ham_to_ASR)
      implicit none
 
      ! loop index  
-     integer :: ialpha, ibeta, kappa, kappap, kappapp  
+     integer :: ialpha, ibeta, kappa, kappap, kappapp, m1, m2,islab,jslab, lamd, i, j, na, nb, nasr
 
      ! Hamiltonian of slab system to apply the ASR to
-     complex(Dp),intent(out) ::Ham_to_ASR(Num_wann*nslab,Num_wann*nslab) 
+     complex(Dp),intent(inout) ::Ham_to_ASR(Num_wann*nslab,Num_wann*nslab) 
 
      ! Hamiltonian of slab at q=0
-     complex(Dp), allocatable :: Ham0(:,:)
+     complex(Dp), allocatable :: Ham0(:,:), Ham_no(:,:)
 
      ! Sum of Hamiltonian of slab at q=0
      complex(Dp), allocatable :: sum(:,:)
 
-     allocate(Ham0(Num_wann*nslab,Num_wann*nslab))
-     allocate(sum(Num_wann*nslab,3))
-   
-     Ham0 = 0.0d0
-     ! Get H(q=0)
-     call ham_slab((/0.0d0, 0.0d0/),Ham0)
+     ! Displacement vector for debugging
+     real(Dp), allocatable :: onesvec(:), resultsofvec(:)
 
-     sum = 0.0d0
-      do kappa=1, Origin_cell%Num_atoms*nslab
-         do ialpha=1, 3
-            do kappapp=1, Origin_cell%Num_atoms*nslab
-               do ibeta=1, 3
-                  sum(3*(kappa-1)+ialpha,ibeta) = sum(3*(kappa-1)+ialpha,ibeta) + Ham0(3*(kappa-1)+ialpha,3*(kappapp-1)+ibeta) 
-               end do
-            enddo
-         end do
-      enddo
+     real(Dp) :: k0(2)
 
+     double precision :: sumd, Qdd
 
-     do kappa=1, Origin_cell%Num_atoms*nslab
-      do kappap=1, Origin_cell%Num_atoms*nslab
-         do ialpha=1, 3
-            do ibeta=1, 3
-               if (kappa.eq.kappap)then
-                  Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) = Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) - sum(3*(kappap-1)+ialpha,ibeta)
-               endif
-            end do
-         enddo
-      enddo
-     enddo
-
+     allocate(Ham0(Num_wann*nslab,Num_wann*nslab), Ham_no(Num_wann*nslab,Num_wann*nslab))
+     allocate(onesvec(Num_wann*nslab), resultsofvec(Num_wann*nslab))
      
 
-     deallocate(Ham0)
-     deallocate(sum)
+     !!!!!!!!!!!!!!!!!!!!!!!
+     ! TODO: ADD MASSES
+     !!!!!!!!!!!!!!!!!!!!!!
+     
+     k0 = 0.0d0
+     Ham0 = 0.0d0
+     Ham_no = 0.0d0
+     ! Get H(q=0)
+     call ham_slab(k0,Ham0)
+     Ham_no = Ham0
+
+   !   call apply_ASR_slab_iterative_Gamma(Ham0)
+
+   !    Ham0 = Ham_no-Ham0 
+      ! resultsofvec=0.0d0
+      ! call eigensystem_c('V', 'L', Num_wann*Nslab, Ham0, resultsofvec)  
+      ! call force_positive_definite_slab(Ham0, resultsofvec)
+
+     onesvec = 0.0d0
+     onesvec(3::3) = 1.0d0
+   ! !   print *, onesvec
+     resultsofvec = matmul(Ham_to_ASR, onesvec)
+
+   !   print *, 'vector pre-ASR'
+   !   print *, resultsofvec 
+   !   print *, 'end of vector pre-ASR'
+
+   na = 3*Origin_cell%Num_atoms
+
+   do islab=1, Nslab
+      do jslab=1, Nslab
+         do kappa=1, Origin_cell%Num_atoms
+            do kappap=1, Origin_cell%Num_atoms
+               Ham0(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) =&
+               Ham0(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) *&
+               sqrt(Atom_Mass(kappa)*Atom_Mass(kappap))
+
+               Ham_to_ASR(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) =&
+               Ham_to_ASR(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) *&
+               sqrt(Atom_Mass(kappa)*Atom_Mass(kappap))
+            enddo
+         enddo
+      enddo
+   enddo
+
+
+     do ialpha=1, 3
+      do ibeta=1, 3
+         do kappa=1, Origin_cell%Num_atoms*Nslab
+               sumd = 0.0d0 
+               Qdd = 0.0d0
+               do kappapp=1, Origin_cell%Num_atoms*Nslab
+                 sumd =&
+                 sumd + Ham0(3*(kappa-1)+ialpha,3*(kappapp-1)+ibeta)! + Ham0(3*(kappa-1)+ibeta,3*(kappapp-1)+ialpha))/2.0d0
+                 Qdd = Qdd !+ (Ham0(3*(kappa-1)+ialpha,3*(kappapp-1)+ibeta) - Ham0(3*(kappa-1)+ibeta,3*(kappapp-1)+ialpha))
+               enddo
+               Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappa-1)+ibeta) =Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappa-1)+ibeta) +  DCMPLX(-(sumd+Qdd), 0.d0) 
+               ! Ham_no(3*(kappa-1)+ialpha,3*(kappa-1)+ibeta) =Ham_no(3*(kappa-1)+ialpha,3*(kappa-1)+ibeta) +  DCMPLX(-(sumd+Qdd), 0.d0) 
+         enddo
+      enddo
+     end do
+
+
+   do islab=1, Nslab
+      do jslab=1, Nslab
+         do kappa=1, Origin_cell%Num_atoms
+            do kappap=1, Origin_cell%Num_atoms
+               Ham0(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) =&
+               Ham0(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) /&
+               sqrt(Atom_Mass(kappa)*Atom_Mass(kappap))
+
+               Ham_to_ASR(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) =&
+               Ham_to_ASR(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) /&
+               sqrt(Atom_Mass(kappa)*Atom_Mass(kappap))
+            enddo
+         enddo
+      enddo
+   enddo
+
+   !   Ham0 = Ham_no
+
+   !   do ialpha=1, 3
+   !    do ibeta=1, 3
+   !       do kappa=1, Origin_cell%Num_atoms*Nslab
+   !             sumd = 0.0d0 
+   !             Qdd = 0.0d0
+   !             do kappapp=1, Origin_cell%Num_atoms*Nslab
+   !               sumd =&
+   !               sumd + Ham0(3*(kappa-1)+ialpha,3*(kappapp-1)+ibeta)! + Ham0(3*(kappa-1)+ibeta,3*(kappapp-1)+ialpha))/2.0d0
+
+   !               Qdd = Qdd !+ (Ham0(3*(kappa-1)+ialpha,3*(kappapp-1)+ibeta) - Ham0(3*(kappa-1)+ibeta,3*(kappapp-1)+ialpha))
+   !             enddo
+   !             Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappa-1)+ibeta) =Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappa-1)+ibeta) +  DCMPLX(-(sumd+Qdd), 0.d0) 
+   !             Ham_no(3*(kappa-1)+ialpha,3*(kappa-1)+ibeta) =Ham_no(3*(kappa-1)+ialpha,3*(kappa-1)+ibeta) +  DCMPLX(-(sumd+Qdd), 0.d0) 
+   !       enddo
+   !    enddo
+   !   end do
+
+      ! do i=1, Num_wann*nslab
+      !    do j=1, ialpha - 1
+      !       Ham_to_ASR(i,j) = 0.5d0* (Ham_to_ASR(i,j)+CONJG(Ham_to_ASR(j,i)))
+      !       Ham_to_ASR(j,i) = CONJG(Ham_to_ASR(i,j))
+      !    end do
+      ! end do
+
+      ! do ialpha=1, 3
+      ! do ibeta=ialpha, 3
+      !    do kappa=1, Origin_cell%Num_atoms*Nslab
+      !       do kappap=kappa, Origin_cell%Num_atoms*Nslab
+      !          Ham_to_ASR(3*(kappap-1)+ibeta,3*(kappa-1)+ialpha) = &
+      !             conjg(Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta))
+      !       enddo
+      !    enddo
+      ! enddo
+      ! enddo
+   
+   !   print *, 'chamk in asr'
+   !      do j=1, Nslab* Num_wann
+   !        print *, Ham_to_ASR(j,:)
+   !      end do
+       
+   !      print *, 'end of chamk in asr'
+   !   onesvec = 0.0d0
+   !   onesvec(3::3) = 1.0d0
+   ! ! !   print *, onesvec
+   !   resultsofvec = matmul(Ham_to_ASR, onesvec)
+
+   !   print *, 'vector'
+   !   print *, resultsofvec 
+   !   print *, 'end of vector'
+
+   !   print *, 'hamtoasr'
+   !   print *, dble(Ham_to_ASR)
+   !   print *, 'end of hamtoasr'
+     
+   
+     deallocate(Ham0, Ham_no)
+     deallocate(onesvec,resultsofvec)
    return
 end subroutine apply_ASR_slab
+
+subroutine apply_ASR_slab_iterative_Gamma(Ham_to_ASR)
+     ! This subroutine is used to apply the ASR for
+     ! slab systems. 
+     !
+     ! We use the scheme based on https://doi.org/10.1016/j.cpc.2011.04.019
+     ! 
+     ! History  
+     !       24/04/2026  Francesc Ballester 
+
+  
+     use para
+     implicit none
+
+     ! loop index  
+     integer :: ialpha, ibeta, kappa, kappap, kappapp, niters, iiter, na, islab, jslab
+
+     ! Hamiltonian of slab system to apply the ASR to
+     complex(Dp),intent(inout) ::Ham_to_ASR(Num_wann*nslab,Num_wann*nslab) 
+
+     complex(Dp) :: sum0
+     
+
+    na = 3*Origin_cell%Num_atoms
+
+      do islab=1, Nslab
+         do jslab=1, Nslab
+            do kappa=1, Origin_cell%Num_atoms
+               do kappap=1, Origin_cell%Num_atoms
+                  Ham_to_ASR(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) =&
+                  Ham_to_ASR(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) *&
+                  sqrt(Atom_Mass(kappa)*Atom_Mass(kappap))
+               enddo
+            enddo
+         enddo
+      enddo
+     niters=100
+     do iiter=1,niters
+
+      !> naive ASR
+      do ialpha=1,3
+         do ibeta=1,3
+            do kappa=1,Origin_cell%Num_atoms*nslab
+               sum0=0.0d0
+               do kappap =1, Origin_cell%Num_atoms*nslab
+                  sum0 = sum0 + Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta)
+               end do
+               sum0 = sum0/(Origin_cell%Num_atoms*nslab)
+               do kappap =1, Origin_cell%Num_atoms*nslab
+                  Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) = Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) - sum0
+               end do
+            enddo
+         enddo
+      enddo
+
+      !> Symmetrize
+      do kappa=1, Origin_cell%Num_atoms*nslab
+         do kappap=kappa, Origin_cell%Num_atoms*nslab
+            sum0=0.0d0
+            do ialpha=1,3
+               do ibeta=1,3
+               sum0 = (Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) + conjg(Ham_to_ASR(3*(kappap-1)+ibeta,3*(kappa-1)+ialpha)))*0.5d0
+               Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) = sum0
+               Ham_to_ASR(3*(kappap-1)+ibeta,3*(kappa-1)+ialpha) = sum0
+               end do
+            end do
+         end do
+      end do
+
+      
+     enddo
+     !> Symmetric ASR
+      do ialpha=1,3
+         do ibeta=1,3
+            do kappa=1,Origin_cell%Num_atoms*nslab
+               sum0=0.0d0
+               do kappap =1, Origin_cell%Num_atoms*nslab
+                  sum0 = sum0 + Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta)
+               end do
+               sum0 = sum0/(Origin_cell%Num_atoms*nslab-kappa+1)
+               do kappap =1, Origin_cell%Num_atoms*nslab
+                  Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) = Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) - sum0
+                  Ham_to_ASR(3*(kappap-1)+ibeta,3*(kappa-1)+ialpha) = Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta)
+               end do
+            enddo
+         enddo
+      enddo
+
+      do islab=1, Nslab
+         do jslab=1, Nslab
+            do kappa=1, Origin_cell%Num_atoms
+               do kappap=1, Origin_cell%Num_atoms
+                  Ham_to_ASR(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) =&
+                  Ham_to_ASR(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) /&
+                  sqrt(Atom_Mass(kappa)*Atom_Mass(kappap))
+               enddo
+            enddo
+         enddo
+      enddo
+
+
+   return
+end subroutine apply_ASR_slab_iterative_Gamma
 
 
 subroutine apply_ASR_RealSpace(irorigin)
@@ -488,32 +706,32 @@ subroutine apply_ASR_slab_RealSpace(Ham_to_ASR)
 
 
    !   Hamiltonian of slab system to apply the ASR to
-     complex(Dp),intent(out) ::Ham_to_ASR(Num_wann*nslab,Num_wann*nslab) 
+     complex(Dp),intent(out) ::Ham_to_ASR(-ijmax:ijmax,Num_wann,Num_wann) 
 
 
      ! Sum of Hamiltonian
-     complex(Dp), allocatable :: sum(:)
+     complex(Dp) :: sum
 
-     allocate(sum(Num_wann*nslab))
+   !   allocate(sum(Num_wann))
 
-     sum = 0.0d0
-     do kappapp=1, Num_wann*nslab
-      do kappa=1, Num_wann*nslab
-         if (.not.(kappa.eq.kappapp)) then
-            sum(kappa) = sum(kappa) + Ham_to_ASR(kappa,kappapp) 
-         endif
+     do kappa=1, Origin_cell%Num_atoms
+      do ialpha=1, 3
+         do ibeta=1,3
+            sum = 0.0d0
+            do irab=-ijmax, ijmax
+               do kappapp=1, Origin_cell%Num_atoms
+               if ((.not.(kappa.eq.kappapp)).and.(.not.(irab.eq.0))) then
+                  sum = sum + Ham_to_ASR(irab,3+kappa+ialpha,3*kappapp+ibeta) 
+               endif
+               enddo
+            enddo
+            Ham_to_ASR(0,3+kappa+ialpha,3*kappa+ibeta) = -sum
+         enddo
       enddo
      enddo
 
-   
-     do kappa=1, Num_wann*nslab
-      Ham_to_ASR(kappa,kappa) = -1.0d0*sum(kappa)
-     enddo
 
 
-     
-
-     deallocate(sum)
    return
 end subroutine apply_ASR_slab_RealSpace
 
@@ -551,7 +769,7 @@ subroutine apply_ASR_slab_iterative(Ham_to_ASR)
      Ham0 = 0.0d0
      ! Get H(q=0)
      call ham_slab((/0.0d0, 0.0d0/),Ham0)
-    
+
 
      niters=100
      do iiter=1,niters
@@ -578,13 +796,15 @@ subroutine apply_ASR_slab_iterative(Ham_to_ASR)
             sum0=0.0d0
             do ialpha=1,3
                do ibeta=1,3
-               sum0 = (Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) + Ham0(3*(kappap-1)+ibeta,3*(kappa-1)+ialpha))*0.5d0
+               sum0 = (Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) + conjg(Ham0(3*(kappap-1)+ibeta,3*(kappa-1)+ialpha)))*0.5d0
                Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) = sum0
                Ham0(3*(kappap-1)+ibeta,3*(kappa-1)+ialpha) = sum0
                end do
             end do
          end do
       end do
+
+      
      enddo
      !> Symmetric ASR
       do ialpha=1,3
@@ -606,12 +826,12 @@ subroutine apply_ASR_slab_iterative(Ham_to_ASR)
 
 
 
-
+   
      !> ASR on the rest?????
      sum = 0.0d0
      do kappapp=1, Origin_cell%Num_atoms*nslab
       do ibeta=1, 3
-         sum(:,ibeta) = sum(:,ibeta) + Ham0(:,3*(kappapp-1)+ibeta) 
+         sum(:,ibeta) = sum(:,ibeta) + (Ham0(:,3*(kappapp-1)+ibeta))
       end do
      enddo
      !> skip kappap by imposing delta_kappa,kappap
@@ -628,6 +848,169 @@ subroutine apply_ASR_slab_iterative(Ham_to_ASR)
    return
 end subroutine apply_ASR_slab_iterative
 
+
+subroutine apply_ASR_slab_iterative_RealSpace(Ham_to_ASR)
+     ! This subroutine is used to apply the ASR for
+     ! slab systems. 
+     !
+     ! We use the scheme based on https://doi.org/10.1016/j.cpc.2011.04.019
+     ! 
+     ! History  
+     !       24/04/2026  Francesc Ballester 
+
+  
+     use para
+     implicit none
+
+     ! loop index  
+     integer :: ialpha, ibeta, kappa, kappap, kappapp, niters, iiter
+
+     ! Hamiltonian of slab system to apply the ASR to
+     complex(Dp),intent(out) ::Ham_to_ASR(-ijmax:ijmax,Num_wann,Num_wann) 
+
+     ! Hamiltonian of slab at q=0
+     complex(Dp), allocatable :: Ham0(:,:)
+
+     ! Sum of Hamiltonian of slab at q=0
+     complex(Dp), allocatable :: sum(:,:)
+
+     complex(Dp) :: sum0
+
+     allocate(Ham0(Num_wann,Num_wann))
+     allocate(sum(Num_wann,3))
+   
+     ! Get H(q=0)
+   !   call ham_slab((/0.0d0, 0.0d0/),Ham0)
+     Ham0= 0.0d0
+     Ham0(:,:) = Ham_to_ASR(0,:,:)
+
+     niters=1
+     do iiter=1,niters
+
+      !> naive ASR
+      do ialpha=1,3
+         do ibeta=1,3
+            do kappa=1,Origin_cell%Num_atoms
+               sum0=0.0d0
+               do kappap =1, Origin_cell%Num_atoms
+                  sum0 = sum0 + Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta)
+               end do
+               sum0 = sum0/(Origin_cell%Num_atoms)
+               do kappap =1, Origin_cell%Num_atoms
+                  Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) = Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) - sum0
+               end do
+            enddo
+         enddo
+      enddo
+
+      !> Symmetrize
+      do kappa=1, Origin_cell%Num_atoms
+         do kappap=kappa, Origin_cell%Num_atoms
+            sum0=0.0d0
+            do ialpha=1,3
+               do ibeta=1,3
+               sum0 = (Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) + Ham0(3*(kappap-1)+ibeta,3*(kappa-1)+ialpha))*0.5d0
+               Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) = sum0
+               Ham0(3*(kappap-1)+ibeta,3*(kappa-1)+ialpha) = sum0
+               end do
+            end do
+         end do
+      end do
+
+      
+     enddo
+     !> Symmetric ASR
+      ! do ialpha=1,3
+      !    do ibeta=1,3
+      !       do kappa=1,Origin_cell%Num_atoms
+      !          sum0=0.0d0
+      !          do kappap =1, Origin_cell%Num_atoms
+      !             sum0 = sum0 + Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta)
+      !          end do
+      !          sum0 = sum0/(Origin_cell%Num_atoms-kappa+1)
+      !          do kappap =1, Origin_cell%Num_atoms
+      !             Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) = Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta) - sum0
+      !             Ham0(3*(kappap-1)+ibeta,3*(kappa-1)+ialpha) = Ham0(3*(kappa-1)+ialpha,3*(kappap-1)+ibeta)
+      !          end do
+      !       enddo
+      !    enddo
+      ! enddo
+
+      Ham_to_ASR(0,:,:) = Ham0(:,:)
+
+
+
+   
+   !   !> ASR on the rest?????
+   !   sum = 0.0d0
+   !   do kappapp=1, Origin_cell%Num_atoms
+   !    do ibeta=1, 3
+   !       sum(:,ibeta) = sum(:,ibeta) + (Ham0(:,3*(kappapp-1)+ibeta))
+   !    end do
+   !   enddo
+   !   !> skip kappap by imposing delta_kappa,kappap
+   !   do kappa=1, Origin_cell%Num_atoms
+   !       do ialpha=1, 3
+   !          do ibeta=1, 3
+   !             Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappa-1)+ibeta) = Ham_to_ASR(3*(kappa-1)+ialpha,3*(kappa-1)+ibeta) - sum(3*(kappa-1)+ialpha,ibeta)
+   !          end do
+   !       enddo
+   !   enddo
+     deallocate(Ham0)
+     deallocate(sum)
+   return
+end subroutine apply_ASR_slab_iterative_RealSpace
+
+
+subroutine force_positive_definite_slab(Ham_to_force, omega2)
+     use para
+     implicit none
+
+     ! loop index  
+     integer :: ialpha, ibeta, kappa, kappap, kappapp, m1, m2,islab,jslab, lamd, i, j, na, nb, nasr, a, b, mu
+
+     ! Hamiltonian of slab system to apply the ASR to
+     complex(Dp),intent(inout) ::Ham_to_force(Num_wann*nslab,Num_wann*nslab)
+     real(Dp), intent(in) :: omega2(Num_wann*nslab)
+
+    
+     complex(Dp), allocatable :: Hamdummy(:,:)
+
+     allocate(Hamdummy(Num_wann*nslab,Num_wann*nslab))
+     
+     Hamdummy = 0.0d0
+
+     do i=1, nslab
+      do j=1, nslab
+         do kappa=1, Origin_cell%Num_atoms
+            do kappap=1, Origin_cell%Num_atoms
+               do ialpha=1, 3
+                  do ibeta=1, 3
+                     a = 3*Origin_cell%Num_atoms*(i-1)+3*(kappa-1)+ialpha
+                     b = 3*Origin_cell%Num_atoms*(j-1)+3*(kappap-1)+ibeta
+                     do mu=1,Num_wann*nslab
+                        Hamdummy(a,b) = Hamdummy(a,b) +&
+                        abs(omega2(mu))*Ham_to_force(a,mu)*conjg(Ham_to_force(b,mu))
+                     enddo
+                  end do
+               end do
+            end do
+         end do
+      end do
+     end do
+
+     do a=1, Num_wann*nslab
+      do b=1, Num_wann*nslab
+         Ham_to_force(a,b) = Hamdummy(a,b)
+      end do
+     end do
+
+
+   !   call eigensystem_c('V', 'L', Num_wann*Nslab, Ham_to_force, omega2) 
+
+   deallocate(Hamdummy)
+
+end subroutine force_positive_definite_slab
 ! subroutine remove_Trans(Ham_to_ASR)
 !      ! This subroutine is used to apply the ASR for
 !      ! slab systems by projecting out directly the translational vectors. 

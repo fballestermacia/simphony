@@ -70,11 +70,11 @@
 
      if((LOTO_correction).and.(.not.added_LR_in_Real_Space))then
          do iR=1,Nrpts
-            ia=irvec(1,iR)
-            ib=irvec(2,iR)
-            ic=irvec(3,iR)
-            R = ia*Origin_cell%Rua + ib*Origin_cell%Rub + ic*Origin_cell%Ruc
-            R = R/Origin_cell%cell_parameters(1)
+            ! ia=irvec(1,iR)
+            ! ib=irvec(2,iR)
+            ! ic=irvec(3,iR)
+            ! R = ia*Origin_cell%Rua + ib*Origin_cell%Rub + ic*Origin_cell%Ruc
+            ! R = R/Origin_cell%cell_parameters(1)
             R = irvec(:,iR)
             mat1 = 0.0d0
             call FT_long_range_to_R(R,LOTO_grid1,LOTO_grid2,LOTO_grid3,mat1,     &
@@ -100,19 +100,30 @@
         chamk=0.0d0 
       
         call ham_slab(k,Chamk)
-        
-        if (apply_ASR) then
-         call apply_ASR_slab(Chamk)
-        endif
-      
 
+      !   if (apply_ASR) then
+      !    call apply_ASR_slab(CHamk)
+      !   endif
+         
         eigenvalue=0.0d0
 
-        ! diagonal Chamk
-        call eigensystem_c('V', 'U', Num_wann*Nslab, CHamk, eigenvalue)
+      !   print *, 'chamk'
+      !   do j=1, Nslab* Num_wann
+      !     print *, chamk(j,:)
+      !   end do
        
-        ekslab(:,i)=eigenvalue
+      !   print *, 'end of chamk'
 
+        ! diagonal Chamk
+        call eigensystem_c('V', 'L', Num_wann*Nslab, CHamk, eigenvalue)    
+
+        ekslab(:,i)=eigenvalue
+         ! print *, 'k-vector'
+         ! print *, K
+         ! print *, 'eigenvalues'
+         ! print *, eigenvalue
+
+         ! print *, SHAPE(CHamk)
         ! H*chamk(:,n)=E(n)*chamk(:,n)
         !> Nslab*Num_wann
         !> rho(:)=abs(chamk(:,n))**2
