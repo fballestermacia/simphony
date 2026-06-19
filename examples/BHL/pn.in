@@ -8,14 +8,14 @@ Hrfile = 'BHL_phononTB_hr.dat'
 LOTO_correction       = F
 
 !> bulk band structure calculation flags
-BulkBand_calc         = T
+BulkBand_calc         = F
 BulkBand_plane_calc   = F
 BulkGap_cube_calc     = F
 BulkGap_plane_calc    = F
 
 
 !> slab band structure calculation flags
-SlabBand_calc         = F
+SlabBand_calc         = T
 SlabSS_calc           = F
 SlabArc_calc          = F
 SlabBand_plane_calc   = F
@@ -27,6 +27,8 @@ WireBand_calc         = F
 Dos_calc              = F
 
 
+apply_ASR	      = T
+
 !> Topological quantities calculation flags
 FindNodes_calc        = F
 BerryPhase_calc       = F
@@ -37,16 +39,16 @@ WeylChirality_calc    = F
 /
  
 &SYSTEM 
-NSLAB = 5
+NSLAB = 21
 NSLAB1 = 40
 NSLAB2 = 1
-NumOccupied = 4      !>Index of band taken into account for the calculations
+NumOccupied = 3      !>Index of band taken into account for the calculations
 /
 
 
 &PARAMETERS 
 Nk1 = 151           !>number k points 
-Nk2 = 3           !>number k points 
+Nk2 = 151           !>number k points 
 /
 
 
@@ -80,11 +82,14 @@ MILLER_INDEX        ! this is equal to the SURFACE card
 1 0 0
 
 
+SELECTED_OCCUPIED_BANDS
+5-6
+
 KPATH_SLAB
-2
+3
 X -0.5 0.0 G 0.0 0.0
 G 0.0 0.0 X 0.5 0.0
-
+X 0.5 0.0 G 0.0 0.0
 
 
 KPLANE_SLAB
