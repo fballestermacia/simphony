@@ -237,6 +237,16 @@ subroutine readNormalHmnR()
    ! endif
 
 
+   ! if (apply_ASR) then
+   !    call apply_ASR_RealSpace(ir0)
+   ! endif
+
+
+   if (apply_ASR) then
+      call apply_ASR_RealSpace(ir0)
+   endif
+      
+
    !> write out Hmn(R=0)
    if (cpuid.eq.0 .and. Num_wann< 200)then
       write(stdout, '(a)')" "

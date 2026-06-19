@@ -428,7 +428,6 @@
      logical :: LOTO_correction  ! Flag for LOTO correction of phonon spectrum 
      logical :: added_LR_in_Real_Space
      logical :: apply_ASR  ! Flag for applying ASR in slabs
-     logical :: apply_ASR  ! Flag for applying ASR in slabs
      logical :: Write_eigenstates_at_HSP ! Flag for writing the eigenstates at HSP
      logical :: Boltz_OHE_calc  ! Flag for Boltzmann tranport under magnetic field
      logical :: Boltz_Berry_correction  ! Flag for Boltzmann tranport under magnetic field
