@@ -47,7 +47,6 @@
       call ham_qlayer2qlayer2(k,Hij)
      end if
 
-   !   call ham_qlayer2qlayer2(k,Hij)
 
 
      Hamk_slab=0.0d0 
@@ -345,6 +344,296 @@ end subroutine ham_slab_sparseHR
 
   return
   end subroutine ham_slab_parallel_B
+
+
+
+
+subroutine make_translational_invariant(Ham)
+     ! This subroutine is used to apply the ASR for
+     ! slab systems by projecting out the non-traslational-invariant part. 
+     !
+     ! We use the scheme based on Eq. (81) of X. Gonze et al, PRB 50. 13035 (1994) 
+     ! 
+     ! History  
+     !       24/04/2026  Francesc Ballester 
+
+  
+     use para
+     implicit none
+
+     ! loop index  
+     integer :: ialpha, ibeta, kappa, kappap, kappapp, m1, m2,islab,jslab, lamd, i, j, na, nb, nasr
+
+     ! Hamiltonian of slab system to apply the ASR to
+     complex(Dp),intent(inout) ::Ham(Num_wann*nslab,Num_wann*nslab) 
+
+     complex(Dp), allocatable :: igHig(:,:)
+
+
+     if (.not. allocated(ntiH)) then
+      allocate(ntiH(Num_wann*nslab,Num_wann*nslab))
+      allocate(igHig(Num_wann*nslab,Num_wann*nslab))
+      ntiH = 0.0d0
+      igHig = 0.0d0
+
+      call Ham_slab_realSpace((/0.0d0,0.0d0/), igHig, 1)
+      ! call ham_slab((/0.0d0,0.0d0/), igHig)
+      ! call ASR_R_G(igHig)
+
+      if (LOTO_correction)then
+         LOTO_correction = .false.
+         call ham_slab((/0.0d0,0.0d0/), ntiH)
+         LOTO_correction = .true.
+      else
+         call ham_slab((/0.0d0,0.0d0/), ntiH)
+      endif
+
+      ntiH = ntiH - igHig
+      deallocate(igHig)
+     endif
+
+      ! na = 3*Origin_cell%Num_atoms
+
+      ! do islab=1, Nslab
+      !    do jslab=1, Nslab
+      !       do kappa=1, Origin_cell%Num_atoms
+      !          do kappap=1, Origin_cell%Num_atoms
+      !             Ham(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) =&
+      !             Ham(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) *&
+      !             sqrt(Atom_Mass(kappa)*Atom_Mass(kappap))
+      !          enddo
+      !       enddo
+      !    enddo
+      ! enddo
+
+
+
+      Ham = Ham - ntiH
+
+
+      ! do islab=1, Nslab
+      !    do jslab=1, Nslab
+      !       do kappa=1, Origin_cell%Num_atoms
+      !          do kappap=1, Origin_cell%Num_atoms
+      !             Ham(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) =&
+      !             Ham(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) /&
+      !             sqrt(Atom_Mass(kappa)*Atom_Mass(kappap))
+      !          enddo
+      !       enddo
+      !    enddo
+      ! enddo
+
+
+end subroutine make_translational_invariant
+
+subroutine Ham_slab_realSpace(k,slabham, Gproj) 
+     ! This subroutine generates a set of slab Hamiltonians
+     ! in real space
+     ! prior to Fourier interpolation onto reciprocal space
+     ! 19/06/2026 F Ballester
+     
+     
+     use para
+
+     implicit none
+
+     real(dp), intent(in):: k(2)
+     complex(dp), intent(inout) :: slabham(nslab*Num_wann,nslab*Num_wann)
+     integer, intent(in) :: Gproj
+
+     ! loop index
+     integer :: iR, inew_ic, i1, i2, iRsearch
+     real(dp) :: ia, ib, ic
+
+     ! new index used to sign irvec     
+     real(dp) :: new_ia,new_ib,new_ic, kdotr, ndegen_slab(nrpts)
+
+     ! eigenvalues for debugging
+     real(dp) :: eigen(nslab*Num_wann)
+     complex(dp) :: ratio
+
+     ! intermediate array so the math checks out
+     complex(dp) :: HijR(-ijmax:ijmax,Num_wann,Num_wann,nrpts),&
+                     HmnR_SLAB(Num_wann*Nslab,Num_wann*Nslab,nrpts), &
+                     irvec_SLAB(2,nrpts)
+
+
+     real(Dp) :: tx(nslab*Num_wann), ty(nslab*Num_wann), tz(nslab*Num_wann)
+
+      HijR = 0.0d0
+      HmnR_SLAB = 0.0d0
+      irvec_SLAB = 0.0d0
+      ndegen_slab = 1.0d0
+      eigen = 0.0d0
+      slabham = 0.0d0
+
+      do iR=1,Nrpts
+        ia=irvec(1,iR)
+        ib=irvec(2,iR)
+        ic=irvec(3,iR)
+
+        !> new lattice
+        call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+
+        irvec_SLAB(1,iR) = new_ia
+        irvec_SLAB(2,iR) = new_ib
+        inew_ic= int(new_ic)
+         ! print *, irvec(:, iR), new_ia, new_ib, new_ic
+
+         HijR(inew_ic, 1:Num_wann, 1:Num_wann,iR)&
+         =HijR(inew_ic, 1:Num_wann, 1:Num_wann,iR)&
+         +HmnR(:,:,iR)!*ratio/ndegen(iR)
+      enddo
+
+      do iR=1,Nrpts
+         ! i1 column index
+         do i1=1, nslab
+            ! i2 row index
+            do i2=1, nslab
+               if (abs(i2-i1).le.ijmax)then
+                  HmnR_SLAB((i2-1)*Num_wann+1:(i2-1)*Num_wann+Num_wann,&
+                           (i1-1)*Num_wann+1:(i1-1)*Num_wann+Num_wann, iR )&
+                  = HijR(i1-i2,1:Num_wann,1:Num_wann,iR) 
+               endif 
+            enddo ! i2
+         enddo ! i1
+         if (Gproj.eq.1) call ASR_R_G(HmnR_SLAB(:,:,iR))
+     enddo
+
+
+      do iR=1,Nrpts
+           kdotr=k(1)*irvec_SLAB(1,iR)+k(2)*irvec_SLAB(2,iR)
+           ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
+
+           slabham(:,:) =slabham(:,:)&
+           +HmnR_SLAB(:,:,iR)*ratio/ndegen_slab(iR)
+      enddo
+
+
+   !   call ASR_R_G(slabham)
+   !   tx=0.0d0
+   !   tx(1::3) = 1.0d0
+   !   ty=0.0d0
+   !   ty(2::3) = 1.0d0
+   !   tz=0.0d0
+   !   tz(3::3) = 1.0d0
+   ! !   tx = MATMUL(slabham,tx)
+   !   ty = MATMUL(slabham,ty)
+   !   tz = MATMUL(slabham,tz)
+   !   print *,'tx'
+   !   print *, tx
+   !   print *,'ty'
+   !   print *, ty
+   !   print *,'tz'
+   !   print *, tz
+  
+
+      
+   !    print *, 'start'
+   !   do i1 =1, nslab*num_wann
+   !    print *, slabham(i1,:) 
+   !   enddo
+   !   print *, 'end'
+
+   !    call eigensystem_c('V', 'L', Num_wann*Nslab,  slabham , eigen)   
+
+   !    print *, 'start'
+   !    print *, eigen
+   !   print *, 'end'
+
+end subroutine Ham_slab_realSpace
+
+
+subroutine ASR_R_G(Hs)
+     ! This subroutine projects out the translational part
+     ! of the slab Hamiltonian in real space 
+     ! prior to Fourier interpolation onto reciprocal space
+     ! 22/06/2026 F Ballester
+     
+     
+     use para
+
+     implicit none
+
+     complex(dp), intent(inout) :: Hs(nslab*Num_wann,nslab*Num_wann)
+
+     integer :: a,b, islab, jslab, kappa, na, kappap
+     
+     real(dp) :: G(nslab*Num_wann,nslab*Num_wann), tx(nslab*Num_wann), ty(nslab*Num_wann), tz(nslab*Num_wann), eye(nslab*Num_wann,nslab*Num_wann)
+
+     G = 0.0d0
+     eye = 0.0d0
+
+     tx=0.0d0
+     tx(1::3) = 1.0d0
+     ty=0.0d0
+     ty(2::3) = 1.0d0
+     tz=0.0d0
+     tz(3::3) = 1.0d0
+
+     do a=1, nslab*Num_wann
+      eye(a,a) = 1.0d0
+      do b=1, nslab*Num_wann
+         G(a,b) =3.0d0/dble(nslab*Num_wann)*&
+         (tx(a)*tx(b)+ty(a)*ty(b)+tz(a)*tz(b))
+      enddo
+     enddo
+   !    print *, 'start G'
+   !   do a =1, nslab*num_wann
+   !    print *, G(a,:) 
+   !   enddo
+   !   print *, 'end G'
+
+     eye(:,:) = eye(:,:) - G(:,:)
+
+
+
+      na = 3*Origin_cell%Num_atoms
+
+      do islab=1, Nslab
+         do jslab=1, Nslab
+            do kappa=1, Origin_cell%Num_atoms
+               do kappap=1, Origin_cell%Num_atoms
+                  Hs(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) =&
+                  Hs(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) *&
+                  sqrt(Atom_Mass(kappa)*Atom_Mass(kappap))
+               enddo
+            enddo
+         enddo
+      enddo
+
+     Hs = MATMUL(eye,Hs)
+     Hs = MATMUL(Hs,eye)
+
+
+
+
+      do islab=1, Nslab
+         do jslab=1, Nslab
+            do kappa=1, Origin_cell%Num_atoms
+               do kappap=1, Origin_cell%Num_atoms
+                  Hs(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) =&
+                  Hs(na*(islab-1)+3*(kappa-1)+1:na*(islab-1)+3*(kappa-1)+3,na*(jslab-1)+3*(kappap-1)+1:na*(jslab-1)+3*(kappap-1)+3) /&
+                  sqrt(Atom_Mass(kappa)*Atom_Mass(kappap))
+               enddo
+            enddo
+         enddo
+      enddo
+
+   !   tx = MATMUL(Hs,tx)
+   !   ty = MATMUL(Hs,ty)
+   !   tz = MATMUL(Hs,tz)
+   !   print *,'tx'
+   !   print *, tx
+   !   print *,'ty'
+   !   print *, ty
+   !   print *,'tz'
+   !   print *, tz
+
+
+end subroutine ASR_R_G
+
+
 
 subroutine apply_ASR_slab(Ham_to_ASR)
      ! This subroutine is used to apply the ASR for

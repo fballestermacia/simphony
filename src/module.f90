@@ -898,6 +898,10 @@
      complex(dp), allocatable :: valley_operator_R(:,:,:)   ! Hamiltonian m,n are band indexes
      complex(dp), allocatable :: HmnR_LR(:,:,:)   ! Long-Range Hamiltonian m,n are band indexes
      complex(dp), allocatable :: HmnR_LR_sumkappa(:,:,:)
+     complex(dp), allocatable :: ntiH(:,:)
+
+     
+
      
      !sparse HmnR arraies
      integer,allocatable :: hicoo(:), hjcoo(:), hirv(:, :)

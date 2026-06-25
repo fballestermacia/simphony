@@ -31,7 +31,7 @@
      real(dp), allocatable :: surf_r_weight(:, :), surf_r_weight_mpi(:, :)
 
      ! hamiltonian slab
-     complex(Dp),allocatable ::CHamk(:,:)
+     complex(Dp),allocatable ::CHamk(:,:),CHamk2(:,:), CHamk3(:,:)
 
 
      ! test for loto
@@ -51,6 +51,8 @@
      allocate(ekslab(Nslab*Num_wann,knv2))
      allocate(ekslab_mpi(Nslab*Num_wann,knv2))
      allocate(CHamk(nslab*Num_wann,nslab*Num_wann))
+     allocate(CHamk2(nslab*Num_wann,nslab*Num_wann))
+     allocate(CHamk3(nslab*Num_wann,nslab*Num_wann))
      allocate(work(lwork))
      allocate(rwork(lwork))
  
@@ -97,13 +99,13 @@
         call now(time_start)
 
         k= k2_path(i, :)
-        chamk=0.0d0 
-      
+
         call ham_slab(k,Chamk)
 
-      !   if (apply_ASR) then
-      !    call apply_ASR_slab(CHamk)
-      !   endif
+
+        if (apply_ASR) then
+         call make_translational_invariant(CHamk)
+        endif
          
         eigenvalue=0.0d0
 

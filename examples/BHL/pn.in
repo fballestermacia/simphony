@@ -39,7 +39,7 @@ WeylChirality_calc    = F
 /
  
 &SYSTEM 
-NSLAB = 21
+NSLAB = 5
 NSLAB1 = 40
 NSLAB2 = 1
 NumOccupied = 3      !>Index of band taken into account for the calculations
@@ -86,10 +86,9 @@ SELECTED_OCCUPIED_BANDS
 5-6
 
 KPATH_SLAB
-3
+2
 X -0.5 0.0 G 0.0 0.0
 G 0.0 0.0 X 0.5 0.0
-X 0.5 0.0 G 0.0 0.0
 
 
 KPLANE_SLAB
