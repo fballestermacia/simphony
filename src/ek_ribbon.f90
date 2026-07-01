@@ -125,6 +125,11 @@
         k=kmax*real(i-1)/(Nk1-1)
         chamk=0.0d0 
         call ham_ribbon(k,Chamk)
+
+         if (apply_ASR) then
+         call make_translational_invariant_ribbon(CHamk)
+        endif
+
         eigenvalue=0.0d0
 
         ! diagonal Chamk

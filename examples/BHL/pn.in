@@ -15,13 +15,13 @@ BulkGap_plane_calc    = F
 
 
 !> slab band structure calculation flags
-SlabBand_calc         = T
+SlabBand_calc         = F
 SlabSS_calc           = F
 SlabArc_calc          = F
 SlabBand_plane_calc   = F
 
 !> wire band structure calculation flags
-WireBand_calc         = F
+WireBand_calc         = T
 
 !> DOS calculation flags
 Dos_calc              = F

@@ -1738,7 +1738,7 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
    
    
    
-   call RANDOM_NUMBER(keps)
+   !call RANDOM_NUMBER(keps)
 
    do iR=1, Nrpts
       R(1)=dble(irvec(1,iR))
