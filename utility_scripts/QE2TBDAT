@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-This code generates an output file 'name_phononTB_hr.dat' which is an input of wannier90/wanniertools/simphony.
+This code generates an output file 'name_phononTB_hr.dat' which is an input of wannier90/wanniertools/phonnier.
 Inputs are output files from Quantum Espresso. Mainly the 'name.dat{0,1,2,...}' files, which are read and parsed using SSCHA's CellConstructor.
 
 TB_hr.dat file format can be seen here: https://wannier90.readthedocs.io/en/latest/user_guide/wannier90/files/#seedname_centresxyz
 
 Usage:
-QE2TBDAT PathTo/name.dyn N_irr_q [ASR], []=optional
+QE2TBDAT PathTo/name.dyn N_irr_q [ASR], []=optional CURRENTLY NO ASR OPTIONS ARE IMPLEMENTED
 
 ASR options: 
 - 'no' (default)
@@ -199,7 +199,7 @@ def write_phonon_hr(fcmat, svecs, mass, multi, super_pos, p2s_map, s2p_map, num_
                     rz = rz + sdim
                     hr_mat[rx, ry, rz, idx : idx + 3, idy : idy + 3] = fcmat[
                         p2s_map[iatom], katom
-                    ] / (multi[katom, iatom] * mass_sqrt)
+                    ] / (multi[katom, p2s_map[iatom]] * mass_sqrt)
                     #print(multi[katom, iatom])
 
     # collect all hr at rpts with none-zero data
@@ -258,6 +258,50 @@ def write_phonon_hr(fcmat, svecs, mass, multi, super_pos, p2s_map, s2p_map, num_
                     )
                     f.write(line)
     
+
+def write_phonon_hr2(fcmat, svecs, mass, outfile):
+    '''
+    Write phonon tight-binding Hamiltonian in the format of wannier90_hr.dat
+    from a centered FC matrix
+    '''
+    # maximum dimension for hr matrix
+    nrpt = np.shape(svecs)[1]
+    norbs = np.shape(fcmat)[2]
+    dege_rpts = np.ones(nrpt)
+    with open(outfile, "w") as f:
+        line = (
+            " Writen on "
+            + str(datetime.now())
+            + "\n"
+            + "          "
+            + str(norbs)
+            + "\n"
+            + "        "
+            + str(nrpt)
+            + "\n"
+        )
+        f.write(line)
+        nl = np.int32(np.ceil(nrpt / 15.0))
+        for n in range(nl):
+            line = "    " + "    ".join(
+                [str(np.int32(i)) for i in dege_rpts[n * 15 : (n + 1) * 15]]
+            )
+            f.write(line)
+            f.write("\n")
+        for irpt in range(nrpt):
+            rx = svecs[0,irpt]
+            ry = svecs[1,irpt]
+            rz = svecs[2,irpt]
+            for jatomorb in range(norbs):
+                for iatomorb in range(norbs):
+                    rp = fcmat[irpt, iatomorb, jatomorb].real/np.sqrt(mass[iatomorb//3] * mass[jatomorb//3])
+                    ip = fcmat[irpt, iatomorb, jatomorb].imag/np.sqrt(mass[iatomorb//3] * mass[jatomorb//3])
+                    tmp = "{:8d}{:8d}{:8d}{:8d}{:8d}{:20.10f}{:20.10f}\n"
+                    line = tmp.format(
+                        rx, ry, rz, iatomorb + 1, jatomorb + 1, rp, ip
+                    )
+                    f.write(line)
+    
     
 if __name__ == '__main__':
 
@@ -295,39 +339,38 @@ if __name__ == '__main__':
     #dyn = dyn.InterpolateMesh(dyn.GetSupercell(), lo_to_splitting=True)
     #if symmetrize:
     #    dyn.Symmetrize(verbose=False, asr=asr, use_spglib=False)
-    super_dyn = dyn.GenerateSupercellDyn(dyn.GetSupercell())
+    # super_dyn = dyn.GenerateSupercellDyn(dyn.GetSupercell(), img_thr=1e-8)
     
     #print(len(dyn.q_tot))
     #print(dyn.dielectric_tensor)
     #print(dyn.effective_charges)
 
-    num_atom = int(len(dyn.structure.coords))
-    num_satom = int(len(super_dyn.structure.coords))
+    # num_atom = int(len(dyn.structure.coords))
+    # num_satom = int(len(super_dyn.structure.coords))
 
-    cell = dyn.structure.unit_cell
-    scell = super_dyn.structure.unit_cell
+    # cell = dyn.structure.unit_cell
+    # scell = super_dyn.structure.unit_cell
 
-    mass = super_dyn.structure.get_masses_array()*MASS_RY_TO_UMA
+    mass = dyn.structure.get_masses_array()*MASS_RY_TO_UMA
 
-    positions = CC.Methods.covariant_coordinates(cell, dyn.structure.coords) 
-    super_pos = CC.Methods.covariant_coordinates(cell, super_dyn.structure.coords) 
+    # positions = CC.Methods.covariant_coordinates(cell, dyn.structure.coords) 
+    # super_pos = CC.Methods.covariant_coordinates(cell, super_dyn.structure.coords) 
 
     # Mapping between the suppercell and the primitive cell
-    p2s_map = np.arange(num_atom)
-    s2p_map = s2p(super_pos,cell,p2s_map)
+    # p2s_map = np.arange(num_atom)
+    # s2p_map = s2p(super_pos,cell,p2s_map)
 
     print('Input files succesfully read!')
 
 
     # Calculate the smallest vectors and their multiplicity from the crystal structure
-    print('Calculating smallest vectors...')
-    svecs, multi = smallest_vectors(
-        CC.Methods.covariant_coordinates(scell, super_dyn.structure.coords),
-        CC.Methods.covariant_coordinates(scell, super_dyn.structure.coords),
-        scell 
-        )
-    print("Done!")
-    
+    # print('Calculating smallest vectors...')
+    # svecs, multi = smallest_vectors(
+    #     CC.Methods.covariant_coordinates(scell, super_dyn.structure.coords),
+    #     CC.Methods.covariant_coordinates(scell, super_dyn.structure.coords),
+    #     scell 
+    #     )
+    # print("Done!")
 
     
     t2 = CC.ForceTensor.Tensor2(dyn.structure,
@@ -338,32 +381,37 @@ if __name__ == '__main__':
     t2.SetupFromPhonons(dyn)
     
     t2.effective_charges=None
-    #print(t2.x_r_vector2)
-    #t2.Center()
-    dyn2 = t2.GeneratePhonons(dyn.GetSupercell(), asr = asr, lo_to_splitting = False)
-    #if symmetrize:
-    dyn2.Symmetrize(verbose=False, asr=asr, use_spglib=False)
 
-    
+    t2.Center()
 
-    fc = dyn2.GetRealSpaceFC(supercell_array=dyn2.GetSupercell())
+    # dyn2 = t2.GeneratePhonons(dyn.GetSupercell(), asr = asr, lo_to_splitting = False)
+    ################if symmetrize:
+    # dyn2.Symmetrize(verbose=False, asr=asr, use_spglib=False)
 
-    
-    
+
+    # fc = dyn2.GetRealSpaceFC(supercell_array=dyn2.GetSupercell())
 
     # Finally write the TB_hr.dat file
     print('Writing file...')
-    write_phonon_hr(
-            np.transpose(np.reshape(fc,(num_satom,3,num_satom,3)),axes=(0,2,1,3))*factor**2,
-            svecs,
+    # write_phonon_hr(
+    #         np.transpose(np.reshape(fc,(num_satom,3,num_satom,3)),axes=(0,2,1,3))*factor**2,
+    #         svecs,
+    #         mass,
+    #         multi,
+    #         super_dyn.structure.coords,
+    #         p2s_map,
+    #         s2p_map,
+    #         num_satom,
+    #         num_atom,
+    #         cell,
+    #         '{}_phononTB_hr.dat'.format(prefix)
+    #     )
+
+
+    write_phonon_hr2(
+            t2.tensor*factor**2,
+            t2.x_r_vector2,
             mass,
-            multi,
-            super_dyn.structure.coords,
-            p2s_map,
-            s2p_map,
-            num_satom,
-            num_atom,
-            cell,
             '{}_phononTB_hr.dat'.format(prefix)
         )
 
