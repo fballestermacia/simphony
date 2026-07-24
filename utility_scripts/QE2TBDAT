@@ -383,6 +383,7 @@ if __name__ == '__main__':
     t2.effective_charges=None
 
     t2.Center()
+    t2.Apply_ASR()
 
     # dyn2 = t2.GeneratePhonons(dyn.GetSupercell(), asr = asr, lo_to_splitting = False)
     ################if symmetrize:
