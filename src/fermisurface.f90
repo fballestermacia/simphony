@@ -1263,6 +1263,7 @@ subroutine fermisurface_stack
      
          !> diagonalization
          call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
+         W = sign(1.0d0,W)*SQRT(abs(W))
          gap(1, ik)= W(Numoccupied+1)- W(Numoccupied)
          gap(2:9 , ik)= W(Numoccupied-3:Numoccupied+4)
       
