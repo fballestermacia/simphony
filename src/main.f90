@@ -376,6 +376,17 @@
         endif
      endif
 
+     !> Slab DOS
+     if (SlabDos_calc) then
+           if(cpuid.eq.0)write(stdout, *)' '
+           if(cpuid.eq.0)write(stdout, *)'>> Start of calculating DOS for slab system'
+           call now(time_start)
+           call slab_dos_sub
+           call now(time_end)
+           call print_time_cost(time_start, time_end, 'Dos_calc')
+           if(cpuid.eq.0)write(stdout, *)'<< End of calculating the DOS for slab system'
+        endif
+
      !> effective mass
      if (EffectiveMass_calc) then
         if(cpuid.eq.0)write(stdout, *)' '

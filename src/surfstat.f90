@@ -595,7 +595,7 @@
            write(outfileindex, 204)k2line_stop(i+1)*Angstrom2atomic, emin, k2line_stop(i+1)*Angstrom2atomic, emax
         enddo
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
-        write(outfileindex, '(2a)')"splot 'dos.dat_bulk' u 1:2:(exp($3)) w pm3d"
+        write(outfileindex, '(2a)')"splot 'dos.dat_bulk' u 1:2:3 w pm3d"
         CLOSE(outfileindex)
 
      endif

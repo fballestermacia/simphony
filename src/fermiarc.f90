@@ -692,7 +692,7 @@
         write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape*Angstrom2atomic, ':', k1max_shape*Angstrom2atomic, ']'
         write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape*Angstrom2atomic, ':', k2max_shape*Angstrom2atomic, ']'
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
-        write(outfileindex, '(2a)')"splot 'arc.jsdat_l' u 1:2:(exp($3)) w pm3d"
+        write(outfileindex, '(2a)')"splot 'arc.jsdat_l' u 1:2:$3 w pm3d"
         close(outfileindex)
      endif !> SOC>0
   

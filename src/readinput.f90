@@ -135,6 +135,7 @@ subroutine readinput
    MirrorChern_calc      = .FALSE.
    Dos_calc              = .FALSE.
    JDos_calc             = .FALSE.
+   SlabDos_calc             = .FALSE.
    !EffectiveMass_calc    = .FALSE.
    FindNodes_calc        = .FALSE.
    LOTO_correction       = .FALSE.
@@ -190,7 +191,7 @@ subroutine readinput
       write(*, *)"BerryPhase_calc,BerryCurvature_calc, BerryCurvature_EF_calc"
       write(*, *)"Berrycurvature_kpath_EF_calc"!, BerryCurvature_kpath_Occupied_calc"
       write(*, *)"BerryCurvature_slab_calc, BerryCurvature_Cube_calc"
-      write(*, *)"Dos_calc, JDos_calc, FindNodes_calc"
+      write(*, *)"Dos_calc, JDos_calc, SlabDos_calc, FindNodes_calc"
       write(*, *)"BulkFS_plane_calc"
       write(*, *)"BulkFS_plane_stack_calc"
       write(*, *)"Z2_3D_calc"
@@ -277,6 +278,7 @@ subroutine readinput
       write(stdout, *) "Chern_3D_calc                     : ",  Chern_3D_calc
       write(stdout, *) "MirrorChern_calc                  : ",  MirrorChern_calc
       write(stdout, *) "JDos_calc                         : ",  JDOS_calc
+      write(stdout, *) "SlabDos_calc                      : ",  SlabDOS_calc
       write(stdout, *) "FindNodes_calc                    : ",  FindNodes_calc
       write(stdout, *) "EffectiveMass_calc                : ", EffectiveMass_calc
       !write(stdout, *) "AHC_calc                          : ", AHC_calc

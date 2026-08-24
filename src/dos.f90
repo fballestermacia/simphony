@@ -476,8 +476,7 @@ subroutine dos_sub
 #endif
    dos= dos*dk3
 
-   !> include the spin degeneracy if there is no SOC in the tight binding Hamiltonian.
-   if (SOC<=0) dos=dos*2d0
+
 
    outfileindex= outfileindex+ 1
    if (cpuid.eq.0) then
@@ -530,6 +529,183 @@ subroutine dos_sub
 
    return
 end subroutine dos_sub
+
+
+subroutine slab_dos_sub
+!> calculate density of state for 3D slab system
+!
+!> DOS(\omega)= \sum_k \delta(\omega- E(k))
+
+   use wmpi
+   use para
+   implicit none
+
+   !> the integration k space
+   real(dp) :: emin, emax
+
+   integer :: ik,ie,ib,ikx,iky,ikz,ieta
+   integer :: knv3,ierr
+   integer :: NumberofEta, NE
+
+   !> integration for band
+   integer :: iband_low,iband_high,iband_tot
+
+   real(dp) :: x, dk2, eta0
+
+   real(dp) :: k(2)
+   real(dp) :: time_start, time_end
+
+   real(dp), allocatable :: eigval(:)
+   real(dp), allocatable :: W(:)
+   real(dp), allocatable :: omega(:)
+   real(dp), allocatable :: dos(:, :)
+   real(dp), allocatable :: dos_mpi(:, :)
+   real(dp), allocatable :: eta_array(:)
+   complex(dp), allocatable :: Hk(:, :)
+
+   !> delta function
+   real(dp), external :: delta
+
+   knv3= Nk1*Nk2
+
+   if (OmegaNum<2) OmegaNum=2
+   NE= OmegaNum
+
+   iband_low= Numoccupied- 10000
+   iband_high= Numoccupied+ 10000
+
+   if (iband_low <1) iband_low = 1
+   if (iband_high >Num_wann*Nslab) iband_high = Num_wann*Nslab
+
+   iband_tot= iband_high- iband_low+ 1
+
+   NumberofEta = 9
+
+   allocate(W(Num_wann*Nslab))
+   allocate(Hk(Num_wann*Nslab, Num_wann*Nslab))
+   allocate(eigval(iband_tot))
+   allocate(eta_array(NumberofEta))
+   allocate(dos(NE, NumberofEta))
+   allocate(dos_mpi(NE, NumberofEta))
+   allocate(omega(NE))
+   dos=0d0
+   dos_mpi=0d0
+   eigval= 0d0
+
+
+   emin= OmegaMin
+   emax= OmegaMax
+   eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
+   eta_array= eta_array*Eta_Arc
+
+
+   !> energy
+   do ie=1, NE
+      omega(ie)= emin+ (emax-emin)* (ie-1d0)/dble(NE-1)
+   enddo ! ie
+
+   !dk3= kCubeVolume/dble(knv3)
+   dk2= 1d0/dble(knv3)
+
+   !> get eigenvalue
+   time_start= 0d0
+   time_end= 0d0
+   do ik=1+cpuid, knv3, num_cpu
+
+      if (cpuid.eq.0.and. mod(ik/num_cpu, 100).eq.0) &
+         write(stdout, '(a, i18, "/", i18, a, f10.3, "s")') 'ik/knv3', &
+         ik, knv3, ' time left', (knv3-ik)*(time_end-time_start)/num_cpu
+
+      call now(time_start)
+      ikx= (ik-1)/(nk2)+1
+      iky= ((ik-1-(ikx-1)*Nk2))+1
+      k= K2D_start+ K2D_vec1*(ikx-1)/dble(nk1)  &
+         + K2D_vec2*(iky-1)/dble(nk2)  
+     
+      call ham_slab(k, Hk)
+
+      W= 0d0
+      call eigensystem_c( 'N', 'U', Num_wann*Nslab ,Hk, W)
+      eigval(:)= W(iband_low:iband_high)
+
+      !> get density of state
+      do ie= 1, NE
+         do ib= 1, iband_tot
+            x= omega(ie)- sign(1.0d0,eigval(ib))*sqrt(abs(eigval(ib)))
+            do ieta= 1, NumberofEta
+               eta0= eta_array(ieta)
+               dos_mpi(ie, ieta) = dos_mpi(ie, ieta)+ delta(eta0, x)
+            enddo
+         enddo ! ib
+      enddo ! ie
+      call now(time_end)
+
+
+      call now(time_end)
+
+   enddo  ! ik
+
+#if defined (MPI)
+   call mpi_allreduce(dos_mpi,dos,size(dos),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+   dos= dos_mpi
+#endif
+   dos= dos*dk2
+
+
+
+   outfileindex= outfileindex+ 1
+   if (cpuid.eq.0) then
+      open(unit=outfileindex, file='slabdos.dat')
+      write(outfileindex, *)'# Density of state of slab system'
+      write(outfileindex, '(2a16)')'# E(THz)', 'DOS(E) (1/THz)'
+      write(outfileindex, '("#", a, f6.2, 300f16.2)')'Broadening \eta (GHz): ', Eta_array(:)*1000d0/eV2Hartree
+      do ie=1, NE
+         write(outfileindex, '(90f16.6)')omega(ie)/eV2Hartree, dos(ie, :)*eV2Hartree
+      enddo ! ie
+      close(outfileindex)
+   endif
+
+   outfileindex= outfileindex+ 1
+   !> write script for gnuplot
+   if (cpuid==0) then
+      open(unit=outfileindex, file='slabdos.gnu')
+      write(outfileindex, '(a)')"set encoding iso_8859_1"
+      write(outfileindex, '(a)')'set terminal  png truecolor enhanced  font ",24" size 1920, 1680'
+      write(outfileindex, '(a)')"set output 'slabdos.png'"
+      write(outfileindex, '(a)')'set border lw 2'
+      write(outfileindex, '(a)')'set autoscale fix'
+      write(outfileindex, '(a, f16.6,a)')'set yrange [0:', maxval(dos)*eV2Hartree+0.5, '1]'
+      write(outfileindex, '(a)')'set key samplen 0.8 spacing 1 font ",12"'
+      write(outfileindex, '(a)')'set xlabel "Frequency (THz)"'
+      write(outfileindex, '(a)')'set key title  "Broadening"'
+      write(outfileindex, '(a)')'set title "Slab DOS with different broadenings"'
+      write(outfileindex, '(a)')'set ylabel "Slab DOS (states/THz/unit cell)"'
+      write(outfileindex, '(a, f6.1, a)')"plot 'slabdos.dat' u 1:2 w l lw 2 title '",&
+         Eta_array(1)*1000/eV2Hartree, "GHz', \"
+      do ieta= 2, NumberofEta-1
+         write(outfileindex, 202)" '' u 1:", ieta, " w l lw 2 title '", &
+            Eta_array(ieta)*1000/eV2Hartree, "GHz', \"
+      enddo
+      write(outfileindex, '(a, f6.1, a)')" '' u 1:10 w l lw 2 title '",&
+         Eta_array(NumberofEta)*1000/eV2Hartree, "GHz'"
+      close(outfileindex)
+   endif
+202 format(a, i3, a, f6.1, a)
+
+#if defined (MPI)
+   call mpi_barrier(mpi_cmw, ierr)
+#endif
+   deallocate(W)
+   deallocate(Hk)
+   deallocate(eigval)
+   deallocate(dos)
+   deallocate(dos_mpi)
+   deallocate(omega)
+
+   return
+end subroutine slab_dos_sub
 
 subroutine joint_dos
 ! calculate joint density of state for 3D bulk system
