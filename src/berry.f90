@@ -1,5 +1,5 @@
    subroutine  berryphase
-      !> Subroutine for calculating Berry phase for a giving path
+      !> Subroutine for calculating Berry phase for a given path
       !
       ! Comments:
       !
@@ -70,7 +70,11 @@
          if (index(KPorTB, 'KP')/=0)then
             call ham_bulk_kp (k, uk)
          else
-            call ham_bulk_latticegauge(k, uk)
+            if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+               call ham_bulk_LOTO(k, uk)
+            else
+               call ham_bulk_latticegauge(k, uk)
+            endif
          endif
         
          !> diagonal uk

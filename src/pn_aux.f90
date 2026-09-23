@@ -97,7 +97,8 @@
         write(stdout, '(a)') "                                                           "
         write(stdout, '(a)') "                        Author: Francesc Ballester              "
         write(stdout, '(a)') "                      Email: fballestermacia@gmail.com           "
-        write(stdout, '(a)') "                      TODO: INCLUDE PAPER AND GITHUB              "
+        write(stdout, '(a)') "                   https://doi.org/10.1016/j.cpc.2026.110373     "
+        write(stdout, '(a)') "               https://github.com/fballestermacia/simphony         "
         write(stdout, '(a)') "                                                           "
         write(stdout, '(a)') "                 Now, let's start by reading your input file...    "
         write(stdout, '(a)') " ====================================================================="
@@ -119,13 +120,13 @@
         write(stdout, '(2x,a)') "If you think everything is correct and you want to use it for any "
         write(stdout, '(2x,a)') "publication, please acknowledge and cite this program as:"
         write(stdout, '(2x,a)') ''
-        write(stdout, '(2x,a)') "Loren ipsum dolor sit amet"
-        write(stdout, '(2x,a)') "name name name name"
-        write(stdout, '(2x,a)') "where and when"
-        write(stdout, '(2x,a)') "doi"
+        write(stdout, '(2x,a)') "F. Ballester, J.L. Mañes, I. Errea and M. G. Vergniory"
+        write(stdout, '(2x,a)') "Computer Physics Communications 329 (2026) 110373"
+        write(stdout, '(2x,a)') " https://doi.org/10.1016/j.cpc.2026.110373"
         write(stdout, '(2x,a)') ''
         write(stdout, '(2x,a)') "If you saw any bug or anything odd during execution,        "
         write(stdout, '(2x,a)') "report it at fballestermacia@gmail.com or on github                 "
+        write(stdout, '(2x,a)') "https://github.com/fballestermacia/simphony"
         write(stdout, '(2x,a)') "Thank you for using Simphony!           "
         write(stdout, '(2x,a)') ''
         write(stdout, '(2x,a)')  "''And then there's quantum, of course.'  The monk sighed. "

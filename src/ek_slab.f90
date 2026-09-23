@@ -60,7 +60,7 @@
      surf_l_weight_mpi= 0d0
      surf_r_weight= 0d0
      surf_r_weight_mpi= 0d0
-
+      
      ! sweep k
      ekslab=0.0d0
      ekslab_mpi=0.0d0
@@ -86,9 +86,8 @@
             HmnR(:,:,iR) = HmnR(:,:,iR)+mat1!/Nrpts
             added_LR_in_Real_Space = .true.
          end do   
-         
       end if
-
+      print *, 'here'
      do i= 1+cpuid, knv2, num_cpu
         if (cpuid==0.and. mod(i/num_cpu, 4)==0) &
            write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
@@ -650,7 +649,7 @@ end subroutine ek_slab_sparseHR
            k12_shape(:, ik)= k12(1, ik)* Ka2+ k12(2, ik)* Kb2
         enddo
      enddo
-
+     
      ! sweep k
      ekslab=0.0d0
      ekslab_mpi=0.0d0
