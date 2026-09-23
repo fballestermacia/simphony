@@ -375,8 +375,6 @@ Surface states connecting the Weyl nodes in the (001) surface Brillouin zone are
 
 ## Roadmap
 
-[x] Update README.md
+[x] Add citation when available
 
-[ ] Add citation when available
-
-
+[ ] Update README.md with the new tutorials from the published article
