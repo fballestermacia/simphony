@@ -910,7 +910,7 @@ subroutine ek_bulk_plane
    kxy_plane=0d0
   
    if (Nk1<2 .or. Nk2<2) stop 'ERROR: I refuse to do this job because you give me so small Nk1 and Nk2'      
-   if (Numoccupied> Num_wann) stop 'ERROR: please set correct Numoccupied, it should be small than num_wann'
+   if (Numoccupied> Num_wann) stop 'ERROR: please set correct Numoccupied, it should be smaller than num_wann'
    
    ik =0
    do i= 1, Nk1
@@ -946,7 +946,7 @@ subroutine ek_bulk_plane
          call ham_bulk_kp(k, Hamk_bulk)
       else
          !> deal with phonon system
-         if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+         if (LOTO_correction) then
             call ham_bulk_LOTO(k, Hamk_bulk)
          else
             call ham_bulk_latticegauge(k, Hamk_bulk)
@@ -957,6 +957,7 @@ subroutine ek_bulk_plane
       !> diagonalization by call zheev in lapack
       W= 0d0
       call eigensystem_c( 'V', 'U', Num_wann ,Hamk_bulk, W)
+
       eigv(:, ik)= W(nband_min:nband_max)
       do j=1, Num_wann
          W(j)= sqrt(abs(W(j)))*sign(1d0, W(j))
@@ -978,14 +979,14 @@ subroutine ek_bulk_plane
    eigv_mpi= eigv
 #endif
 
-   if (index(Particle,'phonon')/=0) then
-      eigv_mpi = eigv_mpi! - MINVAL(eigv_mpi)
-   endif
+   ! if (index(Particle,'phonon')/=0) then
+   !    eigv_mpi = eigv_mpi! - MINVAL(eigv_mpi)
+   ! endif
 
    !> deal with phonon system
    if (index(Particle,'phonon')/=0) then
       do ik=1, knv3
-         do j=1, Num_wann
+         do j=1, nband_store
             eigv_mpi(j, ik)= sqrt(abs(eigv_mpi(j, ik)))*sign(1d0, eigv_mpi(j, ik))
             !eigv_mpi(j, ik)=     (abs(eigv_mpi(j, ik)))*sign(1d0, eigv_mpi(j, ik))
          enddo
@@ -1046,7 +1047,7 @@ subroutine ek_bulk_plane
       write(outfileindex, '(a)')'set view 80,60'
       write(outfileindex, '(a)')'set xlabel "k_1"'
       write(outfileindex, '(a)')'set ylabel "k_2"'
-      write(outfileindex, '(a)')'set zlabel "Energy (eV)" rotate by 90'
+      write(outfileindex, '(a)')'set zlabel "Frequency (THz)" rotate by 90'
       write(outfileindex, '(a)')'unset colorbox'
       write(outfileindex, '(a)')'set autoscale fix'
       write(outfileindex, '(a)')'set pm3d interpolate 4,4'
