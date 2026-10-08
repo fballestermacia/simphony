@@ -87,7 +87,7 @@
             added_LR_in_Real_Space = .true.
          end do   
       end if
-      print *, 'here'
+      ! print *, 'here'
      do i= 1+cpuid, knv2, num_cpu
         if (cpuid==0.and. mod(i/num_cpu, 4)==0) &
            write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
