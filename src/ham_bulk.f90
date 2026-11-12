@@ -1768,8 +1768,8 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
       rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi) !Transform to cartesian
       
       q(1) = k(1)*rec_lattice(1,1) + k(2)*rec_lattice(1,2) + k(3)*rec_lattice(1,3)
-      q(2) = k(1)*rec_lattice(1,2) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
-      q(3) = k(1)*rec_lattice(1,3) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to cartesian
+      q(2) = k(1)*rec_lattice(2,1) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
+      q(3) = k(1)*rec_lattice(3,1) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to cartesian
       call long_range_phonon_interaction_phonopy(0,0,0,q,.false.,1.0d0,mat2,tau,zeu,rec_lattice,Origin_cell%Num_atoms, Origin_cell%spinorbital_to_atom_index(::3),keps)
 
       ! do mm = 1, Num_wann
@@ -1797,8 +1797,8 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
       rec_lattice = Origin_cell%reciprocal_lattice*Origin_cell%cell_parameters(1)/(twopi) !Transform to cartesian
       
       q(1) = k(1)*rec_lattice(1,1) + k(2)*rec_lattice(1,2) + k(3)*rec_lattice(1,3)
-      q(2) = k(1)*rec_lattice(1,2) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
-      q(3) = k(1)*rec_lattice(1,3) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to cartesian
+      q(2) = k(1)*rec_lattice(2,1) + k(2)*rec_lattice(2,2) + k(3)*rec_lattice(2,3)
+      q(3) = k(1)*rec_lattice(3,1) + k(2)*rec_lattice(3,2) + k(3)*rec_lattice(3,3) !Transform to cartesian
       
       time_start= 0d0
       time_end= 0d0

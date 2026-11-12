@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-This code generates an output file 'name_phononTB_hr.dat' which is an input of wannier90/wanniertools/phonnier.
+This code generates an output file 'name_phononTB_hr.dat' which is an input of wannier90/wanniertools/simphony.
 Inputs are output files from Quantum Espresso. Mainly the 'name.dat{0,1,2,...}' files, which are read and parsed using SSCHA's CellConstructor.
 
 TB_hr.dat file format can be seen here: https://wannier90.readthedocs.io/en/latest/user_guide/wannier90/files/#seedname_centresxyz
@@ -334,7 +334,7 @@ if __name__ == '__main__':
     dyn = CC.Phonons.Phonons()
     dyn.LoadFromQE(fildyn_prefix=dynprefix, nqirr=nqirrs)
 
-    
+    dyn.alat = np.linalg.norm(dyn.structure.unit_cell[0])   # Simphony: alat = |a1|
 
     #dyn = dyn.InterpolateMesh(dyn.GetSupercell(), lo_to_splitting=True)
     #if symmetrize:

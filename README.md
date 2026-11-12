@@ -7,9 +7,7 @@
 <h1 align="center">Welcome to Simphony!</h3>
  <h3 align="center"><ins>SIM</ins>ulated <ins>PHON</ins>on topolog<ins>Y</ins></h3>
 
-Simphony is an open-source software package designed for the topologi-
-cal analysis of lattice vibrations based on Wannier tight-binding models. Its primary function is to classify the topology of novel materials by computing bulk and slab phonon band structures, extracting phonon surface spectra, and providing analysis tools such as Wilson loop calculations and Weyl node
-detection.
+Simphony is an open-source software package designed for the topological analysis of lattice vibrations based on Wannier tight-binding models, mainly built from WannierTools. Its primary function is to classify the topology of novel materials by computing bulk and slab phonon band structures, extracting phonon surface spectra, and providing analysis tools such as Wilson loop calculations and Weyl node detection.
 
 </div>
 

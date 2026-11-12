@@ -225,7 +225,11 @@
             end do   
         end if
 
-        call ham_qlayer2qlayer(k,H00,H01)
+        if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+           call ham_qlayer2qlayer_LOTO(k,H00,H01)
+        else
+           call ham_qlayer2qlayer(k,H00,H01)
+        endif
         call now(time2)
         time_q= time_q+time2-time1
 

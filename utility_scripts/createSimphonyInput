@@ -1,82 +1,129 @@
 #!/usr/bin/env python3
 
 """
-This code generates an input file 'pn.in' which is an input of Phonnier.
-Inputs are output files from Quantum Espresso. Mainly the 'name.dat{0,1,2,...}' files, which are read and parsed using SSCHA's CellConstructor.
+This code generates an input file 'pn.in' for Simphony.
 
-Usage:
-createPhonnierInput PathTo/name.dyn N_irr_q
+Two sources are supported:
 
+  1) QuantumESPRESSO: the 'name.dyn{1,2,...}' files of a ph.x run, read with SSCHA's CellConstructor.
+         createSimphonyInput PathTo/name.dyn N_irr_q
+
+  2) Phonopy (e.g. VASP+phonopy): the primitive cell is read from phonopy.yaml, and the
+     Born charges / dielectric tensor (if any) from BORN.
+         createSimphonyInput PathTo/phonopy.yaml [BORN|-] [prefix]
+
+     BORN '-' (or omitted): phonopy's defaults are used (NAC parameters stored in the yaml, or a
+     BORN file in the current directory); if none is found, LOTO_correction = F.
+     prefix (default: yaml file name without extension) must match the one used in PHONOPY2TBDAT,
+     so that Hrfile = 'prefix_phononTB_hr.dat'.
+
+     NOTE: PHONOPY2TBDAT builds the TB model in the phonopy *unit* cell. Both are only
+     consistent if the unit cell is the primitive cell (same atoms, same order).
 """
 
 
 from datetime import datetime
+import os
 import numpy as np
-import cellconstructor as CC
-import cellconstructor.Phonons
-import cellconstructor.ForceTensor
-from cellconstructor.Units import MASS_RY_TO_UMA
 import sys
 import seekpath as sk
 
-if __name__ == '__main__':
 
-    # Constant to get the correct units
-    factor = 108.97077184367376 #PwscfToTHz
-
-    # Handle inputs from terminal
-
-    try:
-        dynprefix = str(sys.argv[1])
-    except IndexError:
-        raise IndexError('Missing file name name.dyn. Usage: \'createPhonnierInput PathTo/name.dyn N_irr_q\'')
-
-    try:
-        nqirrs = int(sys.argv[2])
-    except IndexError:
-        raise IndexError('Missing number of irreducible q points N_irr_q. Usage: \'createPhonnierInput PathTo/name.dyn N_irr_q\'')
-    
-    prefix = dynprefix.split('.dyn')[0]
+def read_qe(dynprefix, nqirrs):
+    """Structure, masses (amu), Born charges and dielectric tensor from QE .dyn files."""
+    import cellconstructor as CC
+    import cellconstructor.Phonons
+    from cellconstructor.Units import MASS_RY_TO_UMA
 
     dyn = CC.Phonons.Phonons()
     dyn.LoadFromQE(fildyn_prefix=dynprefix, nqirr=nqirrs)
 
-    if dyn.effective_charges is not None:
-        isloto="T"
-    else: isloto="F"
-
-    bc = dyn.effective_charges
-    dt = dyn.dielectric_tensor
-
-    num_atom = int(len(dyn.structure.coords))
-
-    mass = np.round(dyn.structure.get_masses_array()*MASS_RY_TO_UMA,5)
-
     cell = dyn.structure.unit_cell
+    return dict(prefix=dynprefix.split('.dyn')[0],
+                cell=cell,
+                positions=np.round(CC.Methods.covariant_coordinates(cell, dyn.structure.coords), 8),
+                numbers=dyn.structure.get_ityp(),
+                labels=dyn.structure.atoms,
+                mass=np.round(dyn.structure.get_masses_array()*MASS_RY_TO_UMA, 5),
+                bc=dyn.effective_charges,
+                dt=dyn.dielectric_tensor)
 
-    positions = np.round(CC.Methods.covariant_coordinates(cell, dyn.structure.coords),8) 
-    
-    numbers = dyn.structure.get_ityp()
-    labels = dyn.structure.atoms
+
+def read_phonopy(yamlfile, bornfile=None, prefix=None):
+    """Primitive cell, masses (amu), Born charges and dielectric tensor from phonopy files."""
+    import phonopy
+
+    kw = dict(produce_fc=False, log_level=0)
+    if bornfile is not None:
+        kw['born_filename'] = bornfile
+    ph = phonopy.load(yamlfile, **kw)
+
+    prim = ph.primitive
+    if len(prim) != len(ph.unitcell):
+        print('WARNING: the phonopy primitive cell ({} atoms) differs from the unit cell ({} atoms).\n'
+              '         The TB file from PHONOPY2TBDAT is built in the unit cell, so it will NOT match\n'
+              '         this pn.in. Re-run phonopy using the primitive cell as unit cell.'.format(len(prim), len(ph.unitcell)))
+
+    nac = ph.nac_params
+    if prefix is None:
+        prefix = os.path.splitext(os.path.basename(yamlfile))[0]
+
+    # Born charges in phonopy: born[atom][E-field][displacement], same as CellConstructor/LOTO_BC
+    return dict(prefix=prefix,
+                cell=np.array(prim.cell),
+                positions=np.round(np.array(prim.scaled_positions), 8),
+                numbers=np.array(prim.numbers),
+                labels=list(prim.symbols),
+                mass=np.round(np.array(prim.masses), 5),
+                bc=None if nac is None else np.array(nac['born']),
+                dt=None if nac is None else np.array(nac['dielectric']))
+
+
+USAGE = ("Usage:\n  createSimphonyInput PathTo/name.dyn N_irr_q\n"
+         "  createSimphonyInput PathTo/phonopy.yaml [BORN|-] [prefix]")
+
+if __name__ == '__main__':
+
+    # Handle inputs from terminal
+    if len(sys.argv) < 2:
+        raise SystemExit(USAGE)
+
+    source = str(sys.argv[1])
+
+    if source.lower().endswith(('.yaml', '.yml')):
+        born = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] != '-' else None
+        pref = sys.argv[3] if len(sys.argv) > 3 else None
+        data = read_phonopy(source, born, pref)
+    else:
+        try:
+            nqirrs = int(sys.argv[2])
+        except IndexError:
+            raise IndexError('Missing number of irreducible q points N_irr_q.\n' + USAGE)
+        data = read_qe(source, nqirrs)
+
+    prefix = data['prefix']
+    bc = data['bc']
+    dt = data['dt']
+    isloto = "T" if (bc is not None and dt is not None) else "F"
+
+    cell = data['cell']
+    positions = data['positions']
+    numbers = data['numbers']
+    labels = data['labels']
+    mass = data['mass']
+    num_atom = len(positions)
 
     structure = (cell, positions, numbers)
 
     path = sk.get_explicit_k_path_orig_cell(structure,with_time_reversal=True, reference_distance=0.05)
 
     qpath = path['explicit_kpoints_rel']
-    #qpath = CC.Methods.covariant_coordinates(cell, qpath) 
     
     segments = path['explicit_segments']
     qlabels = path['explicit_kpoints_labels']
     for i in range(len(qlabels)):
         if qlabels[i]=="GAMMA":
                 qlabels[i] = "G"
-#     print(qpath, segments, labels)
-
-#     for i,s in enumerate(segments):
-#         i1 = s[0]
-#         i2 = s[1]-1
-#         print(qabels[i1], qpath[i1], qlabels[i2], qpath[i2])
 
 
     with open("pn.in", "w") as f:

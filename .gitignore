@@ -29,6 +29,7 @@ examples/BHL/*
 
 utility_scripts/*
 !utility_scripts/QE2TBDAT
+!utility_scripts/PHONOPY2TBDAT
 !utility_scripts/createSimphonyInput
 
 
