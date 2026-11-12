@@ -17,9 +17,11 @@ Usage:
     FILE  : any of FORCE_CONSTANTS (or force_constants.hdf5), FORCE_SETS and BORN, in any
             order. Each file is identified by its content, not by its position.
             If no force-constant file is given, FORCE_SETS next to phonopy.yaml is used
-            (or the forces stored in the yaml). If no BORN is given, no long-range part is
-            removed (non-polar case; Simphony then needs LOTO_correction = F).
+            (or the forces stored in the yaml). If no BORN is given, the Born charges and
+            dielectric tensor stored in the yaml are used (phonopy_params.yaml), or a BORN
+            file in the current directory, exactly as phonopy and createSimphonyInput do.
     PREFIX: output prefix (default: yaml file name without extension).
+    --no-nac: ignore all Born charges (no long-range subtraction; LOTO_correction = F).
 
     Examples:
         PHONOPY2TBDAT phonopy.yaml BORN
@@ -75,7 +77,7 @@ def read_units(yaml):
     return LENGTH_TO_ANGSTROM[length], FC_TO_RY_BOHR2[fcu]
 
 
-def read_phonopy(yaml, fc=None, born=None, fsets=None):
+def read_phonopy(yaml, fc=None, born=None, fsets=None, use_nac=True):
     """Load the phonopy calculation, with full (supercell x supercell) force constants."""
     kw = dict(symmetrize_fc=False, produce_fc=True, is_compact_fc=False, log_level=0)
     if fc is not None:
@@ -86,10 +88,13 @@ def read_phonopy(yaml, fc=None, born=None, fsets=None):
         fsets = os.path.join(os.path.dirname(os.path.abspath(yaml)), "FORCE_SETS")
         if os.path.exists(fsets):
             kw["force_sets_filename"] = fsets
-    if born is not None:
-        kw["born_filename"] = born
-    else:
+    if not use_nac:
         kw["is_nac"] = False
+    elif born is not None:
+        kw["born_filename"] = born
+    # else: phonopy's default -> NAC parameters stored in the yaml (e.g. phonopy_params.yaml
+    # from the phonon databases) or a BORN file in the current directory. This is the same
+    # rule used by createSimphonyInput, so the hr.dat and the LOTO cards are consistent.
     ph = phonopy.load(yaml, **kw)
 
     if ph.force_constants is None:
@@ -252,10 +257,15 @@ def parse_args(argv):
     yaml = argv[1]
     files = {"fc": None, "fsets": None, "born": None}
     prefix = None
+    use_nac = True
     args = argv[2:]
     k = 0
     while k < len(args):
         a = args[k]
+        if a == "--no-nac":
+            use_nac = False
+            k += 1
+            continue
         if a in ("-p", "--prefix"):
             prefix = args[k + 1]
             k += 2
@@ -276,18 +286,21 @@ def parse_args(argv):
         raise ValueError("Give either FORCE_CONSTANTS or FORCE_SETS, not both.")
     if prefix is None:
         prefix = os.path.splitext(os.path.basename(yaml))[0]
-    return yaml, files, prefix
+    if not use_nac and files["born"] is not None:
+        raise ValueError("--no-nac and a BORN file are incompatible.")
+    return yaml, files, prefix, use_nac
 
 
 def main(argv):
-    yaml, files, prefix = parse_args(argv)
+    yaml, files, prefix, use_nac = parse_args(argv)
     for kind, label in (("fc", "force constants"), ("fsets", "force sets"), ("born", "Born charges")):
         if files[kind]:
             print(f"Using {files[kind]} as {label}")
-    if files["born"] is None:
-        print("No BORN file given: the long-range part is NOT removed (use LOTO_correction = F).")
-
-    ph = read_phonopy(yaml, files["fc"], files["born"], files["fsets"])
+    ph = read_phonopy(yaml, files["fc"], files["born"], files["fsets"], use_nac)
+    if ph.nac_params is None:
+        print("No Born charges found: the long-range part is NOT removed (use LOTO_correction = F).")
+    elif files["born"] is None:
+        print("Using the Born charges and dielectric tensor found by phonopy (yaml or ./BORN).")
     dyn = phonopy_to_cc(ph, yaml)
     t2 = short_range_tensor(dyn, ph.nac_params)
     masses = dyn.structure.get_masses_array() * MASS_RY_TO_UMA
@@ -298,7 +311,7 @@ def main(argv):
     write_cards(ph, f"{prefix}_pn_cards.in", read_units(yaml)[0])
     print(f"Written {prefix}_phononTB_hr.dat and {prefix}_pn_cards.in")
     if ph.nac_params is not None:
-        print("Set LOTO_correction = T in pn.in (keep the default Package = 'QE').")
+        print("Long-range part removed: set LOTO_correction = T in pn.in (keep Package = 'QE').")
 
 
 if __name__ == "__main__":
