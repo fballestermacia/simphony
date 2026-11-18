@@ -43,3 +43,8 @@ main : $(OBJ)
 clean :
 	rm -f *.o *.mod *~ pn.x
 
+# module dependencies (allow parallel builds: make -j)
+# (the first line cancels GNU make's built-in Modula-2 rule %.o: %.mod)
+%.o : %.mod
+$(filter-out module.o,$(OBJ)): module.o
+ek_bulk.o ek_slab.o ham_bulk.o wanniercenter_adaptive.o dos.o: sparse.o
