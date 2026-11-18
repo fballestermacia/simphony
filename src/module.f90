@@ -428,7 +428,12 @@
      logical :: LandauLevel_B_calc  ! Flag for Hofstader butterfly
      logical :: LOTO_correction  ! Flag for LOTO correction of phonon spectrum 
      logical :: added_LR_in_Real_Space
-     logical :: apply_ASR  ! Flag for applying ASR in slabs
+     logical :: apply_ASR  ! Impose the ASR in slabs, ribbons and surface Green's functions (scheme: ASR_scheme)
+     character(16) :: ASR_scheme  ! 'free' (default): free surfaces, the missing bonds are removed from the on-site blocks
+                                  ! 'global': OLD VERSION (Simphony <= 1.1.0, used in the CPC 2026 article), kept for
+                                  !    reproducibility: projection on the uniform translation of the whole slab/ribbon
+                                  !    (make_translational_invariant); no correction in SlabSS_calc/SlabArc_calc
+     logical :: free_surface_ASR  ! = apply_ASR .and. ASR_scheme == 'free' (set in readinput, not an input)
      logical :: Write_eigenstates_at_HSP ! Flag for writing the eigenstates at HSP
      logical :: Boltz_OHE_calc  ! Flag for Boltzmann tranport under magnetic field
      logical :: Boltz_Berry_correction  ! Flag for Boltzmann tranport under magnetic field
@@ -481,7 +486,7 @@
                           BerryCurvature_slab_calc, MirrorChern_calc, BerryCurvature_Cube_calc, &
                           Z2_3D_calc, Chern_3D_calc, WeylChirality_calc, NLChirality_calc, &
                           Dos_calc, JDos_calc, SlabDos_calc, EffectiveMass_calc, &
-                          FindNodes_calc, TBtoKP_calc, LOTO_correction, added_LR_in_Real_Space, apply_ASR, Write_eigenstates_at_HSP, &
+                          FindNodes_calc, TBtoKP_calc, LOTO_correction, added_LR_in_Real_Space, apply_ASR, ASR_scheme, Write_eigenstates_at_HSP, &
                           BulkBand_plane_calc, Hof_Butt_calc, Symmetry_Import_calc, &
                           Boltz_Berry_correction, &
                           Boltz_k_calc, Boltz_evolve_k, Boltz_OHE_calc, AHC_Calc, SHC_calc, &
@@ -900,6 +905,9 @@
      complex(dp), allocatable :: HmnR_LR(:,:,:)   ! Long-Range Hamiltonian m,n are band indexes
      complex(dp), allocatable :: HmnR_LR_sumkappa(:,:,:)
      complex(dp), allocatable :: ntiH(:,:)
+     !> free-surface corrections (apply_ASR with ASR_scheme = 'free'): slab, ribbon, left/right surface principal layers
+     complex(dp), allocatable :: dH_free_slab(:,:), dH_free_ribbon(:,:)
+     complex(dp), allocatable :: dH_free_L(:,:), dH_free_R(:,:)
 
      
 

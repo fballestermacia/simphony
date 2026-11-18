@@ -293,6 +293,7 @@ BulkBand_calc         = T
 Wanniercenter_calc    = T
 WireBand_calc         = T
 apply_ASR             = T
+ASR_scheme            = 'global'   ! old version, as in the published article
 /
 ```
 
@@ -360,6 +361,7 @@ BulkBand_calc         = T
 Wanniercenter_calc    = T
 SlabBand_calc         = T
 apply_ASR             = T
+ASR_scheme            = 'global'   ! old version, as in the published article
 /
 ```
 

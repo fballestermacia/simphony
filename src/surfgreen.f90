@@ -123,6 +123,15 @@
 
      enddo ! end of iteration
 
+     !> free surface (apply_ASR, ASR_scheme = 'free'): remove the missing bonds from the outermost
+     !> principal layer. The old version (ASR_scheme = 'global') has no correction here.
+     !> Adding dH to the effective surface on-site matrix is the Dyson step [G^-1 - dH]^-1.
+     if (free_surface_ASR .and. index(Particle,'phonon')/=0) then
+        if (.not. allocated(dH_free_L)) call init_free_surface_GF()
+        epsilons  = epsilons  + dH_free_L
+        epsilons_t= epsilons_t+ dH_free_R
+     endif
+
      ! calculate surface green's function
      GLL= omegac*ones- epsilons
      call inv(Ndim, GLL)

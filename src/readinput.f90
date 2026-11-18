@@ -23,6 +23,7 @@ subroutine readinput
    real(dp) :: cell_volume, cell_volume2
 
    integer  :: i, j, ia, ik, iq, io, it, idummy, ig, NN, stat, istart, iend
+   integer  :: ic_asr
    integer  :: NumberOfspinorbitals, NumberOfspinorbitals_unfold
 
    integer, allocatable :: iarray_temp(:)
@@ -141,6 +142,7 @@ subroutine readinput
    LOTO_correction       = .FALSE.
    added_LR_in_Real_Space = .FALSE.
    apply_ASR             = .FALSE.
+   ASR_scheme            = 'free'
    Write_eigenstates_at_HSP = .FALSE.
    !Boltz_OHE_calc        = .FALSE.
    !Boltz_Berry_correction= .FALSE.
@@ -201,6 +203,7 @@ subroutine readinput
       write(*, *)"NLChirality_calc"
       write(*, *)"LOTO_correction"
       write(*, *)"apply_ASR"
+      write(*, *)"ASR_scheme ('free' or 'global')"
       write(*, *)"Write_eigenstates_at_HSP"
       !write(*, *)"AHC_calc"
       !write(*, *)"SHC_calc"
@@ -234,6 +237,19 @@ subroutine readinput
 
       stop
    endif
+
+   !> scheme used by apply_ASR (case-insensitive): 'free' (default) or 'global' (old version)
+   ASR_scheme = adjustl(ASR_scheme)
+   do ic_asr = 1, len_trim(ASR_scheme)
+      if (ASR_scheme(ic_asr:ic_asr) >= 'A' .and. ASR_scheme(ic_asr:ic_asr) <= 'Z') &
+         ASR_scheme(ic_asr:ic_asr) = achar(iachar(ASR_scheme(ic_asr:ic_asr)) + 32)
+   enddo
+   if (trim(ASR_scheme) /= 'free' .and. trim(ASR_scheme) /= 'global') then
+      write(*, *) "ERROR: ASR_scheme = '"//trim(ASR_scheme)//"' is not valid."
+      write(*, *) "       Use 'free' (default) or 'global' (old version, as in the CPC 2026 article)."
+      stop
+   endif
+   free_surface_ASR = apply_ASR .and. trim(ASR_scheme) == 'free'
 
    !> In order to be compatiable with the old version, we keep the bulkband_calc.
    BulkBand_line_calc= BulkBand_line_calc.or.BulkBand_calc
@@ -287,6 +303,9 @@ subroutine readinput
       !write(stdout, *) "Boltz_Berry_correction            : ", Boltz_Berry_correction
       write(stdout, *) "LOTO_correction                   : ", LOTO_correction
       write(stdout, *) "apply_ASR                         : ", apply_ASR
+      write(stdout, *) "ASR_scheme                        : ", trim(ASR_scheme)
+      if (apply_ASR .and. trim(ASR_scheme) == 'global') write(stdout, *) &
+         "  (old version: global projection in slabs/ribbons as in Simphony <= 1.1.0; no free surfaces)"
       write(stdout, *) "Write_eigenstates_at_HSP          : ", Write_eigenstates_at_HSP
       !write(stdout, *) "OrbitalTexture_calc               : ", OrbitalTexture_calc
       !write(stdout, *) "OrbitalTexture_3D_calc            : ", OrbitalTexture_3D_calc

@@ -28,6 +28,7 @@ Dos_calc              = F
 
 
 apply_ASR	      = T
+ASR_scheme            = 'global'   ! old version, as in the published article
 
 !> Topological quantities calculation flags
 FindNodes_calc        = F

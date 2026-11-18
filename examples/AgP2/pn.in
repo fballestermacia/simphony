@@ -20,6 +20,7 @@ SlabArc_calc          = F
 
 !> impose the acoustic sum rule on slab/ribbon Hamiltonians
 apply_ASR             = T
+ASR_scheme            = 'global'   ! old version, as in the published article
 
 !> wire band structure calculation flags
 WireBand_calc         = F

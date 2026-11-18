@@ -102,7 +102,9 @@
         call ham_slab(k,Chamk)
 
 
-        if (apply_ASR) then
+        !> apply_ASR with ASR_scheme = 'free' (default): the free-surface correction is already in ham_slab.
+        !> ASR_scheme = 'global': OLD VERSION (Simphony <= 1.1.0, CPC 2026 article), kept for reproducibility.
+        if (apply_ASR .and. trim(ASR_scheme) == 'global') then
          call make_translational_invariant(CHamk)
         endif
          
