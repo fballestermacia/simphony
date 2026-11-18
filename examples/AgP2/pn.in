@@ -8,15 +8,18 @@ Hrfile = 'AgP2_phononTB_hr.dat'
 LOTO_correction       = T
 
 !> bulk band structure calculation flags
-BulkBand_calc         = F
+BulkBand_calc         = T
 BulkGap_cube_calc     = F
 BulkGap_plane_calc    = F
 
 
 !> slab band structure calculation flags
-SlabBand_calc         = F
+SlabBand_calc         = T
 SlabSS_calc           = F
 SlabArc_calc          = F
+
+!> impose the acoustic sum rule on slab/ribbon Hamiltonians
+apply_ASR             = T
 
 !> wire band structure calculation flags
 WireBand_calc         = F
@@ -35,7 +38,7 @@ WeylChirality_calc    = F
  
 &SYSTEM 
 NSLAB = 10
-NumOccupied = 1      !>Index of band taken into account for the calculations
+NumOccupied = 32     !>Index of the highest occupied band (overridden by SELECTED_OCCUPIED_BANDS)
 /
 
 
