@@ -126,7 +126,11 @@
         chamk=0.0d0 
         call ham_ribbon(k,Chamk)
 
-        ! apply_ASR: the free-edge correction is already included in ham_ribbon
+        !> apply_ASR with ASR_scheme = 'free' (default): the free-edge correction is already in ham_ribbon.
+        !> ASR_scheme = 'global': OLD VERSION (Simphony <= 1.1.0, CPC 2026 article), kept for reproducibility.
+        if (apply_ASR .and. trim(ASR_scheme) == 'global') then
+         call make_translational_invariant_ribbon(CHamk)
+        endif
 
         eigenvalue=0.0d0
 

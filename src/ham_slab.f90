@@ -1,15 +1,15 @@
   subroutine ham_slab(k,Hamk_slab)
-     ! Slab Hamiltonian at k. With apply_ASR = T the free-surface correction
-     ! (missing bonds removed from the on-site blocks, see free_surface_correction)
-     ! is added; it is k-independent and computed once. It replaces the global
-     ! projection of make_translational_invariant (11/2026).
+     ! Slab Hamiltonian at k. With apply_ASR = T and ASR_scheme = 'free' (default) the
+     ! free-surface correction (missing bonds removed from the on-site blocks, see
+     ! free_surface_correction) is added; it is k-independent and computed once (11/2026).
+     ! ASR_scheme = 'global' keeps the old global projection (make_translational_invariant).
      use para
      implicit none
      real(Dp), intent(in) :: k(2)
      complex(Dp), intent(out) :: Hamk_slab(Num_wann*nslab,Num_wann*nslab)
 
      call ham_slab_raw(k, Hamk_slab)
-     if (apply_ASR .and. index(Particle,'phonon')/=0) then
+     if (free_surface_ASR .and. index(Particle,'phonon')/=0) then
         if (.not. allocated(dH_free_slab)) call init_free_surface_slab()
         Hamk_slab = Hamk_slab + dH_free_slab
      endif
@@ -367,6 +367,11 @@ end subroutine ham_slab_sparseHR
 
 
 subroutine make_translational_invariant(Ham)
+     ! OLD VERSION (Simphony <= 1.1.0, CPC 2026 article). Used only with apply_ASR = T and
+     ! ASR_scheme = 'global', kept for reproducibility. It spreads the missing bonds over the
+     ! whole slab (O(1/Nslab) per atom), so surface modes depend on Nslab and tend to the
+     ! clamped surface; the default ASR_scheme = 'free' uses free_surface_correction instead.
+     !
      ! This subroutine is used to apply the ASR for
      ! slab systems by projecting out the non-traslational-invariant part. 
      !
@@ -446,6 +451,9 @@ end subroutine make_translational_invariant
 
 
 subroutine make_translational_invariant_ribbon(Ham)
+     ! OLD VERSION (Simphony <= 1.1.0, CPC 2026 article). Used only with apply_ASR = T and
+     ! ASR_scheme = 'global', kept for reproducibility; see make_translational_invariant.
+     !
      ! This subroutine is used to apply the ASR for
      ! slab systems by projecting out the non-traslational-invariant part. 
      !
@@ -637,6 +645,7 @@ end subroutine Ham_slab_realSpace
 
 
 subroutine ASR_R_G(Hs)
+     ! OLD VERSION: part of ASR_scheme = 'global' (Simphony <= 1.1.0), kept for reproducibility.
      ! This subroutine projects out the translational part
      ! of the slab Hamiltonian in real space 
      ! prior to Fourier interpolation onto reciprocal space
@@ -727,6 +736,7 @@ end subroutine ASR_R_G
 
 
 subroutine ASR_R_G_ribbon(Hs)
+     ! OLD VERSION: part of ASR_scheme = 'global' (Simphony <= 1.1.0), kept for reproducibility.
      ! This subroutine projects out the translational part
      ! of the slab Hamiltonian in real space 
      ! prior to Fourier interpolation onto reciprocal space
