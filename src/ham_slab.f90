@@ -1,6 +1,24 @@
   subroutine ham_slab(k,Hamk_slab)
+     ! Slab Hamiltonian at k. With apply_ASR = T the free-surface correction
+     ! (missing bonds removed from the on-site blocks, see free_surface_correction)
+     ! is added; it is k-independent and computed once. It replaces the global
+     ! projection of make_translational_invariant (11/2026).
+     use para
+     implicit none
+     real(Dp), intent(in) :: k(2)
+     complex(Dp), intent(out) :: Hamk_slab(Num_wann*nslab,Num_wann*nslab)
+
+     call ham_slab_raw(k, Hamk_slab)
+     if (apply_ASR .and. index(Particle,'phonon')/=0) then
+        if (.not. allocated(dH_free_slab)) call init_free_surface_slab()
+        Hamk_slab = Hamk_slab + dH_free_slab
+     endif
+  end subroutine ham_slab
+
+
+  subroutine ham_slab_raw(k,Hamk_slab)
      ! This subroutine is used to caculate Hamiltonian for 
-     ! slab system. 
+     ! slab system (bulk blocks only, no surface correction). 
      ! 
      ! History  
      !        4/18/2010 by Quansheng Wu
@@ -92,7 +110,7 @@
      deallocate( Hij)
      
   return
-  end subroutine ham_slab
+  end subroutine ham_slab_raw
 
 
 subroutine ham_slab_sparseHR(nnzmax, k, acoo,jcoo,icoo)
@@ -1531,3 +1549,239 @@ end subroutine force_positive_definite_slab
 !      deallocate(v1)
 
 ! end subroutine remove_Trans
+
+
+subroutine free_surface_correction(nrow, ncol, A, region, allow_merge, dH, res_before, res_after)
+   !> Free-surface (missing-bond) correction for phonons.
+   !>
+   !> A(nrow, ncol): mass-weighted dynamical matrix at q_par = 0 between the nrow orbitals of a
+   !>    region (rows; 3 per atom, atom-major as in the hr file) and ALL the atoms present in the
+   !>    cut crystal (columns). Columns 1:nrow are the same orbitals as the rows.
+   !> region(nrow/3): label of each atom (> 0) for step 2; atoms without missing bonds are ignored.
+   !> allow_merge: finite systems only (slab, ribbon), see step 2.
+   !> dH(nrow, nrow): Hermitian correction to ADD to the rows/columns 1:nrow.
+   !>
+   !> With Phi_ab = sqrt(m_a m_b) D_ab and the bulk ASR, Phi_aa = -sum_{b/=a, bulk} Phi_ab, the row
+   !> sum over the atoms that are present is R_a = sum_b Phi_ab = -sum_{b missing} Phi_ab.
+   !> Step 1 (free surface): Phi_aa -> Phi_aa - sym(R_a), i.e. the bonds to the missing atoms are
+   !>    removed from the on-site block. The bulk interior (R_a = 0) is untouched.
+   !> Step 2 (cleanup): for low-symmetry surfaces R_a has an antisymmetric part X_a that a symmetric
+   !>    on-site block cannot absorb. It is removed with the minimal-norm symmetric correction
+   !>    supported on the surface atoms of each region, C_ab = -(X_a - X_b)/n_region. This is exact
+   !>    if sum_{a in region} X_a = 0. If not and allow_merge, the regions are merged (for a finite
+   !>    system the total sum vanishes, so the result is exact); otherwise a uniform residual
+   !>    sum(X)/n_region per atom remains and is reported in res_after.
+   !> res_before/res_after: max |sum_b Phi_ab| (internal units) before and after the correction.
+   !>
+   !> 11/2026: free-surface treatment, following a user bug report on clamped phonon surfaces.
+   use para
+   implicit none
+   integer, intent(in) :: nrow, ncol
+   complex(dp), intent(in) :: A(nrow, ncol)
+   integer, intent(in) :: region(nrow/3)
+   logical, intent(in) :: allow_merge
+   complex(dp), intent(out) :: dH(nrow, nrow)
+   real(dp), intent(out) :: res_before, res_after
+
+   integer :: nat, ncat, ia, ib, ireg, nreg, ns
+   integer, allocatable :: lab(:)
+   real(dp), allocatable :: mass(:), R(:, :, :), X(:, :, :)
+   real(dp) :: Xsum(3, 3), Rmax, mcol, Rnew(3, 3)
+   logical :: merge_regions
+
+   nat = nrow/3
+   ncat = ncol/3
+   allocate(mass(nat), R(3, 3, nat), X(3, 3, nat), lab(nat))
+   do ia = 1, nat
+      mass(ia) = Atom_Mass(mod(ia-1, Num_wann/3) + 1)
+   enddo
+
+   !> row sums in force-constant form
+   R = 0d0
+   do ib = 1, ncat
+      mcol = Atom_Mass(mod(ib-1, Num_wann/3) + 1)
+      do ia = 1, nat
+         R(:, :, ia) = R(:, :, ia) + sqrt(mass(ia)*mcol)*real(A(3*ia-2:3*ia, 3*ib-2:3*ib), dp)
+      enddo
+   enddo
+   Rmax = maxval(abs(R))
+   res_before = Rmax
+
+   !> step 1: remove the missing bonds from the on-site blocks
+   dH = 0d0
+   do ia = 1, nat
+      dH(3*ia-2:3*ia, 3*ia-2:3*ia) = -0.5d0*(R(:, :, ia) + transpose(R(:, :, ia)))/mass(ia)
+      X(:, :, ia) = 0.5d0*(R(:, :, ia) - transpose(R(:, :, ia)))
+   enddo
+
+   !> step 2: antisymmetric residual, projected out inside each region
+   lab = region
+   do ia = 1, nat
+      if (maxval(abs(R(:, :, ia))) <= 1d-6*Rmax) lab(ia) = 0
+   enddo
+   nreg = maxval(lab)
+   if (allow_merge .and. nreg > 1) then
+      merge_regions = .false.
+      do ireg = 1, nreg
+         Xsum = 0d0
+         do ia = 1, nat
+            if (lab(ia) == ireg) Xsum = Xsum + X(:, :, ia)
+         enddo
+         if (maxval(abs(Xsum)) > 1d-6*Rmax) merge_regions = .true.
+      enddo
+      if (merge_regions) then
+         where (lab > 0) lab = 1
+         nreg = 1
+      endif
+   endif
+   do ireg = 1, nreg
+      ns = count(lab == ireg)
+      if (ns == 0) cycle
+      do ia = 1, nat
+         if (lab(ia) /= ireg) cycle
+         do ib = 1, nat
+            if (lab(ib) /= ireg .or. ib == ia) cycle
+            dH(3*ia-2:3*ia, 3*ib-2:3*ib) = dH(3*ia-2:3*ia, 3*ib-2:3*ib) &
+               - (X(:, :, ia) - X(:, :, ib))/dble(ns)/sqrt(mass(ia)*mass(ib))
+         enddo
+      enddo
+   enddo
+
+   !> residual after the correction
+   res_after = 0d0
+   do ia = 1, nat
+      Rnew = R(:, :, ia)
+      do ib = 1, nat
+         Rnew = Rnew + sqrt(mass(ia)*mass(ib))*real(dH(3*ia-2:3*ia, 3*ib-2:3*ib), dp)
+      enddo
+      res_after = max(res_after, maxval(abs(Rnew)))
+   enddo
+
+   deallocate(mass, R, X, lab)
+end subroutine free_surface_correction
+
+
+subroutine report_free_surface(label, n, H0, res_before, res_after)
+   !> writes the free-surface diagnostics to PN.out; H0 = corrected matrix at q_par = 0
+   use para
+   implicit none
+   character(*), intent(in) :: label
+   integer, intent(in) :: n
+   complex(dp), intent(in) :: H0(n, n)
+   real(dp), intent(in) :: res_before, res_after
+   complex(dp), allocatable :: Hw(:, :)
+   real(dp), allocatable :: eig(:)
+   real(dp) :: f(6), conv
+   integer :: i, nneg
+
+   allocate(Hw(n, n), eig(n))
+   Hw = H0
+   call eigensystem_c('N', 'U', n, Hw, eig)
+   conv = eV2Hartree*eV2Hartree   ! internal units -> THz^2
+   do i = 1, min(6, n)
+      f(i) = sign(sqrt(abs(eig(i)/conv)), eig(i))
+   enddo
+   nneg = count(eig/conv < -1d-4)   ! omega < -0.01 THz
+   if (cpuid == 0) then
+      write(stdout, '(a)') ' '
+      write(stdout, '(3a)') ' >> apply_ASR: free-surface correction (', trim(label), ')'
+      write(stdout, '(a, 2es12.3)') '    max |sum_b Phi_ab| before / after (amu*THz^2): ', &
+         res_before/conv, res_after/conv
+      write(stdout, '(a, 6f10.4)') '    lowest frequencies at q_par = 0 (THz):', f(1:min(6, n))
+      if (nneg > 0) then
+         write(stdout, '(a, i6, a)') '    WARNING: ', nneg, ' unstable modes at q_par = 0. The truncated bulk'
+         write(stdout, '(a)') '    force constants do not give a stable free surface (surface relaxation/'
+         write(stdout, '(a)') '    surface force constants needed); results below 0 THz are not meaningful.'
+      endif
+   endif
+   deallocate(Hw, eig)
+end subroutine report_free_surface
+
+
+subroutine init_free_surface_slab()
+   !> k-independent free-surface correction of the slab (both surfaces), stored in dH_free_slab
+   use para
+   implicit none
+   complex(dp), allocatable :: H0(:, :)
+   integer, allocatable :: region(:)
+   integer :: n, ia
+   logical :: loto_save
+   real(dp) :: rb, ra
+
+   n = Num_wann*Nslab
+   allocate(H0(n, n), region(n/3), dH_free_slab(n, n))
+   !> as in make_translational_invariant: no non-analytic q->0 term in the q_par = 0 matrix
+   loto_save = LOTO_correction
+   LOTO_correction = .false.
+   call ham_slab_raw((/0d0, 0d0/), H0)
+   LOTO_correction = loto_save
+
+   !> region 1: upper half of the slab, region 2: lower half
+   do ia = 1, n/3
+      if ((3*(ia-1))/Num_wann + 1 <= Nslab/2) then
+         region(ia) = 1
+      else
+         region(ia) = 2
+      endif
+   enddo
+   call free_surface_correction(n, n, H0, region, .true., dH_free_slab, rb, ra)
+   H0 = H0 + dH_free_slab
+   call report_free_surface('slab', n, H0, rb, ra)
+   deallocate(H0, region)
+end subroutine init_free_surface_slab
+
+
+subroutine init_free_surface_ribbon()
+   !> k-independent free-edge correction of the ribbon, stored in dH_free_ribbon
+   use para
+   implicit none
+   complex(dp), allocatable :: H0(:, :)
+   integer, allocatable :: region(:)
+   integer :: n
+   real(dp) :: rb, ra
+
+   n = Num_wann*nslab1*nslab2
+   allocate(H0(n, n), region(n/3), dH_free_ribbon(n, n))
+   call ham_ribbon_raw(0d0, H0)
+   region = 1
+   call free_surface_correction(n, n, H0, region, .true., dH_free_ribbon, rb, ra)
+   H0 = H0 + dH_free_ribbon
+   call report_free_surface('ribbon', n, H0, rb, ra)
+   deallocate(H0, region)
+end subroutine init_free_surface_ribbon
+
+
+subroutine init_free_surface_GF()
+   !> Free-surface corrections of the outermost principal layer for the surface Green's
+   !> functions (surfgreen_1985). GLL's surface layer is coupled to the bulk through H01, so the
+   !> atoms that are present are [H00, H01]; for GRR they are [H00, H01^dagger].
+   !> The correction is added to the effective surface on-site matrix, which is the exact
+   !> Dyson step G_free = [G^-1 - dH]^-1 at no extra cost.
+   use para
+   implicit none
+   complex(dp), allocatable :: H00(:, :), H01(:, :), A(:, :)
+   integer, allocatable :: region(:)
+   real(dp) :: rb, ra
+
+   allocate(H00(Ndim, Ndim), H01(Ndim, Ndim), A(Ndim, 2*Ndim), region(Ndim/3))
+   allocate(dH_free_L(Ndim, Ndim), dH_free_R(Ndim, Ndim))
+   call ham_qlayer2qlayer((/0d0, 0d0/), H00, H01)
+   region = 1
+
+   A(:, 1:Ndim) = H00
+   A(:, Ndim+1:2*Ndim) = H01
+   call free_surface_correction(Ndim, 2*Ndim, A, region, .false., dH_free_L, rb, ra)
+   if (cpuid == 0) then
+      write(stdout, '(a)') ' '
+      write(stdout, '(a)') ' >> apply_ASR: free-surface correction of the surface Green functions'
+      write(stdout, '(a, 2es12.3)') '    left  surface, max |sum_b Phi_ab| before / after (amu*THz^2): ', &
+         rb/eV2Hartree**2, ra/eV2Hartree**2
+   endif
+
+   A(:, Ndim+1:2*Ndim) = conjg(transpose(H01))
+   call free_surface_correction(Ndim, 2*Ndim, A, region, .false., dH_free_R, rb, ra)
+   if (cpuid == 0) write(stdout, '(a, 2es12.3)') &
+      '    right surface, max |sum_b Phi_ab| before / after (amu*THz^2): ', rb/eV2Hartree**2, ra/eV2Hartree**2
+
+   deallocate(H00, H01, A, region)
+end subroutine init_free_surface_GF

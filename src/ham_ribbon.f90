@@ -5,6 +5,23 @@
 !        4/15/2010 by Quansheng Wu
 ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine ham_ribbon(k,Hamk_ribbon)
+     ! Ribbon Hamiltonian at k. With apply_ASR = T the free-edge correction
+     ! (missing bonds removed from the on-site blocks) is added; it is k-independent.
+     use para
+     implicit none
+     real(Dp) :: k
+     complex(Dp),intent(out) :: Hamk_ribbon(Num_wann*nslab1*nslab2, &
+        Num_wann*nslab1*nslab2)
+
+     call ham_ribbon_raw(k, Hamk_ribbon)
+     if (apply_ASR .and. index(Particle,'phonon')/=0) then
+        if (.not. allocated(dH_free_ribbon)) call init_free_surface_ribbon()
+        Hamk_ribbon = Hamk_ribbon + dH_free_ribbon
+     endif
+  end subroutine ham_ribbon
+
+
+  subroutine ham_ribbon_raw(k,Hamk_ribbon)
   
      use para
      implicit none

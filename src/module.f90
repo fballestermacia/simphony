@@ -428,7 +428,7 @@
      logical :: LandauLevel_B_calc  ! Flag for Hofstader butterfly
      logical :: LOTO_correction  ! Flag for LOTO correction of phonon spectrum 
      logical :: added_LR_in_Real_Space
-     logical :: apply_ASR  ! Flag for applying ASR in slabs
+     logical :: apply_ASR  ! Free surfaces: remove the missing bonds from the on-site blocks (slabs, ribbons, surface Green's functions)
      logical :: Write_eigenstates_at_HSP ! Flag for writing the eigenstates at HSP
      logical :: Boltz_OHE_calc  ! Flag for Boltzmann tranport under magnetic field
      logical :: Boltz_Berry_correction  ! Flag for Boltzmann tranport under magnetic field
@@ -900,6 +900,9 @@
      complex(dp), allocatable :: HmnR_LR(:,:,:)   ! Long-Range Hamiltonian m,n are band indexes
      complex(dp), allocatable :: HmnR_LR_sumkappa(:,:,:)
      complex(dp), allocatable :: ntiH(:,:)
+     !> free-surface corrections (apply_ASR): slab, ribbon, left/right surface principal layers
+     complex(dp), allocatable :: dH_free_slab(:,:), dH_free_ribbon(:,:)
+     complex(dp), allocatable :: dH_free_L(:,:), dH_free_R(:,:)
 
      
 

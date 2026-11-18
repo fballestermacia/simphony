@@ -102,9 +102,7 @@
         call ham_slab(k,Chamk)
 
 
-        if (apply_ASR) then
-         call make_translational_invariant(CHamk)
-        endif
+        ! apply_ASR: the free-surface correction is already included in ham_slab
          
         eigenvalue=0.0d0
 

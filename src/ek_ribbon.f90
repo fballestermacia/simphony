@@ -126,9 +126,7 @@
         chamk=0.0d0 
         call ham_ribbon(k,Chamk)
 
-         if (apply_ASR) then
-         call make_translational_invariant_ribbon(CHamk)
-        endif
+        ! apply_ASR: the free-edge correction is already included in ham_ribbon
 
         eigenvalue=0.0d0
 
