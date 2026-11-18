@@ -338,7 +338,7 @@ By performing the Wannier charge center calculation for each isolated band set (
 
 which reveals a winding number of 1 for the top two bands, whereas on the first four bands no winding is present, as discussed in the reference above. This topological invariant indicates the presence of protected edge states, which are clearly visible in the band structure of a ribbon of 40 unit cells (the color represents the projection onto the edges of the ribbon):
 
-![BHLribbon](images/BHLribbon.png)
+<p align="center"><img src="images/BHLribbon.png" width="430" alt="BHLribbon"></p>
 
 Note that the slab and ribbon Hamiltonians used by *WireBand_calc* and *SlabBand_calc* can break the ASR, which can be solved by imposing the ASR directly by setting *apply_ASR = T* in the *&CONTROL* namelist.
 
